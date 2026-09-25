@@ -1,0 +1,12 @@
+{
+  "module": {"comments": {"unattached": []}},
+  "entries": [
+    {"qualified_name": "add", "kind": "function", "signature": "add(a, b)",
+     "doc": null,
+     "comments": {"leading": [], "trailing": null, "trailing_block": [], "inner": []}},
+    {"qualified_name": "Point", "kind": "class", "doc": null},
+    {"qualified_name": "Point.__init__", "kind": "method",
+     "signature": "__init__(self, x, y)", "doc": null,
+     "comments": {"leading": [], "trailing": null, "trailing_block": [], "inner": []}}
+  ]
+}

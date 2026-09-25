@@ -1,0 +1,38 @@
+{
+  "entries": [
+    {"qualified_name": "rest_style", "signature": "rest_style(name, count)",
+     "doc": {"style": "rest", "body": "reST 风格示例。",
+             "params": [
+               {"name": "name", "type": "str", "desc": "名称。", "parsed": true},
+               {"name": "count", "type": "int", "desc": "次数。", "parsed": true}
+             ],
+             "returns": {"type": "str", "desc": "拼接结果。", "parsed": true},
+             "unparsed": []}},
+    {"qualified_name": "google_style",
+     "signature": "google_style(path, mode='r', *flags)",
+     "doc": {"style": "google",
+             "params": [
+               {"name": "path", "type": "str", "desc": "文件路径。", "parsed": true},
+               {"name": "mode", "type": "str", "parsed": true},
+               {"name": "*flags", "type": null, "desc": "额外标记。", "parsed": true}
+             ],
+             "returns": {"type": "bool", "desc": "是否成功。", "parsed": true},
+             "unparsed": [
+               {"raw": "这一行不符合参数格式", "section": "params", "parsed": false}
+             ]}},
+    {"qualified_name": "numpy_style", "signature": "numpy_style(data, axis)",
+     "doc": {"style": "numpy",
+             "params": [
+               {"name": "data", "type": "list of int", "desc": "输入数据。", "parsed": true},
+               {"name": "axis", "type": "int", "desc": "轴编号。", "parsed": true}
+             ],
+             "returns": {"type": "int", "desc": "合计值。", "parsed": true},
+             "unparsed": [
+               {"raw": "不符合格式的行", "section": "params", "parsed": false}
+             ]}},
+    {"qualified_name": "plain_doc",
+     "doc": {"style": null, "body": "没有任何结构化字段的普通文档。",
+             "params": [], "returns": null, "unparsed": []}},
+    {"qualified_name": "no_doc", "doc": null}
+  ]
+}

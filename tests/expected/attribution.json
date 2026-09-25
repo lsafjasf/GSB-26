@@ -1,0 +1,46 @@
+{
+  "module": {
+    "comments": {
+      "unattached": ["# 模块头部注释第一行", "# 模块头部注释第二行", "# 模块级行尾注释"]
+    }
+  },
+  "entries": [
+    {"qualified_name": "beta", "kind": "function", "line": 7,
+     "comments": {"leading": [], "trailing": null,
+                  "trailing_block": ["# beta 的尾部说明：缩进深，属于 beta 而非 gamma"],
+                  "inner": []}},
+    {"qualified_name": "gamma", "kind": "function", "line": 13,
+     "comments": {"leading": ["# gamma 的前置说明"],
+                  "trailing": "# gamma 定义行的行尾注释",
+                  "trailing_block": [],
+                  "inner": ["# gamma 内部注释"]}},
+    {"qualified_name": "delta", "kind": "function",
+     "comments": {"leading": [], "trailing": null, "trailing_block": [], "inner": []}},
+    {"qualified_name": "epsilon", "kind": "function",
+     "comments": {"leading": ["# epsilon 的说明第一行", "# epsilon 的说明第二行"],
+                  "trailing": null, "trailing_block": [], "inner": []}},
+    {"qualified_name": "decorated", "kind": "function",
+     "decorators": ["staticmethod", "decorator(arg=1)"],
+     "signature": "decorated(value)",
+     "doc": {"body": "正文。"},
+     "comments": {"leading": ["# 被装饰函数的说明", "# 装饰器行尾注释"],
+                  "trailing": null, "trailing_block": [], "inner": []}},
+    {"qualified_name": "Klass", "kind": "class", "signature": "class Klass",
+     "comments": {"leading": [], "trailing": null, "trailing_block": [], "inner": []}},
+    {"qualified_name": "Klass.method", "kind": "method", "signature": "method(self)",
+     "comments": {"leading": ["# 方法的前置说明"], "trailing": null,
+                  "trailing_block": [], "inner": ["# 方法内部注释"]}},
+    {"qualified_name": "Klass.other", "kind": "method",
+     "comments": {"leading": [], "trailing": null,
+                  "trailing_block": ["# other 的尾部说明，属于 other"], "inner": []}},
+    {"qualified_name": "outer", "kind": "function",
+     "comments": {"leading": [], "trailing": null, "trailing_block": [], "inner": []}},
+    {"qualified_name": "outer.inner", "kind": "function",
+     "comments": {"leading": ["# 嵌套函数的说明"], "trailing": null,
+                  "trailing_block": [], "inner": []}},
+    {"qualified_name": "fetch", "kind": "async_function",
+     "signature": "async fetch(url)",
+     "comments": {"leading": [], "trailing": null, "trailing_block": [],
+                  "inner": ["# 异步函数内部注释"]}}
+  ]
+}

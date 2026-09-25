@@ -1,0 +1,95 @@
+{
+  "file": "tests/samples/non_ascii.py",
+  "module": {
+    "name": "tests/samples/non_ascii.py",
+    "kind": "module",
+    "doc": null,
+    "comments": {
+      "unattached": [
+        "# 文件说明：包含中文注释的样例"
+      ]
+    }
+  },
+  "entries": [
+    {
+      "name": "计算",
+      "kind": "function",
+      "signature": "计算(甲, 乙)",
+      "line": 4,
+      "decorators": [],
+      "doc": {
+        "body": "计算两个数的加权和。",
+        "params": [
+          {
+            "name": "甲",
+            "type": "int",
+            "desc": "第一个操作数。",
+            "parsed": true
+          },
+          {
+            "name": "乙",
+            "type": "int",
+            "desc": "第二个操作数。",
+            "parsed": true
+          }
+        ],
+        "returns": {
+          "type": "int",
+          "desc": "加权结果。",
+          "parsed": true
+        },
+        "unparsed": [],
+        "style": "google"
+      },
+      "comments": {
+        "leading": [],
+        "trailing": null,
+        "trailing_block": [],
+        "inner": [
+          "# 返回加权和"
+        ]
+      },
+      "qualified_name": "计算"
+    },
+    {
+      "name": "计数器",
+      "kind": "class",
+      "signature": "class 计数器",
+      "line": 18,
+      "decorators": [],
+      "doc": {
+        "body": "简单的计数器。日文：カウンター。Emoji: 🔢",
+        "params": [],
+        "returns": null,
+        "unparsed": [],
+        "style": null
+      },
+      "comments": {
+        "leading": [],
+        "trailing": null,
+        "trailing_block": [],
+        "inner": []
+      },
+      "qualified_name": "计数器"
+    },
+    {
+      "name": "重置",
+      "kind": "method",
+      "signature": "重置(self)",
+      "line": 22,
+      "decorators": [],
+      "doc": null,
+      "comments": {
+        "leading": [
+          "# 重置方法的前置注释"
+        ],
+        "trailing": null,
+        "trailing_block": [],
+        "inner": [
+          "# 归零"
+        ]
+      },
+      "qualified_name": "计数器.重置"
+    }
+  ]
+}
