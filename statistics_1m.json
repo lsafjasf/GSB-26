@@ -1,0 +1,60 @@
+{
+  "bit_distribution": {
+    "bits_per_symbol": 6,
+    "one_bit_fraction": 0.49997266,
+    "one_bits": 95994750,
+    "total_bits": 192000000,
+    "zero_bit_fraction": 0.50002734,
+    "zero_bits": 96005250
+  },
+  "count": 1000000,
+  "duplicate_count": 0,
+  "entropy_bits": 192,
+  "generation_seconds": 0.661577,
+  "largest_prefix_buckets": [
+    {
+      "largest_bucket_size": 4,
+      "prefix": "0AMi",
+      "prefix_length": 4
+    },
+    {
+      "largest_bucket_size": 1,
+      "prefix": "---AUJLa",
+      "prefix_length": 8
+    },
+    {
+      "largest_bucket_size": 1,
+      "prefix": "---AUJLaQLfZ",
+      "prefix_length": 12
+    },
+    {
+      "largest_bucket_size": 1,
+      "prefix": "---AUJLaQLfZsMLF",
+      "prefix_length": 16
+    }
+  ],
+  "length": 32,
+  "lexicographically_adjacent_prefix_histogram": {
+    "0": 63,
+    "1": 4032,
+    "2": 252281,
+    "3": 714628,
+    "4": 28524,
+    "5": 464,
+    "6": 7
+  },
+  "longest_common_prefix": {
+    "left": "Fut4vC8iH1Y-_nI_HpiGQRBb_ADxDNvm",
+    "length": 6,
+    "right": "Fut4vCRgLeYOe0y7ablI9id2K8zWHued"
+  },
+  "sort_seconds": 0.228606,
+  "symbol_distribution": {
+    "alphabet_size": 64,
+    "chi_square": 58.056,
+    "expected_per_symbol": 500000.0,
+    "observed_max": 501894,
+    "observed_min": 498659
+  },
+  "unique_count": 1000000
+}
