@@ -1,0 +1,42 @@
+============================================================
+CSV Validation Report
+============================================================
+File: examples/users_bad.csv
+Rows processed: 7
+Total errors: 7
+Errors collected: 7
+Truncated: no (complete result)
+
+Summary by category:
+  field_validation: 4
+  malformed_row: 3
+Summary by code:
+  encoding_error: 1
+  field_count_mismatch: 1
+  not_in_choices: 1
+  out_of_range: 1
+  pattern_mismatch: 1
+  required_missing: 1
+  unclosed_quote: 1
+Summary by field:
+  (row): 3
+  age: 1
+  email: 1
+  name: 1
+  role: 1
+Summary by severity:
+  critical: 1
+  error: 5
+  warning: 1
+
+Details (7 errors):
+  examples/users_bad.csv:3:3 [email] field_validation/pattern_mismatch (warning): expected match /^[^@\s]+@[^@\s]+$/, actual 'not-an-email'
+  examples/users_bad.csv:4:3 malformed_row/unclosed_quote (error): expected closed quote before end of line, actual '"carol,carol@example.'
+    raw: 3,"carol,carol@example.com,29,user
+  examples/users_bad.csv:5:4 [age] field_validation/out_of_range (error): expected <= 150, actual '221'
+  examples/users_bad.csv:6:2 [name] field_validation/required_missing (error): expected non-empty value, actual ''
+  examples/users_bad.csv:6:5 [role] field_validation/not_in_choices (error): expected one of admin,user,guest, actual 'alien'
+  examples/users_bad.csv:7 malformed_row/field_count_mismatch (error): expected 5 fields, actual '4 fields'
+    raw: 6,frank,frank@example.com,28
+  examples/users_bad.csv:9 malformed_row/encoding_error (critical): expected valid utf-8, actual "b'8,hank,hank@example.com,41,\\xff\\xfeuser\\n'"
+    raw: b'8,hank,hank@example.com,41,\xff\xfeuser\n'

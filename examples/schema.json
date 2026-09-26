@@ -1,0 +1,7 @@
+[
+  {"name": "id",    "type": "int"},
+  {"name": "name",  "type": "str", "min_length": 1, "max_length": 20},
+  {"name": "email", "type": "str", "pattern": "^[^@\\s]+@[^@\\s]+$", "severity": "warning"},
+  {"name": "age",   "type": "int", "min_value": 0, "max_value": 150},
+  {"name": "role",  "type": "enum", "choices": ["admin", "user", "guest"]}
+]

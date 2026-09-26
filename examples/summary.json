@@ -1,0 +1,118 @@
+{
+  "file": "examples/users_bad.csv",
+  "rows_processed": 7,
+  "total_errors": 7,
+  "errors_collected": 7,
+  "truncated": false,
+  "by_category": {
+    "field_validation": 4,
+    "malformed_row": 3
+  },
+  "by_code": {
+    "encoding_error": 1,
+    "field_count_mismatch": 1,
+    "not_in_choices": 1,
+    "out_of_range": 1,
+    "pattern_mismatch": 1,
+    "required_missing": 1,
+    "unclosed_quote": 1
+  },
+  "by_field": {
+    "(row)": 3,
+    "age": 1,
+    "email": 1,
+    "name": 1,
+    "role": 1
+  },
+  "by_severity": {
+    "critical": 1,
+    "error": 5,
+    "warning": 1
+  },
+  "errors": [
+    {
+      "category": "field_validation",
+      "code": "pattern_mismatch",
+      "file": "examples/users_bad.csv",
+      "line": 3,
+      "column": 3,
+      "field": "email",
+      "expected": "match /^[^@\\s]+@[^@\\s]+$/",
+      "actual": "not-an-email",
+      "severity": "warning",
+      "raw_snippet": null
+    },
+    {
+      "category": "malformed_row",
+      "code": "unclosed_quote",
+      "file": "examples/users_bad.csv",
+      "line": 4,
+      "column": 3,
+      "field": null,
+      "expected": "closed quote before end of line",
+      "actual": "\"carol,carol@example.",
+      "severity": "error",
+      "raw_snippet": "3,\"carol,carol@example.com,29,user"
+    },
+    {
+      "category": "field_validation",
+      "code": "out_of_range",
+      "file": "examples/users_bad.csv",
+      "line": 5,
+      "column": 4,
+      "field": "age",
+      "expected": "<= 150",
+      "actual": "221",
+      "severity": "error",
+      "raw_snippet": null
+    },
+    {
+      "category": "field_validation",
+      "code": "required_missing",
+      "file": "examples/users_bad.csv",
+      "line": 6,
+      "column": 2,
+      "field": "name",
+      "expected": "non-empty value",
+      "actual": "",
+      "severity": "error",
+      "raw_snippet": null
+    },
+    {
+      "category": "field_validation",
+      "code": "not_in_choices",
+      "file": "examples/users_bad.csv",
+      "line": 6,
+      "column": 5,
+      "field": "role",
+      "expected": "one of admin,user,guest",
+      "actual": "alien",
+      "severity": "error",
+      "raw_snippet": null
+    },
+    {
+      "category": "malformed_row",
+      "code": "field_count_mismatch",
+      "file": "examples/users_bad.csv",
+      "line": 7,
+      "column": null,
+      "field": null,
+      "expected": "5 fields",
+      "actual": "4 fields",
+      "severity": "error",
+      "raw_snippet": "6,frank,frank@example.com,28"
+    },
+    {
+      "category": "malformed_row",
+      "code": "encoding_error",
+      "file": "examples/users_bad.csv",
+      "line": 9,
+      "column": null,
+      "field": null,
+      "expected": "valid utf-8",
+      "actual": "b'8,hank,hank@example.com,41,\\xff\\xfeuser\\n'",
+      "severity": "critical",
+      "raw_snippet": "b'8,hank,hank@example.com,41,\\xff\\xfeuser\\n'"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+id,name,email,age,role
+1,alice,alice@example.com,34,admin
+2,bob,not-an-email,17,user
+3,"carol,carol@example.com,29,user
+4,dave,dave@example.com,221,guest
+5,,eve@example.com,45,alien
+6,frank,frank@example.com,28
+7,grace,grace@example.com,31,user
+8,hank,hank@example.com,41,ÿþuser
