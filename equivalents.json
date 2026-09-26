@@ -1,0 +1,9 @@
+{
+  "boundary_value:12:7:7ba599": "clamp01: `x < 0` -> `x <= 0` is equivalent: at x == 0 both branches return 0 (the bound equals the returned constant).",
+  "boundary_value:14:7:88c654": "clamp01: `x > 1` -> `x >= 1` is equivalent: at x == 1 both branches return 1.",
+  "statement_deletion:33:4:72c1c6": "normalize: deleting `if not text: return \"\"` is equivalent: after strip(), when the branch is taken text == \"\" and the following `return text` returns the same value.",
+  "statement_deletion:34:8:ad470e": "normalize: deleting `return \"\"` is equivalent: control falls through to `return text` where text == \"\".",
+  "statement_deletion:40:4:3a716b": "sort_names: deleting `result = list(result)` is equivalent: sorted() already returns a new list, the extra copy is unobservable.",
+  "boundary_value:46:10:88c654": "count_down: `while n > 0` -> `while n >= 0` is equivalent: the extra iteration adds n == 0 to the total and only decrements n further.",
+  "boundary_value:46:14:c5edfc": "count_down: `while n > 0` -> `while n > -1` is equivalent: the extra iteration at n == 0 adds 0 to the total."
+}

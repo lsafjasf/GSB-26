@@ -1,0 +1,821 @@
+{
+  "module": "examples/billing.py",
+  "test_suite": "examples/test_billing.py",
+  "score": 92.65,
+  "killed": 63,
+  "denominator": 68,
+  "denominator_rule": "total - equivalent - incompetent",
+  "numerator_rule": "killed + timeout",
+  "totals": {
+    "killed": 60,
+    "survived": 12,
+    "timeout": 3,
+    "incompetent": 0
+  },
+  "total": 75,
+  "equivalent": 7,
+  "performance": {
+    "mutants": 75,
+    "executions": 75,
+    "cache_hits": 0,
+    "jobs": 8,
+    "timeout_seconds": 3.0,
+    "wall_time_seconds": 3.299
+  },
+  "equivalents": [
+    {
+      "id": "boundary_value:12:7:7ba599",
+      "line": 12,
+      "detail": "Lt -> LtE",
+      "reason": "clamp01: `x < 0` -> `x <= 0` is equivalent: at x == 0 both branches return 0 (the bound equals the returned constant)."
+    },
+    {
+      "id": "boundary_value:14:7:88c654",
+      "line": 14,
+      "detail": "Gt -> GtE",
+      "reason": "clamp01: `x > 1` -> `x >= 1` is equivalent: at x == 1 both branches return 1."
+    },
+    {
+      "id": "statement_deletion:33:4:72c1c6",
+      "line": 33,
+      "detail": "delete If",
+      "reason": "normalize: deleting `if not text: return \"\"` is equivalent: after strip(), when the branch is taken text == \"\" and the following `return text` returns the same value."
+    },
+    {
+      "id": "statement_deletion:34:8:ad470e",
+      "line": 34,
+      "detail": "delete Return",
+      "reason": "normalize: deleting `return \"\"` is equivalent: control falls through to `return text` where text == \"\"."
+    },
+    {
+      "id": "statement_deletion:40:4:3a716b",
+      "line": 40,
+      "detail": "delete Assign",
+      "reason": "sort_names: deleting `result = list(result)` is equivalent: sorted() already returns a new list, the extra copy is unobservable."
+    },
+    {
+      "id": "boundary_value:46:10:88c654",
+      "line": 46,
+      "detail": "Gt -> GtE",
+      "reason": "count_down: `while n > 0` -> `while n >= 0` is equivalent: the extra iteration adds n == 0 to the total and only decrements n further."
+    },
+    {
+      "id": "boundary_value:46:14:c5edfc",
+      "line": 46,
+      "detail": "0 -> -1",
+      "reason": "count_down: `while n > 0` -> `while n > -1` is equivalent: the extra iteration at n == 0 adds 0 to the total."
+    }
+  ],
+  "mutants": [
+    {
+      "id": "statement_deletion:12:4:72c1c6",
+      "kind": "statement_deletion",
+      "line": 12,
+      "detail": "delete If",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "boundary_value:12:7:7ba599",
+      "kind": "boundary_value",
+      "line": 12,
+      "detail": "Lt -> LtE",
+      "status": "survived",
+      "equivalent": true,
+      "from_cache": false,
+      "duration_seconds": 0.035
+    },
+    {
+      "id": "conditional_negation:12:7:f1b134",
+      "kind": "conditional_negation",
+      "line": 12,
+      "detail": "Lt -> GtE",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.037
+    },
+    {
+      "id": "boundary_value:12:11:c5edfc",
+      "kind": "boundary_value",
+      "line": 12,
+      "detail": "0 -> -1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "boundary_value:12:11:af83a1",
+      "kind": "boundary_value",
+      "line": 12,
+      "detail": "0 -> 1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.035
+    },
+    {
+      "id": "return_replacement:13:8:3b596e",
+      "kind": "return_replacement",
+      "line": 13,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "statement_deletion:13:8:ad470e",
+      "kind": "statement_deletion",
+      "line": 13,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "boundary_value:13:15:c5edfc",
+      "kind": "boundary_value",
+      "line": 13,
+      "detail": "0 -> -1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.042
+    },
+    {
+      "id": "boundary_value:13:15:af83a1",
+      "kind": "boundary_value",
+      "line": 13,
+      "detail": "0 -> 1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.038
+    },
+    {
+      "id": "statement_deletion:14:4:72c1c6",
+      "kind": "statement_deletion",
+      "line": 14,
+      "detail": "delete If",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.04
+    },
+    {
+      "id": "boundary_value:14:7:88c654",
+      "kind": "boundary_value",
+      "line": 14,
+      "detail": "Gt -> GtE",
+      "status": "survived",
+      "equivalent": true,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "conditional_negation:14:7:9ada84",
+      "kind": "conditional_negation",
+      "line": 14,
+      "detail": "Gt -> LtE",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "boundary_value:14:11:12a2f8",
+      "kind": "boundary_value",
+      "line": 14,
+      "detail": "1 -> 0",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.035
+    },
+    {
+      "id": "boundary_value:14:11:9d63e4",
+      "kind": "boundary_value",
+      "line": 14,
+      "detail": "1 -> 2",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.034
+    },
+    {
+      "id": "return_replacement:15:8:3b596e",
+      "kind": "return_replacement",
+      "line": 15,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "statement_deletion:15:8:ad470e",
+      "kind": "statement_deletion",
+      "line": 15,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.042
+    },
+    {
+      "id": "boundary_value:15:15:12a2f8",
+      "kind": "boundary_value",
+      "line": 15,
+      "detail": "1 -> 0",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.04
+    },
+    {
+      "id": "boundary_value:15:15:9d63e4",
+      "kind": "boundary_value",
+      "line": 15,
+      "detail": "1 -> 2",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "return_replacement:16:4:3b596e",
+      "kind": "return_replacement",
+      "line": 16,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "statement_deletion:16:4:ad470e",
+      "kind": "statement_deletion",
+      "line": 16,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.034
+    },
+    {
+      "id": "return_replacement:20:4:3b596e",
+      "kind": "return_replacement",
+      "line": 20,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.037
+    },
+    {
+      "id": "statement_deletion:20:4:ad470e",
+      "kind": "statement_deletion",
+      "line": 20,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.037
+    },
+    {
+      "id": "conditional_negation:20:11:39f928",
+      "kind": "conditional_negation",
+      "line": 20,
+      "detail": "Eq -> NotEq",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.037
+    },
+    {
+      "id": "boundary_value:20:15:be5150",
+      "kind": "boundary_value",
+      "line": 20,
+      "detail": "2 -> 1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.043
+    },
+    {
+      "id": "boundary_value:20:15:4a649d",
+      "kind": "boundary_value",
+      "line": 20,
+      "detail": "2 -> 3",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "boundary_value:20:20:c5edfc",
+      "kind": "boundary_value",
+      "line": 20,
+      "detail": "0 -> -1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "boundary_value:20:20:af83a1",
+      "kind": "boundary_value",
+      "line": 20,
+      "detail": "0 -> 1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.037
+    },
+    {
+      "id": "return_replacement:24:4:3b596e",
+      "kind": "return_replacement",
+      "line": 24,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "statement_deletion:24:4:ad470e",
+      "kind": "statement_deletion",
+      "line": 24,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "boundary_value:24:11:5e87d5",
+      "kind": "boundary_value",
+      "line": 24,
+      "detail": "LtE -> Lt",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.038
+    },
+    {
+      "id": "conditional_negation:24:11:e442a6",
+      "kind": "conditional_negation",
+      "line": 24,
+      "detail": "And -> Or",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.035
+    },
+    {
+      "id": "conditional_negation:24:11:f43524",
+      "kind": "conditional_negation",
+      "line": 24,
+      "detail": "LtE -> Gt",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "boundary_value:24:24:5e87d5",
+      "kind": "boundary_value",
+      "line": 24,
+      "detail": "LtE -> Lt",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.037
+    },
+    {
+      "id": "conditional_negation:24:24:f43524",
+      "kind": "conditional_negation",
+      "line": 24,
+      "detail": "LtE -> Gt",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.042
+    },
+    {
+      "id": "return_replacement:28:4:3b596e",
+      "kind": "return_replacement",
+      "line": 28,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.033
+    },
+    {
+      "id": "statement_deletion:28:4:ad470e",
+      "kind": "statement_deletion",
+      "line": 28,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.04
+    },
+    {
+      "id": "boundary_value:28:27:be5150",
+      "kind": "boundary_value",
+      "line": 28,
+      "detail": "2 -> 1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.035
+    },
+    {
+      "id": "boundary_value:28:27:4a649d",
+      "kind": "boundary_value",
+      "line": 28,
+      "detail": "2 -> 3",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "statement_deletion:32:4:3a716b",
+      "kind": "statement_deletion",
+      "line": 32,
+      "detail": "delete Assign",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.033
+    },
+    {
+      "id": "statement_deletion:33:4:72c1c6",
+      "kind": "statement_deletion",
+      "line": 33,
+      "detail": "delete If",
+      "status": "survived",
+      "equivalent": true,
+      "from_cache": false,
+      "duration_seconds": 0.038
+    },
+    {
+      "id": "conditional_negation:33:7:7deab0",
+      "kind": "conditional_negation",
+      "line": 33,
+      "detail": "remove `not`",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "return_replacement:34:8:3b596e",
+      "kind": "return_replacement",
+      "line": 34,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "statement_deletion:34:8:ad470e",
+      "kind": "statement_deletion",
+      "line": 34,
+      "detail": "delete Return",
+      "status": "survived",
+      "equivalent": true,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "return_replacement:35:4:3b596e",
+      "kind": "return_replacement",
+      "line": 35,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "statement_deletion:35:4:ad470e",
+      "kind": "statement_deletion",
+      "line": 35,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "statement_deletion:39:4:3a716b",
+      "kind": "statement_deletion",
+      "line": 39,
+      "detail": "delete Assign",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "statement_deletion:40:4:3a716b",
+      "kind": "statement_deletion",
+      "line": 40,
+      "detail": "delete Assign",
+      "status": "survived",
+      "equivalent": true,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "return_replacement:41:4:3b596e",
+      "kind": "return_replacement",
+      "line": 41,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.038
+    },
+    {
+      "id": "statement_deletion:41:4:ad470e",
+      "kind": "statement_deletion",
+      "line": 41,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "statement_deletion:45:4:3a716b",
+      "kind": "statement_deletion",
+      "line": 45,
+      "detail": "delete Assign",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "boundary_value:45:12:c5edfc",
+      "kind": "boundary_value",
+      "line": 45,
+      "detail": "0 -> -1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.037
+    },
+    {
+      "id": "boundary_value:45:12:af83a1",
+      "kind": "boundary_value",
+      "line": 45,
+      "detail": "0 -> 1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.036
+    },
+    {
+      "id": "statement_deletion:46:4:248b22",
+      "kind": "statement_deletion",
+      "line": 46,
+      "detail": "delete While",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "boundary_value:46:10:88c654",
+      "kind": "boundary_value",
+      "line": 46,
+      "detail": "Gt -> GtE",
+      "status": "survived",
+      "equivalent": true,
+      "from_cache": false,
+      "duration_seconds": 0.035
+    },
+    {
+      "id": "conditional_negation:46:10:9ada84",
+      "kind": "conditional_negation",
+      "line": 46,
+      "detail": "Gt -> LtE",
+      "status": "timeout",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 3.005
+    },
+    {
+      "id": "boundary_value:46:14:c5edfc",
+      "kind": "boundary_value",
+      "line": 46,
+      "detail": "0 -> -1",
+      "status": "survived",
+      "equivalent": true,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "boundary_value:46:14:af83a1",
+      "kind": "boundary_value",
+      "line": 46,
+      "detail": "0 -> 1",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.047
+    },
+    {
+      "id": "statement_deletion:47:8:d98463",
+      "kind": "statement_deletion",
+      "line": 47,
+      "detail": "delete AugAssign",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.044
+    },
+    {
+      "id": "statement_deletion:48:8:d98463",
+      "kind": "statement_deletion",
+      "line": 48,
+      "detail": "delete AugAssign",
+      "status": "timeout",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 3.004
+    },
+    {
+      "id": "boundary_value:48:13:12a2f8",
+      "kind": "boundary_value",
+      "line": 48,
+      "detail": "1 -> 0",
+      "status": "timeout",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 3.003
+    },
+    {
+      "id": "boundary_value:48:13:9d63e4",
+      "kind": "boundary_value",
+      "line": 48,
+      "detail": "1 -> 2",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.049
+    },
+    {
+      "id": "return_replacement:49:4:3b596e",
+      "kind": "return_replacement",
+      "line": 49,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.047
+    },
+    {
+      "id": "statement_deletion:49:4:ad470e",
+      "kind": "statement_deletion",
+      "line": 49,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.048
+    },
+    {
+      "id": "statement_deletion:53:4:72c1c6",
+      "kind": "statement_deletion",
+      "line": 53,
+      "detail": "delete If",
+      "status": "survived",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.042
+    },
+    {
+      "id": "boundary_value:53:7:88c654",
+      "kind": "boundary_value",
+      "line": 53,
+      "detail": "Gt -> GtE",
+      "status": "survived",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "conditional_negation:53:7:9ada84",
+      "kind": "conditional_negation",
+      "line": 53,
+      "detail": "Gt -> LtE",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.037
+    },
+    {
+      "id": "boundary_value:53:17:19246b",
+      "kind": "boundary_value",
+      "line": 53,
+      "detail": "100 -> 101",
+      "status": "survived",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "boundary_value:53:17:63e6d5",
+      "kind": "boundary_value",
+      "line": 53,
+      "detail": "100 -> 99",
+      "status": "survived",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.038
+    },
+    {
+      "id": "statement_deletion:54:8:8525c4",
+      "kind": "statement_deletion",
+      "line": 54,
+      "detail": "delete Raise",
+      "status": "survived",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "return_replacement:55:4:3b596e",
+      "kind": "return_replacement",
+      "line": 55,
+      "detail": "return expr -> return None",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.04
+    },
+    {
+      "id": "statement_deletion:55:4:ad470e",
+      "kind": "statement_deletion",
+      "line": 55,
+      "detail": "delete Return",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.041
+    },
+    {
+      "id": "boundary_value:55:20:12a2f8",
+      "kind": "boundary_value",
+      "line": 55,
+      "detail": "1 -> 0",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "boundary_value:55:20:9d63e4",
+      "kind": "boundary_value",
+      "line": 55,
+      "detail": "1 -> 2",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.039
+    },
+    {
+      "id": "boundary_value:55:34:19246b",
+      "kind": "boundary_value",
+      "line": 55,
+      "detail": "100 -> 101",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.042
+    },
+    {
+      "id": "boundary_value:55:34:63e6d5",
+      "kind": "boundary_value",
+      "line": 55,
+      "detail": "100 -> 99",
+      "status": "killed",
+      "equivalent": false,
+      "from_cache": false,
+      "duration_seconds": 0.033
+    }
+  ]
+}

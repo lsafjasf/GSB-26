@@ -1,0 +1,138 @@
+========================================================================
+MUTATION TESTING REPORT
+========================================================================
+module under test : examples/billing.py
+test suite        : examples/test_billing.py
+
+mutants total     : 75
+  killed          : 60
+  survived        : 12
+  timeout         : 3
+  incompetent     : 0
+  equivalent (excluded): 7
+
+MUTATION SCORE    : 92.6%  (63 / 68)
+denominator = total - equivalent - incompetent = 75 - 7 - 0 = 68
+numerator   = killed + timeout = 60 + 3 = 63
+
+performance       : 75 mutant executions (+0 cache hits), jobs=8, timeout=3.0s, wall time 3.30s
+
+------------------------------------------------------------------------
+EQUIVALENT MUTANTS (excluded from the denominator)
+------------------------------------------------------------------------
+  boundary_value:12:7:7ba599
+      line 12: Lt -> LtE
+      reason: clamp01: `x < 0` -> `x <= 0` is equivalent: at x == 0 both branches return 0 (the bound equals the returned constant).
+  boundary_value:14:7:88c654
+      line 14: Gt -> GtE
+      reason: clamp01: `x > 1` -> `x >= 1` is equivalent: at x == 1 both branches return 1.
+  statement_deletion:33:4:72c1c6
+      line 33: delete If
+      reason: normalize: deleting `if not text: return ""` is equivalent: after strip(), when the branch is taken text == "" and the following `return text` returns the same value.
+  statement_deletion:34:8:ad470e
+      line 34: delete Return
+      reason: normalize: deleting `return ""` is equivalent: control falls through to `return text` where text == "".
+  statement_deletion:40:4:3a716b
+      line 40: delete Assign
+      reason: sort_names: deleting `result = list(result)` is equivalent: sorted() already returns a new list, the extra copy is unobservable.
+  boundary_value:46:10:88c654
+      line 46: Gt -> GtE
+      reason: count_down: `while n > 0` -> `while n >= 0` is equivalent: the extra iteration adds n == 0 to the total and only decrements n further.
+  boundary_value:46:14:c5edfc
+      line 46: 0 -> -1
+      reason: count_down: `while n > 0` -> `while n > -1` is equivalent: the extra iteration at n == 0 adds 0 to the total.
+
+------------------------------------------------------------------------
+SURVIVING MUTANTS (weak tests -- these need stronger assertions)
+------------------------------------------------------------------------
+  boundary_value:12:7:7ba599  line 12: Lt -> LtE
+  boundary_value:14:7:88c654  line 14: Gt -> GtE
+  statement_deletion:33:4:72c1c6  line 33: delete If
+  statement_deletion:34:8:ad470e  line 34: delete Return
+  statement_deletion:40:4:3a716b  line 40: delete Assign
+  boundary_value:46:10:88c654  line 46: Gt -> GtE
+  boundary_value:46:14:c5edfc  line 46: 0 -> -1
+  statement_deletion:53:4:72c1c6  line 53: delete If
+  boundary_value:53:7:88c654  line 53: Gt -> GtE
+  boundary_value:53:17:19246b  line 53: 100 -> 101
+  boundary_value:53:17:63e6d5  line 53: 100 -> 99
+  statement_deletion:54:8:8525c4  line 54: delete Raise
+
+------------------------------------------------------------------------
+ALL MUTANTS
+------------------------------------------------------------------------
+  killed      statement_deletion:12:4:72c1c6         line 12   delete If (0.04s)
+  survived    boundary_value:12:7:7ba599             line 12   Lt -> LtE (0.03s) [equivalent]
+  killed      conditional_negation:12:7:f1b134       line 12   Lt -> GtE (0.04s)
+  killed      boundary_value:12:11:c5edfc            line 12   0 -> -1 (0.04s)
+  killed      boundary_value:12:11:af83a1            line 12   0 -> 1 (0.03s)
+  killed      return_replacement:13:8:3b596e         line 13   return expr -> return None (0.04s)
+  killed      statement_deletion:13:8:ad470e         line 13   delete Return (0.04s)
+  killed      boundary_value:13:15:c5edfc            line 13   0 -> -1 (0.04s)
+  killed      boundary_value:13:15:af83a1            line 13   0 -> 1 (0.04s)
+  killed      statement_deletion:14:4:72c1c6         line 14   delete If (0.04s)
+  survived    boundary_value:14:7:88c654             line 14   Gt -> GtE (0.04s) [equivalent]
+  killed      conditional_negation:14:7:9ada84       line 14   Gt -> LtE (0.04s)
+  killed      boundary_value:14:11:12a2f8            line 14   1 -> 0 (0.03s)
+  killed      boundary_value:14:11:9d63e4            line 14   1 -> 2 (0.03s)
+  killed      return_replacement:15:8:3b596e         line 15   return expr -> return None (0.04s)
+  killed      statement_deletion:15:8:ad470e         line 15   delete Return (0.04s)
+  killed      boundary_value:15:15:12a2f8            line 15   1 -> 0 (0.04s)
+  killed      boundary_value:15:15:9d63e4            line 15   1 -> 2 (0.04s)
+  killed      return_replacement:16:4:3b596e         line 16   return expr -> return None (0.04s)
+  killed      statement_deletion:16:4:ad470e         line 16   delete Return (0.03s)
+  killed      return_replacement:20:4:3b596e         line 20   return expr -> return None (0.04s)
+  killed      statement_deletion:20:4:ad470e         line 20   delete Return (0.04s)
+  killed      conditional_negation:20:11:39f928      line 20   Eq -> NotEq (0.04s)
+  killed      boundary_value:20:15:be5150            line 20   2 -> 1 (0.04s)
+  killed      boundary_value:20:15:4a649d            line 20   2 -> 3 (0.04s)
+  killed      boundary_value:20:20:c5edfc            line 20   0 -> -1 (0.04s)
+  killed      boundary_value:20:20:af83a1            line 20   0 -> 1 (0.04s)
+  killed      return_replacement:24:4:3b596e         line 24   return expr -> return None (0.04s)
+  killed      statement_deletion:24:4:ad470e         line 24   delete Return (0.04s)
+  killed      boundary_value:24:11:5e87d5            line 24   LtE -> Lt (0.04s)
+  killed      conditional_negation:24:11:e442a6      line 24   And -> Or (0.04s)
+  killed      conditional_negation:24:11:f43524      line 24   LtE -> Gt (0.04s)
+  killed      boundary_value:24:24:5e87d5            line 24   LtE -> Lt (0.04s)
+  killed      conditional_negation:24:24:f43524      line 24   LtE -> Gt (0.04s)
+  killed      return_replacement:28:4:3b596e         line 28   return expr -> return None (0.03s)
+  killed      statement_deletion:28:4:ad470e         line 28   delete Return (0.04s)
+  killed      boundary_value:28:27:be5150            line 28   2 -> 1 (0.03s)
+  killed      boundary_value:28:27:4a649d            line 28   2 -> 3 (0.04s)
+  killed      statement_deletion:32:4:3a716b         line 32   delete Assign (0.03s)
+  survived    statement_deletion:33:4:72c1c6         line 33   delete If (0.04s) [equivalent]
+  killed      conditional_negation:33:7:7deab0       line 33   remove `not` (0.04s)
+  killed      return_replacement:34:8:3b596e         line 34   return expr -> return None (0.04s)
+  survived    statement_deletion:34:8:ad470e         line 34   delete Return (0.04s) [equivalent]
+  killed      return_replacement:35:4:3b596e         line 35   return expr -> return None (0.04s)
+  killed      statement_deletion:35:4:ad470e         line 35   delete Return (0.04s)
+  killed      statement_deletion:39:4:3a716b         line 39   delete Assign (0.04s)
+  survived    statement_deletion:40:4:3a716b         line 40   delete Assign (0.04s) [equivalent]
+  killed      return_replacement:41:4:3b596e         line 41   return expr -> return None (0.04s)
+  killed      statement_deletion:41:4:ad470e         line 41   delete Return (0.04s)
+  killed      statement_deletion:45:4:3a716b         line 45   delete Assign (0.04s)
+  killed      boundary_value:45:12:c5edfc            line 45   0 -> -1 (0.04s)
+  killed      boundary_value:45:12:af83a1            line 45   0 -> 1 (0.04s)
+  killed      statement_deletion:46:4:248b22         line 46   delete While (0.04s)
+  survived    boundary_value:46:10:88c654            line 46   Gt -> GtE (0.03s) [equivalent]
+  timeout     conditional_negation:46:10:9ada84      line 46   Gt -> LtE (3.01s)
+  survived    boundary_value:46:14:c5edfc            line 46   0 -> -1 (0.04s) [equivalent]
+  killed      boundary_value:46:14:af83a1            line 46   0 -> 1 (0.05s)
+  killed      statement_deletion:47:8:d98463         line 47   delete AugAssign (0.04s)
+  timeout     statement_deletion:48:8:d98463         line 48   delete AugAssign (3.00s)
+  timeout     boundary_value:48:13:12a2f8            line 48   1 -> 0 (3.00s)
+  killed      boundary_value:48:13:9d63e4            line 48   1 -> 2 (0.05s)
+  killed      return_replacement:49:4:3b596e         line 49   return expr -> return None (0.05s)
+  killed      statement_deletion:49:4:ad470e         line 49   delete Return (0.05s)
+  survived    statement_deletion:53:4:72c1c6         line 53   delete If (0.04s)
+  survived    boundary_value:53:7:88c654             line 53   Gt -> GtE (0.04s)
+  killed      conditional_negation:53:7:9ada84       line 53   Gt -> LtE (0.04s)
+  survived    boundary_value:53:17:19246b            line 53   100 -> 101 (0.04s)
+  survived    boundary_value:53:17:63e6d5            line 53   100 -> 99 (0.04s)
+  survived    statement_deletion:54:8:8525c4         line 54   delete Raise (0.04s)
+  killed      return_replacement:55:4:3b596e         line 55   return expr -> return None (0.04s)
+  killed      statement_deletion:55:4:ad470e         line 55   delete Return (0.04s)
+  killed      boundary_value:55:20:12a2f8            line 55   1 -> 0 (0.04s)
+  killed      boundary_value:55:20:9d63e4            line 55   1 -> 2 (0.04s)
+  killed      boundary_value:55:34:19246b            line 55   100 -> 101 (0.04s)
+  killed      boundary_value:55:34:63e6d5            line 55   100 -> 99 (0.03s)
