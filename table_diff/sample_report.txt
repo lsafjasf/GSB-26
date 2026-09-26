@@ -1,0 +1,158 @@
+========== 表级差异对比报告 ==========
+左表: 迁移前.users  右表: 迁移后.users
+结论: 不一致
+
+-- 计数与占比 --
+左表行数: 6   右表行数: 4
+新增(仅右表): 1  (16.67%)
+删除(仅左表): 1  (16.67%)
+修改(行): 1  (16.67%)
+修改(字段): 1  (11.11%)
+完全一致行: 2
+差异总行数: 3  差异占比: 50.00%
+
+-- 表结构 --
+结构一致: False
+仅左表列: []
+仅右表列: ['vip']
+类型不一致列: []
+参与比较的列: 3 个
+
+-- 主键健康度 --
+主键: ['id']
+左表主键缺失: 1  重复键: 1
+右表主键缺失: 0  重复键: 0
+
+-- 比较规则 --
+忽略列: ['updated_at']
+容差: {'balance': {'atol': 0.01, 'rtol': 0.0}}
+
+-- 差异明细(每类最多 1000 条) --
+新增示例: [{"key": [5], "row": [5, "erin", 7.7, "2026-09-09", 1]}]
+删除示例: [{"key": [4], "row": [4, "dave", 88.88, "2026-09-04"]}]
+修改示例: [{"key": [3], "fields": [{"column": "balance", "left": 0.0, "right": 10.0}], "field_diff_count": 1}]
+
+
+========== JSON 完整报告 ==========
+{
+  "summary": {
+    "left_table": "迁移前.users",
+    "right_table": "迁移后.users",
+    "equal": false,
+    "rows_left": 6,
+    "rows_right": 4,
+    "added": 1,
+    "added_ratio": 0.16666666666666666,
+    "deleted": 1,
+    "deleted_ratio": 0.16666666666666666,
+    "modified_rows": 1,
+    "modified_row_ratio": 0.16666666666666666,
+    "modified_fields": 1,
+    "modified_field_ratio": 0.1111111111111111,
+    "identical_rows": 2,
+    "diff_rows": 3,
+    "diff_row_ratio": 0.5,
+    "max_examples": 1000
+  },
+  "schema": {
+    "consistent": false,
+    "left_only_columns": [],
+    "right_only_columns": [
+      "vip"
+    ],
+    "type_mismatches": [],
+    "compared_columns": [
+      "id",
+      "name",
+      "balance"
+    ],
+    "ignored_columns": [
+      "updated_at"
+    ]
+  },
+  "keys": {
+    "missing_left_count": 1,
+    "missing_left_examples": [
+      {
+        "row_index": 5,
+        "key": [
+          null
+        ]
+      }
+    ],
+    "missing_right_count": 0,
+    "missing_right_examples": [],
+    "duplicates_left_count": 1,
+    "duplicates_left_rows_excluded": 1,
+    "duplicates_left_examples": [
+      {
+        "key": [
+          4
+        ],
+        "occurrences": 2
+      }
+    ],
+    "duplicates_right_count": 0,
+    "duplicates_right_rows_excluded": 0,
+    "duplicates_right_examples": []
+  },
+  "rules": {
+    "key_columns": [
+      "id"
+    ],
+    "ignored_columns": [
+      "updated_at"
+    ],
+    "tolerances": {
+      "balance": {
+        "atol": 0.01,
+        "rtol": 0.0
+      }
+    }
+  },
+  "diff": {
+    "added": [
+      {
+        "key": [
+          5
+        ],
+        "row": [
+          5,
+          "erin",
+          7.7,
+          "2026-09-09",
+          1
+        ]
+      }
+    ],
+    "deleted": [
+      {
+        "key": [
+          4
+        ],
+        "row": [
+          4,
+          "dave",
+          88.88,
+          "2026-09-04"
+        ]
+      }
+    ],
+    "modified": [
+      {
+        "key": [
+          3
+        ],
+        "fields": [
+          {
+            "column": "balance",
+            "left": 0.0,
+            "right": 10.0
+          }
+        ],
+        "field_diff_count": 1
+      }
+    ],
+    "truncated": false
+  }
+}
