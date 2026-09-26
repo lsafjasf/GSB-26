@@ -1,0 +1,8 @@
+# 构建产物中实际出现的组件（name 或 name@version）
+app-server@2.1.0
+web-ui@3.0.2
+http-lib@1.4.0
+json-lib@0.8.1
+crypto-lib
+dom-util@1.2.0
+mystery-bin@0.0.1

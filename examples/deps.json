@@ -1,0 +1,7 @@
+{
+  "direct": [
+    {"name": "app-server", "version": "2.1.0", "source": "registry:internal"},
+    "web-ui",
+    "legacy-driver"
+  ]
+}

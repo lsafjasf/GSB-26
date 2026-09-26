@@ -1,0 +1,16 @@
+{
+  "packages": [
+    {"name": "app-server", "version": "2.1.0", "source": "registry:internal",
+     "dependencies": ["http-lib", "json-lib", "crypto-lib"]},
+    {"name": "web-ui", "version": "3.0.2", "source": "registry:npm",
+     "dependencies": ["http-lib", "dom-util"]},
+    {"name": "http-lib", "version": "1.4.0", "source": "registry:internal",
+     "dependencies": ["crypto-lib"]},
+    {"name": "json-lib", "version": "0.8.1", "source": "registry:internal",
+     "dependencies": []},
+    {"name": "crypto-lib", "version": null, "source": "registry:internal",
+     "dependencies": []},
+    {"name": "dom-util", "version": "1.2.0", "source": null,
+     "dependencies": []}
+  ]
+}

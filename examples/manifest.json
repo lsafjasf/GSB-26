@@ -1,0 +1,130 @@
+{
+  "component_count": 7,
+  "components": [
+    {
+      "direct": true,
+      "introduced_by": [
+        [
+          "app-server"
+        ]
+      ],
+      "name": "app-server",
+      "needs_review": false,
+      "review_reasons": [],
+      "source": "registry:internal",
+      "version": "2.1.0"
+    },
+    {
+      "direct": false,
+      "introduced_by": [
+        [
+          "app-server",
+          "crypto-lib"
+        ],
+        [
+          "app-server",
+          "http-lib",
+          "crypto-lib"
+        ],
+        [
+          "web-ui",
+          "http-lib",
+          "crypto-lib"
+        ]
+      ],
+      "name": "crypto-lib",
+      "needs_review": true,
+      "review_reasons": [
+        "missing_version"
+      ],
+      "source": "registry:internal",
+      "version": null
+    },
+    {
+      "direct": false,
+      "introduced_by": [
+        [
+          "web-ui",
+          "dom-util"
+        ]
+      ],
+      "name": "dom-util",
+      "needs_review": true,
+      "review_reasons": [
+        "unknown_source"
+      ],
+      "source": null,
+      "version": "1.2.0"
+    },
+    {
+      "direct": false,
+      "introduced_by": [
+        [
+          "app-server",
+          "http-lib"
+        ],
+        [
+          "web-ui",
+          "http-lib"
+        ]
+      ],
+      "name": "http-lib",
+      "needs_review": false,
+      "review_reasons": [],
+      "source": "registry:internal",
+      "version": "1.4.0"
+    },
+    {
+      "direct": false,
+      "introduced_by": [
+        [
+          "app-server",
+          "json-lib"
+        ]
+      ],
+      "name": "json-lib",
+      "needs_review": false,
+      "review_reasons": [],
+      "source": "registry:internal",
+      "version": "0.8.1"
+    },
+    {
+      "direct": true,
+      "introduced_by": [
+        [
+          "legacy-driver"
+        ]
+      ],
+      "name": "legacy-driver",
+      "needs_review": true,
+      "review_reasons": [
+        "missing_version",
+        "not_in_lockfile",
+        "unknown_source"
+      ],
+      "source": null,
+      "version": null
+    },
+    {
+      "direct": true,
+      "introduced_by": [
+        [
+          "web-ui"
+        ]
+      ],
+      "name": "web-ui",
+      "needs_review": false,
+      "review_reasons": [],
+      "source": "registry:npm",
+      "version": "3.0.2"
+    }
+  ],
+  "input_fingerprints": {
+    "deps_sha256": "aeb443c904d26cc8aa2c413f3a45f57ee94b599e0f963b5a475810ef26aae51b",
+    "lock_sha256": "278b50b44e7242b561b64fe97915d23d6e6db21ccd08fe15c683b654936d499a"
+  },
+  "tool": {
+    "name": "dep-manifest",
+    "version": "1.0.0"
+  }
+}

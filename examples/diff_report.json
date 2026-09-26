@@ -1,0 +1,29 @@
+{
+  "missing_in_artifact": [
+    {
+      "introduced_by": [
+        [
+          "legacy-driver"
+        ]
+      ],
+      "name": "legacy-driver",
+      "source": null,
+      "version": null
+    }
+  ],
+  "summary": {
+    "consistent": false,
+    "declared": 7,
+    "in_artifact": 7,
+    "missing_in_artifact": 1,
+    "uncovered_in_artifact": 1,
+    "version_mismatches": 0
+  },
+  "uncovered_in_artifact": [
+    {
+      "name": "mystery-bin",
+      "version": "0.0.1"
+    }
+  ],
+  "version_mismatches": []
+}
