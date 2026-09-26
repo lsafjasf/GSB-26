@@ -1,0 +1,141 @@
+distfit 检验报告样例
+Python 3.12.3 / Linux-6.18.33.1-microsoft-standard-WSL2-x86_64-with-glibc2.39
+生成时间: 2026-09-27 05:30:22 CST
+
+====================================================================
+1. 四种分布采样 + 拟合优度检验 (n=5000, alpha=0.05, seed=2026)
+====================================================================
+
+--- uniform(-2, 5) ---
+method     : chi-square
+statistic  : 57.56
+critical   : 66.3386 (alpha=0.05)
+p-value    : 0.18797
+df         : 49
+conclusion : accept
+
+--- exponential(0.7) ---
+method     : chi-square
+statistic  : 57.32
+critical   : 66.3386 (alpha=0.05)
+p-value    : 0.193903
+df         : 49
+conclusion : accept
+
+--- normal(3, 2.5) ---
+method     : chi-square
+statistic  : 31.38
+critical   : 66.3386 (alpha=0.05)
+p-value    : 0.976361
+df         : 49
+conclusion : accept
+
+--- binomial(12, 0.4) ---
+method     : chi-square
+statistic  : 5.87581
+critical   : 18.307 (alpha=0.05)
+p-value    : 0.825587
+df         : 10
+conclusion : accept
+
+====================================================================
+2. 分位数对比 (normal(0,1), n=20000)
+====================================================================
+     q  theoretical       sample    rel.err
+  0.01      -2.3263      -2.2915     0.0150
+  0.05      -1.6449      -1.6280     0.0102
+  0.25      -0.6745      -0.6655     0.0134
+  0.50       0.0000       0.0116     0.0116
+  0.75       0.6745       0.6936     0.0284
+  0.95       1.6449       1.6596     0.0089
+  0.99       2.3263       2.3870     0.0261
+
+====================================================================
+3. 参数反推 (fit) + 拟合优度
+====================================================================
+
+--- fit 'uniform' (真值见上) ---
+family=uniform  params: a=-1.49992, b=3.99994
+method     : chi-square
+statistic  : 45.8
+critical   : 64.0011 (alpha=0.05)
+p-value    : 0.522274
+df         : 47
+conclusion : accept
+note       : 2 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
+
+--- fit 'exponential' (真值见上) ---
+family=exponential  params: lam=2.01451
+method     : chi-square
+statistic  : 46.08
+critical   : 65.1708 (alpha=0.05)
+p-value    : 0.551835
+df         : 48
+conclusion : accept
+note       : 1 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
+
+--- fit 'normal' (真值见上) ---
+family=normal  params: mu=1.00717, sigma=1.987
+method     : chi-square
+statistic  : 50.48
+critical   : 64.0011 (alpha=0.05)
+p-value    : 0.33766
+df         : 47
+conclusion : accept
+note       : 2 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
+
+--- fit 'binomial' (真值见上) ---
+family=binomial  params: n=15, p=0.29974
+method     : chi-square
+statistic  : 11.6679
+critical   : 16.919 (alpha=0.05)
+p-value    : 0.232685
+df         : 9
+conclusion : accept
+note       : 2 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
+
+====================================================================
+4. 明显不匹配的样本：必须拒绝
+====================================================================
+--- 指数样本 exponential(1) 强行拟合 normal ---
+family=normal  params: mu=0.965005, sigma=0.956457
+method     : chi-square
+statistic  : 3329.06
+critical   : 64.0011 (alpha=0.05)
+p-value    : 0
+df         : 47
+conclusion : reject
+note       : 2 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
+
+--- 均匀样本(均值0方差1) 检验 normal(0,1)：均值相同但形状不同 ---
+method     : chi-square
+statistic  : 1592.34
+critical   : 66.3386 (alpha=0.05)
+p-value    : 2.06089e-301
+df         : 49
+conclusion : reject
+
+--- fit_best：正态样本自动选择分布族 ---
+  normal       p-value=0.8933     conclusion=accept
+  uniform      p-value=0          conclusion=reject
+  exponential  p-value=0          conclusion=reject
+
+====================================================================
+5. 小样本 (n=6) 与尾部极端值
+====================================================================
+样本: [-0.072, -1.395, 1.666, -0.63, 1.45, -0.77]
+method     : kolmogorov-smirnov
+statistic  : 0.259741
+critical   : 0.519469 (alpha=0.05)
+p-value    : 0.745744
+conclusion : accept
+note       : n=6 < 30: chi-square approximation invalid for small samples, used KS test instead
+
+说明:
+- n<30 时卡方分箱近似失效(每箱期望频数<5), 自动改用 KS 检验;
+  n=6 时 KS 临界值很大(~0.52), 只有极端不匹配才能拒绝 -> 检验功效低,
+  这是小样本的固有性质, 不是实现缺陷。
+- 尾部极端值: 等概率分箱保证尾部箱与中部箱期望频数相同, 尾部偏差
+  不会被稀释; 但指数/正态的极尾(如 p>0.999)在 n=5000 时每箱仅 ~5 个
+  样本, 统计涨落大, 需更大样本才能分辨尾部偏差。
+- 参数由样本估计时 KS 的 p 值偏保守(Lilliefors 情形), 报告已标注。
