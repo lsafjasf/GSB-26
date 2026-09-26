@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="440" viewBox="0 0 780 440">
+<rect width="100%" height="100%" fill="white"/>
+<text x="390" y="26" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="bold">Block size vs. median time (640x640, 8 workers)</text>
+<line x1="72" y1="368" x2="756" y2="368" stroke="#e5e7eb"/>
+<text x="62" y="372" text-anchor="end" font-family="sans-serif" font-size="12">0.00</text>
+<line x1="72" y1="288" x2="756" y2="288" stroke="#e5e7eb"/>
+<text x="62" y="292" text-anchor="end" font-family="sans-serif" font-size="12">68.09</text>
+<line x1="72" y1="208" x2="756" y2="208" stroke="#e5e7eb"/>
+<text x="62" y="212" text-anchor="end" font-family="sans-serif" font-size="12">136.18</text>
+<line x1="72" y1="128" x2="756" y2="128" stroke="#e5e7eb"/>
+<text x="62" y="132" text-anchor="end" font-family="sans-serif" font-size="12">204.26</text>
+<line x1="72" y1="48" x2="756" y2="48" stroke="#e5e7eb"/>
+<text x="62" y="52" text-anchor="end" font-family="sans-serif" font-size="12">272.35</text>
+<line x1="72" y1="48" x2="72" y2="368" stroke="#374151"/>
+<line x1="72" y1="368" x2="756" y2="368" stroke="#374151"/>
+<line x1="72" y1="368" x2="72" y2="373" stroke="#374151"/>
+<text x="72" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">4</text>
+<line x1="134.1818181818182" y1="368" x2="134.1818181818182" y2="373" stroke="#374151"/>
+<text x="134.1818181818182" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">8</text>
+<line x1="196.36363636363637" y1="368" x2="196.36363636363637" y2="373" stroke="#374151"/>
+<text x="196.36363636363637" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">16</text>
+<line x1="258.5454545454545" y1="368" x2="258.5454545454545" y2="373" stroke="#374151"/>
+<text x="258.5454545454545" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">24</text>
+<line x1="320.72727272727275" y1="368" x2="320.72727272727275" y2="373" stroke="#374151"/>
+<text x="320.72727272727275" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">32</text>
+<line x1="382.90909090909093" y1="368" x2="382.90909090909093" y2="373" stroke="#374151"/>
+<text x="382.90909090909093" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">48</text>
+<line x1="445.09090909090907" y1="368" x2="445.09090909090907" y2="373" stroke="#374151"/>
+<text x="445.09090909090907" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">64</text>
+<line x1="507.27272727272725" y1="368" x2="507.27272727272725" y2="373" stroke="#374151"/>
+<text x="507.27272727272725" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">96</text>
+<line x1="569.4545454545455" y1="368" x2="569.4545454545455" y2="373" stroke="#374151"/>
+<text x="569.4545454545455" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">128</text>
+<line x1="631.6363636363636" y1="368" x2="631.6363636363636" y2="373" stroke="#374151"/>
+<text x="631.6363636363636" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">192</text>
+<line x1="693.8181818181819" y1="368" x2="693.8181818181819" y2="373" stroke="#374151"/>
+<text x="693.8181818181819" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">256</text>
+<line x1="756" y1="368" x2="756" y2="373" stroke="#374151"/>
+<text x="756" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">640</text>
+<text x="414" y="422" text-anchor="middle" font-family="sans-serif" font-size="14">Block size (elements)</text>
+<text transform="translate(20 208) rotate(-90)" text-anchor="middle" font-family="sans-serif" font-size="14">Median time (ms)</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="3" points="72,48 134.1818181818182,126.84706768456195 196.36363636363637,137.71579881603446 258.5454545454545,152.52428554296137 320.72727272727275,174.17765223621342 382.90909090909093,172.3333438002853 445.09090909090907,180.07447223876667 507.27272727272725,180.38985698786522 569.4545454545455,186.06818647736924 631.6363636363636,172.12527740649188 693.8181818181819,175.14646295366177 756,184.65240770309222"/>
+<circle cx="72" cy="48" r="4" fill="#2563eb"/>
+<circle cx="134.1818181818182" cy="126.84706768456195" r="4" fill="#2563eb"/>
+<circle cx="196.36363636363637" cy="137.71579881603446" r="4" fill="#2563eb"/>
+<circle cx="258.5454545454545" cy="152.52428554296137" r="4" fill="#2563eb"/>
+<circle cx="320.72727272727275" cy="174.17765223621342" r="4" fill="#2563eb"/>
+<circle cx="382.90909090909093" cy="172.3333438002853" r="4" fill="#2563eb"/>
+<circle cx="445.09090909090907" cy="180.07447223876667" r="4" fill="#2563eb"/>
+<circle cx="507.27272727272725" cy="180.38985698786522" r="4" fill="#2563eb"/>
+<circle cx="569.4545454545455" cy="186.06818647736924" r="4" fill="#2563eb"/>
+<circle cx="631.6363636363636" cy="172.12527740649188" r="4" fill="#2563eb"/>
+<circle cx="693.8181818181819" cy="175.14646295366177" r="4" fill="#2563eb"/>
+<circle cx="756" cy="184.65240770309222" r="4" fill="#2563eb"/>
+<line x1="576" y1="66" x2="602" y2="66" stroke="#2563eb" stroke-width="3"/>
+<text x="610" y="70" font-family="sans-serif" font-size="13">Blocked serial</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="3" points="72,278.1123489357641 134.1818181818182,293.1896432150282 196.36363636363637,293.91643277222363 258.5454545454545,311.3831208753191 320.72727272727275,314.85887756112334 382.90909090909093,313.40661555999856 445.09090909090907,324.3355755644047 507.27272727272725,322.74575915182265 569.4545454545455,322.30192701476466 631.6363636363636,312.1781865315244 693.8181818181819,299.02795680434065 756,184.48544676700067"/>
+<circle cx="72" cy="278.1123489357641" r="4" fill="#dc2626"/>
+<circle cx="134.1818181818182" cy="293.1896432150282" r="4" fill="#dc2626"/>
+<circle cx="196.36363636363637" cy="293.91643277222363" r="4" fill="#dc2626"/>
+<circle cx="258.5454545454545" cy="311.3831208753191" r="4" fill="#dc2626"/>
+<circle cx="320.72727272727275" cy="314.85887756112334" r="4" fill="#dc2626"/>
+<circle cx="382.90909090909093" cy="313.40661555999856" r="4" fill="#dc2626"/>
+<circle cx="445.09090909090907" cy="324.3355755644047" r="4" fill="#dc2626"/>
+<circle cx="507.27272727272725" cy="322.74575915182265" r="4" fill="#dc2626"/>
+<circle cx="569.4545454545455" cy="322.30192701476466" r="4" fill="#dc2626"/>
+<circle cx="631.6363636363636" cy="312.1781865315244" r="4" fill="#dc2626"/>
+<circle cx="693.8181818181819" cy="299.02795680434065" r="4" fill="#dc2626"/>
+<circle cx="756" cy="184.48544676700067" r="4" fill="#dc2626"/>
+<line x1="576" y1="88" x2="602" y2="88" stroke="#dc2626" stroke-width="3"/>
+<text x="610" y="92" font-family="sans-serif" font-size="13">Parallel (8 workers)</text>
+</svg>

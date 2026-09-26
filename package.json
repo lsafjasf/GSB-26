@@ -1,0 +1,14 @@
+{
+  "name": "blocked-parallel-matmul",
+  "version": "1.0.0",
+  "description": "Blocked parallel matrix multiplication using only the Node.js standard library.",
+  "private": true,
+  "main": "src/parallel-matmul.js",
+  "scripts": {
+    "test": "node test/self-test.js",
+    "benchmark": "node benchmark/benchmark.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

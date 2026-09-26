@@ -1,0 +1,108 @@
+{
+  "environment": {
+    "node": "v18.19.1",
+    "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+    "availableCores": 8,
+    "physicalCoreCap": 8,
+    "benchmarkWorkers": 8,
+    "n": 640,
+    "repetitions": 5,
+    "bestBlock": 64,
+    "sink": 2043.9927987569883,
+    "timestamp": "2026-09-26T23:16:30.747Z"
+  },
+  "blockRows": [
+    {
+      "blockSize": 4,
+      "serialMs": 272.3530579954386,
+      "parallelMs": 76.5036770105362
+    },
+    {
+      "blockSize": 8,
+      "serialMs": 205.2460580021143,
+      "parallelMs": 63.67134200036526
+    },
+    {
+      "blockSize": 16,
+      "serialMs": 195.99564500153065,
+      "parallelMs": 63.052769005298615
+    },
+    {
+      "blockSize": 24,
+      "serialMs": 183.392092987895,
+      "parallelMs": 48.18681301176548
+    },
+    {
+      "blockSize": 32,
+      "serialMs": 164.96284100413322,
+      "parallelMs": 45.22858500480652
+    },
+    {
+      "blockSize": 48,
+      "serialMs": 166.5325380116701,
+      "parallelMs": 46.46460999548435
+    },
+    {
+      "blockSize": 64,
+      "serialMs": 159.9440380036831,
+      "parallelMs": 37.16293600201607
+    },
+    {
+      "blockSize": 96,
+      "serialMs": 159.67561300098896,
+      "parallelMs": 38.51603400707245
+    },
+    {
+      "blockSize": 128,
+      "serialMs": 154.84276799857616,
+      "parallelMs": 38.89378100633621
+    },
+    {
+      "blockSize": 192,
+      "serialMs": 166.70962400734425,
+      "parallelMs": 47.51013000309467
+    },
+    {
+      "blockSize": 256,
+      "serialMs": 164.13828299939632,
+      "parallelMs": 58.70233400166035
+    },
+    {
+      "blockSize": 640,
+      "serialMs": 156.04774199426174,
+      "parallelMs": 156.18984299898148
+    }
+  ],
+  "speedupRows": [
+    {
+      "workers": 1,
+      "ms": 158.7979070097208,
+      "speedup": 1.00721754471167,
+      "efficiency": 1.00721754471167
+    },
+    {
+      "workers": 2,
+      "ms": 81.28939400613308,
+      "speedup": 1.9675880225114695,
+      "efficiency": 0.9837940112557347
+    },
+    {
+      "workers": 4,
+      "ms": 44.17320400476456,
+      "speedup": 3.620838506222718,
+      "efficiency": 0.9052096265556795
+    },
+    {
+      "workers": 8,
+      "ms": 40.25076600909233,
+      "speedup": 3.9736892949454177,
+      "efficiency": 0.4967111618681772
+    }
+  ],
+  "naiveMs": 161.7923959940672,
+  "memory": {
+    "matrixBytes": 9830400,
+    "metadataBytesPerWorker": 256,
+    "upperBoundBytes": 9832448
+  }
+}

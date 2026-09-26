@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="440" viewBox="0 0 780 440">
+<rect width="100%" height="100%" fill="white"/>
+<text x="390" y="26" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="bold">Workers vs. speedup (640x640, block 64)</text>
+<line x1="72" y1="368" x2="756" y2="368" stroke="#e5e7eb"/>
+<text x="62" y="372" text-anchor="end" font-family="sans-serif" font-size="12">0.00</text>
+<line x1="72" y1="288" x2="756" y2="288" stroke="#e5e7eb"/>
+<text x="62" y="292" text-anchor="end" font-family="sans-serif" font-size="12">2.00</text>
+<line x1="72" y1="208" x2="756" y2="208" stroke="#e5e7eb"/>
+<text x="62" y="212" text-anchor="end" font-family="sans-serif" font-size="12">4.00</text>
+<line x1="72" y1="128" x2="756" y2="128" stroke="#e5e7eb"/>
+<text x="62" y="132" text-anchor="end" font-family="sans-serif" font-size="12">6.00</text>
+<line x1="72" y1="48" x2="756" y2="48" stroke="#e5e7eb"/>
+<text x="62" y="52" text-anchor="end" font-family="sans-serif" font-size="12">8.00</text>
+<line x1="72" y1="48" x2="72" y2="368" stroke="#374151"/>
+<line x1="72" y1="368" x2="756" y2="368" stroke="#374151"/>
+<line x1="72" y1="368" x2="72" y2="373" stroke="#374151"/>
+<text x="72" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">1</text>
+<line x1="300" y1="368" x2="300" y2="373" stroke="#374151"/>
+<text x="300" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">2</text>
+<line x1="528" y1="368" x2="528" y2="373" stroke="#374151"/>
+<text x="528" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">4</text>
+<line x1="756" y1="368" x2="756" y2="373" stroke="#374151"/>
+<text x="756" y="390" text-anchor="middle" font-family="sans-serif" font-size="12">8</text>
+<text x="414" y="422" text-anchor="middle" font-family="sans-serif" font-size="14">Worker threads</text>
+<text transform="translate(20 208) rotate(-90)" text-anchor="middle" font-family="sans-serif" font-size="14">Speedup over blocked serial</text>
+<polyline fill="none" stroke="#9ca3af" stroke-width="3" stroke-dasharray="6 5" points="72,328 300,288 528,208 756,48"/>
+<circle cx="72" cy="328" r="4" fill="#9ca3af"/>
+<circle cx="300" cy="288" r="4" fill="#9ca3af"/>
+<circle cx="528" cy="208" r="4" fill="#9ca3af"/>
+<circle cx="756" cy="48" r="4" fill="#9ca3af"/>
+<line x1="576" y1="66" x2="602" y2="66" stroke="#9ca3af" stroke-width="3" stroke-dasharray="6 5"/>
+<text x="610" y="70" font-family="sans-serif" font-size="13">Ideal linear</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="3" points="72,327.7112982115332 300,289.2964790995412 528,223.16645975109128 756,209.0524282021833"/>
+<circle cx="72" cy="327.7112982115332" r="4" fill="#dc2626"/>
+<circle cx="300" cy="289.2964790995412" r="4" fill="#dc2626"/>
+<circle cx="528" cy="223.16645975109128" r="4" fill="#dc2626"/>
+<circle cx="756" cy="209.0524282021833" r="4" fill="#dc2626"/>
+<line x1="576" y1="88" x2="602" y2="88" stroke="#dc2626" stroke-width="3"/>
+<text x="610" y="92" font-family="sans-serif" font-size="13">Measured speedup</text>
+</svg>
