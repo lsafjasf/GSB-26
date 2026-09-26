@@ -1,0 +1,7 @@
+int main() {
+    int x = 0x1F + 3.14e-2;
+    char *s = "hello\nworld";
+    char *bad = "unterminated string
+    int @ = #;
+    /* outer /* inner */ still comment */
+    /* this comment never ends ...

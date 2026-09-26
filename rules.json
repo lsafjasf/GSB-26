@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {"name": "WHITESPACE", "kind": "whitespace", "chars": " \t\r\n", "skip": true},
+    {"name": "COMMENT", "kind": "line_comment", "prefix": "//"},
+    {"name": "COMMENT", "kind": "block_comment", "start": "/*", "end": "*/", "nested": true},
+    {"name": "STRING", "kind": "string", "quote": "\"", "escape": "\\", "multiline": false},
+    {"name": "CHAR", "kind": "string", "quote": "'", "escape": "\\", "multiline": false},
+    {"name": "NUMBER", "kind": "number", "allow_hex": true, "allow_float": true, "allow_exponent": true, "allow_underscore": true},
+    {"name": "KEYWORD", "kind": "keywords",
+     "words": ["if", "else", "while", "for", "return", "int", "float", "char", "void", "break", "continue"]},
+    {"name": "IDENT", "kind": "identifier",
+     "start": ["alpha", "underscore"], "continue": ["alpha", "digit", "underscore"]},
+    {"name": "OP", "kind": "operators",
+     "ops": ["<<=", ">>=", "==", "!=", "<=", ">=", "&&", "||", "++", "--",
+             "+=", "-=", "*=", "/=", "<<", ">>",
+             "+", "-", "*", "/", "%", "=", "<", ">", "!", "&", "|", "^", "~",
+             "(", ")", "{", "}", "[", "]", ";", ",", ".", "?", ":"]}
+  ]
+}
