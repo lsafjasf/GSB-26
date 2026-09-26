@@ -1,0 +1,10 @@
+{
+  "parse": {
+    "regex": "^\\[(\\S+)\\] (\\w+) (.*)$",
+    "fields": [
+      {"name": "ts",      "type": "string", "required": true},
+      {"name": "level",   "type": "string", "required": true},
+      {"name": "message", "type": "string", "required": true}
+    ]
+  }
+}

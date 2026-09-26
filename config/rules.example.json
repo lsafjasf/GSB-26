@@ -1,0 +1,13 @@
+{
+  "parse": {
+    "delimiter": "|",
+    "trim": true,
+    "fields": [
+      {"name": "ts",         "type": "string", "required": true},
+      {"name": "level",      "type": "string", "required": true},
+      {"name": "latency_ms", "type": "int",    "required": false, "default": 0},
+      {"name": "ok",         "type": "bool",   "required": false},
+      {"name": "message",    "type": "string", "required": true}
+    ]
+  }
+}

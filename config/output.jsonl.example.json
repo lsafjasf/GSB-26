@@ -1,0 +1,4 @@
+{
+  "format": "jsonl",
+  "fields": ["ts", "level", "latency_ms", "ok", "message"]
+}

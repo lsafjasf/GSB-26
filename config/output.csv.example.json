@@ -1,0 +1,5 @@
+{
+  "format": "csv",
+  "csv_header": true,
+  "fields": ["ts", "level", "latency_ms", "ok", "message"]
+}
