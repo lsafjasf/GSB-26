@@ -1,0 +1,27 @@
+{
+  "rules": [
+    {"name": "WHITESPACE", "pattern": "[ \\t\\r\\n]+", "skip": true, "priority": 0},
+    {"name": "FLOAT",  "pattern": "\\d+\\.\\d+([eE][+-]?\\d+)?|\\d+[eE][+-]?\\d+", "priority": 0},
+    {"name": "HEX",    "pattern": "0[xX][0-9a-fA-F]+", "priority": 0},
+    {"name": "INT",    "pattern": "\\d+", "priority": 0},
+    {"name": "IDENT",  "pattern": "(?!\\d)\\w+", "priority": 0},
+    {"name": "OP", "pattern": "==|!=|<=|>=|&&|\\|\\||\\+=|-=|\\*=|/=|%=|<<|>>|->|[-+*/%=<>!&|^~()\\[\\]{};,.?:]", "priority": 0}
+  ],
+  "keywords": ["if", "else", "while", "for", "return", "int", "float", "void", "break", "continue"],
+  "keyword_token": "KEYWORD",
+  "ident_type": "IDENT",
+  "strings": {
+    "delimiters": ["\"", "'"],
+    "escape": "\\",
+    "multiline": false,
+    "token": "STRING",
+    "priority": 0
+  },
+  "comments": {
+    "line": ["//"],
+    "block": [{"start": "/*", "end": "*/", "nested": true}],
+    "token": "COMMENT",
+    "skip": false,
+    "priority": 0
+  }
+}
