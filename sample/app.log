@@ -1,0 +1,5 @@
+2026-09-26T10:00:01|INFO|4217|12.5|true|user login ok
+2026-09-26T10:00:02|WARN|4217|3.1|false|retrying upstream|attempt 2
+2026-09-26T10:00:03|ERROR|not-a-number|8.0|true|db query failed
+2026-09-26T10:00:04|INFO|4218||true|cache hit
+2026-09-26T10:00:05|INFO

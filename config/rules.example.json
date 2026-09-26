@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "parser": {
+    "delimiter": "|",
+    "trim": true,
+    "fields": [
+      {"name": "ts", "type": "string", "required": true},
+      {"name": "level", "type": "string", "required": true},
+      {"name": "pid", "type": "int", "required": true},
+      {"name": "latency_ms", "type": "float", "required": false},
+      {"name": "ok", "type": "bool", "required": false, "default": true},
+      {"name": "msg", "type": "string", "required": false, "default": "", "greedy": true}
+    ]
+  },
+  "output": {
+    "format": "jsonl",
+    "fields": ["ts", "level", "pid", "latency_ms", "ok", "msg"]
+  }
+}
