@@ -1,0 +1,448 @@
+{
+  "loop_const": [
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "LOOP (index 3)",
+      "instruction": "LOOP: binop d mul c 2",
+      "reason": "binop mul on constants 10, 2 -> 20"
+    },
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "index 4",
+      "instruction": "binop e add d 1",
+      "reason": "binop add on constants 20, 1 -> 21"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 1",
+      "instruction": "const n 5",
+      "reason": "assigned variable 'n' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 2",
+      "instruction": "const c 10",
+      "reason": "assigned variable 'c' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "LOOP (index 3)",
+      "instruction": "LOOP: const d 20",
+      "reason": "assigned variable 'd' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 4",
+      "instruction": "const e 21",
+      "reason": "assigned variable 'e' is not live afterwards"
+    }
+  ],
+  "nested_branch": [
+    {
+      "iteration": 1,
+      "pass": "branch_prune",
+      "action": "prune",
+      "location": "index 2",
+      "instruction": "cjmp a T1 F1",
+      "reason": "condition is constant 1; branch to F1 is dead"
+    },
+    {
+      "iteration": 1,
+      "pass": "branch_prune",
+      "action": "prune",
+      "location": "index 6",
+      "instruction": "cjmp b T2 F2",
+      "reason": "condition is constant 0; branch to T2 is dead"
+    },
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "index 10",
+      "instruction": "binop y2 add y 8",
+      "reason": "binop add on constants 42, 8 -> 50"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "F1 (index 3)",
+      "instruction": "F1: print x",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 4",
+      "instruction": "jmp END",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "T2 (index 7)",
+      "instruction": "T2: print 1",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 8",
+      "instruction": "jmp END",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 1",
+      "instruction": "const a 1",
+      "reason": "assigned variable 'a' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "T1 (index 3)",
+      "instruction": "T1: const b 0",
+      "reason": "assigned variable 'b' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "F2 (index 5)",
+      "instruction": "F2: const y 42",
+      "reason": "assigned variable 'y' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 6",
+      "instruction": "const y2 50",
+      "reason": "assigned variable 'y2' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "simplify_jumps",
+      "action": "remove",
+      "location": "index 1",
+      "instruction": "jmp T1",
+      "reason": "jump target is the immediately following instruction"
+    },
+    {
+      "iteration": 1,
+      "pass": "simplify_jumps",
+      "action": "remove",
+      "location": "T1 (index 2)",
+      "instruction": "T1: jmp F2",
+      "reason": "jump target is the immediately following instruction"
+    },
+    {
+      "iteration": 1,
+      "pass": "simplify_jumps",
+      "action": "remove",
+      "location": "index 4",
+      "instruction": "jmp END",
+      "reason": "jump target is the immediately following instruction"
+    },
+    {
+      "iteration": 1,
+      "pass": "clean_labels",
+      "action": "remove",
+      "location": "F2 (index 1)",
+      "instruction": "F2: print 50",
+      "reason": "label 'F2' is no longer referenced by any jump"
+    },
+    {
+      "iteration": 1,
+      "pass": "clean_labels",
+      "action": "remove",
+      "location": "END (index 2)",
+      "instruction": "END: halt",
+      "reason": "label 'END' is no longer referenced by any jump"
+    }
+  ],
+  "all_unreachable": [
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 2",
+      "instruction": "const y 2",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 3",
+      "instruction": "print y",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 4",
+      "instruction": "binop z add y 3",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 5",
+      "instruction": "print z",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 8",
+      "instruction": "const w 9",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 9",
+      "instruction": "print w",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 0",
+      "instruction": "const x 1",
+      "reason": "assigned variable 'x' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "simplify_jumps",
+      "action": "remove",
+      "location": "index 0",
+      "instruction": "jmp SKIP",
+      "reason": "jump target is the immediately following instruction"
+    },
+    {
+      "iteration": 1,
+      "pass": "clean_labels",
+      "action": "remove",
+      "location": "SKIP (index 0)",
+      "instruction": "SKIP: print 1",
+      "reason": "label 'SKIP' is no longer referenced by any jump"
+    }
+  ],
+  "self_jump": [
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 3",
+      "instruction": "halt",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 0",
+      "instruction": "const x 5",
+      "reason": "assigned variable 'x' is not live afterwards"
+    }
+  ],
+  "div_zero_pruned": [
+    {
+      "iteration": 1,
+      "pass": "branch_prune",
+      "action": "prune",
+      "location": "index 1",
+      "instruction": "cjmp c OK BAD",
+      "reason": "condition is constant 1; branch to BAD is dead"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "BAD (index 2)",
+      "instruction": "BAD: const z 0",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 3",
+      "instruction": "binop w div c z",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 4",
+      "instruction": "print w",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 5",
+      "instruction": "jmp END",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 0",
+      "instruction": "const c 1",
+      "reason": "assigned variable 'c' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "simplify_jumps",
+      "action": "remove",
+      "location": "index 0",
+      "instruction": "jmp OK",
+      "reason": "jump target is the immediately following instruction"
+    },
+    {
+      "iteration": 1,
+      "pass": "clean_labels",
+      "action": "remove",
+      "location": "OK (index 0)",
+      "instruction": "OK: print 1",
+      "reason": "label 'OK' is no longer referenced by any jump"
+    },
+    {
+      "iteration": 1,
+      "pass": "clean_labels",
+      "action": "remove",
+      "location": "END (index 1)",
+      "instruction": "END: halt",
+      "reason": "label 'END' is no longer referenced by any jump"
+    }
+  ],
+  "overflow": [
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "index 1",
+      "instruction": "binop o add big 1",
+      "reason": "binop add on constants 9223372036854775807, 1 -> -9223372036854775808"
+    },
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "index 4",
+      "instruction": "binop p mul m m",
+      "reason": "binop mul on constants 3037000500, 3037000500 -> -9223372036709301616"
+    },
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "index 7",
+      "instruction": "binop r sub neg 1",
+      "reason": "binop sub on constants -9223372036854775808, 1 -> 9223372036854775807"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 0",
+      "instruction": "const big 9223372036854775807",
+      "reason": "assigned variable 'big' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 1",
+      "instruction": "const o -9223372036854775808",
+      "reason": "assigned variable 'o' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 3",
+      "instruction": "const m 3037000500",
+      "reason": "assigned variable 'm' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 4",
+      "instruction": "const p -9223372036709301616",
+      "reason": "assigned variable 'p' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 6",
+      "instruction": "const neg -9223372036854775808",
+      "reason": "assigned variable 'neg' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 7",
+      "instruction": "const r 9223372036854775807",
+      "reason": "assigned variable 'r' is not live afterwards"
+    }
+  ],
+  "input_prop": [
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "index 4",
+      "instruction": "binop k2 mul k 6",
+      "reason": "binop mul on constants 7, 6 -> 42"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 3",
+      "instruction": "const k 7",
+      "reason": "assigned variable 'k' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 4",
+      "instruction": "const k2 42",
+      "reason": "assigned variable 'k2' is not live afterwards"
+    }
+  ]
+}
