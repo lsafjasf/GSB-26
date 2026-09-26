@@ -1,0 +1,27 @@
+<html><head><title>示例</title><style>p{color:red}</style></head>
+<body>
+<h1>季度报告</h1>
+<p>本季度 <b>营收增长</b> 12%，详见
+<a href="https://example.com/report/q3">完整报告</a>。</p>
+<h2>重点工作</h2>
+<ul>
+  <li>检索系统
+    <ol start="1">
+      <li>索引重构</li>
+      <li>排序优化
+        <ul><li>特征工程</li></ul>
+      </li>
+    </ol>
+  </li>
+  <li>摘要服务</li>
+</ul>
+<blockquote><p>目标：让纯文本输出保留文档结构。</p></blockquote>
+<pre>def tokenize(text):
+    return text.split()   # 代码逐字保留</pre>
+<table>
+  <tr><th>指标</th><th>Q2</th><th>Q3</th></tr>
+  <tr><td>DAU</td><td>1.2M</td><td>1.5M</td></tr>
+  <tr><td>收入</td><td>8.1M</td><td>9.1M</td></tr>
+</table>
+<script>console.log("不可见");</script>
+</body></html>
