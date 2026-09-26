@@ -1,0 +1,9 @@
+{
+  "link_mode": "url",
+  "unordered_marker": "-",
+  "heading_style": "atx",
+  "quote_prefix": "> ",
+  "table_column_separator": " | ",
+  "table_header_divider": true,
+  "hr_text": "---"
+}
