@@ -1,0 +1,3018 @@
+{
+  "module": "selftest.suite",
+  "repeats_per_mode": 20,
+  "modes": [
+    "fixed",
+    "shuffled"
+  ],
+  "env": {
+    "seed": 42,
+    "jobs": 4,
+    "python": "3.12.3",
+    "platform": "Linux-6.18.33.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu_count": 16,
+    "timestamp": "2026-09-26T22:57:45.474061+00:00"
+  },
+  "records": [
+    {
+      "repetition": 0,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.459985+00:00",
+      "duration": 0.0005230100068729371,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 7.430004188790917e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 1.2500095181167126e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.8099963199347258e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.399932317435741e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 4.6000059228390455e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.9790997612290084e-05,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.379995516501367e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.399901859462261e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.1999661587178707e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 1,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.460655+00:00",
+      "duration": 0.0005450710013974458,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 4.350004019215703e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 1.4200049918144941e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.7999991541728377e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 1.6699923435226083e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 5.600013537332416e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 4.0359998820349574e-05,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 5.7010038290172815e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 5.399924702942371e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.399909473955631e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 2,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.460573+00:00",
+      "duration": 0.0003691669990075752,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 4.609988536685705e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 9.799987310543656e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.4899997040629387e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.299960659816861e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.2001116778701544e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.2300006346777081e-05,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 3.349996404722333e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 3.5999983083456755e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.399901859462261e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 3,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.460591+00:00",
+      "duration": 0.0003802879946306348,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 5.070003680884838e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 1.4300021575763822e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.920008799061179e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.500049494206905e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.1999661587178707e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.2631004210561514e-05,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 3.020002623088658e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.399901859462261e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 4.00003045797348e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 4,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.460709+00:00",
+      "duration": 9.830199996940792e-05,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 5.199981387704611e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.3999170884490013e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 8.100032573565841e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 4.799949238076806e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.0999868866056204e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.1299998732283711e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.199973773211241e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.00001522898674e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.00001522898674e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 5,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.460848+00:00",
+      "duration": 5.590100772678852e-05,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.5999906938523054e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 3.0999945010989904e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 5.90007402934134e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 3.299937816336751e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 1.3998942449688911e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 7.500057108700275e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 7.399939931929111e-07,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.2001040633767843e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 1.6999547369778156e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 6,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.460937+00:00",
+      "duration": 6.453199603129178e-05,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 1.9000435713678598e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 2.799934009090066e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 4.899920895695686e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 2.90005118586123e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 1.8000719137489796e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 6.399932317435741e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 2.799934009090066e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 1.5999830793589354e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 1.6999547369778156e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 7,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.461026+00:00",
+      "duration": 5.059099930804223e-05,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 1.799926394596696e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 2.5999906938523054e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 4.4998887460678816e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 2.90005118586123e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 1.500011421740055e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 6.199989002197981e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 6.100017344579101e-07,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 1.9000435713678598e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.3000757209956646e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 8,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.461109+00:00",
+      "duration": 9.040099394042045e-05,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 3.799941623583436e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.500034265220165e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 8.999923011288047e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 4.6000059228390455e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.0999868866056204e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.1399970389902592e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.00003045797348e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.400047378614545e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.2001040633767843e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 9,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.461323+00:00",
+      "duration": 0.00011972201173193753,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 6.699992809444666e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.199981387704611e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1600059224292636e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.799956852570176e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.129992935806513e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 8.700008038431406e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.399901859462261e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.3000757209956646e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 10,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.461572+00:00",
+      "duration": 0.00011207199713680893,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 6.500049494206905e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.699985194951296e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1599913705140352e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.600021151825786e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.0599982235580683e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 5.799956852570176e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.0999868866056204e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.399901859462261e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 11,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.461614+00:00",
+      "duration": 0.00010311200458090752,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 6.399932317435741e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.799956852570176e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.4700053725391626e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.80010998621583e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.1999661587178707e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.1899904822930694e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 1.4199904398992658e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 3.299937816336751e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 12,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.461652+00:00",
+      "duration": 0.00013335299445316195,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 7.199996616691351e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 6.500049494206905e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.3699900591745973e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.799964467063546e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.899905666708946e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.329994458705187e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 6.299960659816861e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 3.0999945010989904e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.3000757209956646e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 13,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.461834+00:00",
+      "duration": 0.00012337201042100787,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 7.100024959072471e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 6.199989002197981e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.3700046110898256e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 7.90008925832808e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.299937816336751e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.3799948394298553e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 6.299960659816861e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.5999906938523054e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.90005118586123e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 14,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.461870+00:00",
+      "duration": 0.00011348299449309707,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 7.00005330145359e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 6.300106178969145e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1200027074664831e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.00004568696022e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.809974830597639e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.2599997464567423e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 5.199981387704611e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.299930201843381e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.500019036233425e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 15,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.462133+00:00",
+      "duration": 0.00014206299965735525,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 6.899936124682426e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 6.600021151825786e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.3099925126880407e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.299960659816861e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.799934009090066e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.119995770044625e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 6.399932317435741e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.90005118586123e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.400047378614545e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 16,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.462302+00:00",
+      "duration": 9.92620043689385e-05,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 5.600013537332416e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.299953045323491e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1310039553791285e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.799956852570176e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.500019036233425e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.9400031305849552e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 5.300098564475775e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.2001040633767843e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.1999585442245007e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 17,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.462530+00:00",
+      "duration": 0.00010387200745753944,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 6.00004568696022e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.299953045323491e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.2300006346777081e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.100017344579101e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.799934009090066e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.0099978428333998e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.999892553314567e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.3000757209956646e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.400047378614545e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 18,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.462685+00:00",
+      "duration": 9.59919998422265e-05,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 5.499896360561252e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.399924702942371e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.0399962775409222e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.600013537332416e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.5999906938523054e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.930005964823067e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 1.1400115909054875e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.90005118586123e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.400047378614545e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 19,
+      "mode": "fixed",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.462827+00:00",
+      "duration": 0.00014100299449637532,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 7.400085451081395e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.999900167807937e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.2800010154023767e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.699992809444666e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.5999906938523054e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.2900057956576347e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.799949238076806e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.500019036233425e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.299930201843381e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 0,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.463108+00:00",
+      "duration": 0.00013083299563731998,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 9.80013282969594e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 3.399909473955631e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.400062607601285e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.90005118586123e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.0300136636942625e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.9099970813840628e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.3000909499824047e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.400047378614545e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 1,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_dict"
+      ],
+      "started_at": "2026-09-26T22:57:45.464014+00:00",
+      "duration": 0.00012444199819583446,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 2.5600020308047533e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 4.400062607601285e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.100008375942707e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 1.8000719137489796e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "failed",
+          "duration": 1.0700023267418146e-06,
+          "error": "AssertionError: 顺序相关失败：test_order_source 已先执行"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.1000021155923605e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 5.00003807246685e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.299953045323491e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 2,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_failure"
+      ],
+      "started_at": "2026-09-26T22:57:45.464920+00:00",
+      "duration": 0.00013505299284588546,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 1.0200019460171461e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 5.699985194951296e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.699977580457926e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.00001522898674e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1299998732283711e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.6999623514711857e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.299930201843381e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.120010321959853e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        }
+      ]
+    },
+    {
+      "repetition": 3,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.465590+00:00",
+      "duration": 0.00012284300464671105,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 7.700000423938036e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.9998773243278265e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.500034265220165e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.699985194951296e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 2.0999868866056204e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1899974197149277e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.0999945010989904e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.9099970813840628e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.309971023350954e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 4,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_tuple"
+      ],
+      "started_at": "2026-09-26T22:57:45.465679+00:00",
+      "duration": 0.00011508300667628646,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 6.300106178969145e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 7.500057108700275e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.299945430830121e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "failed",
+          "duration": 2.2699969122186303e-06,
+          "error": "AssertionError: 顺序相关失败：test_order_source 已先执行"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 9.799987310543656e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.399924702942371e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1700030881911516e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.399901859462261e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.5999906938523054e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 5,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_failure"
+      ],
+      "started_at": "2026-09-26T22:57:45.465714+00:00",
+      "duration": 0.00010636200022418052,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 2.5500048650428653e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 5.899928510189056e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 4.1000021155923605e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.9998773243278265e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.00003807246685e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 1.5999830793589354e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 1.8998980522155762e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1599913705140352e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 7.100024959072471e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        }
+      ]
+    },
+    {
+      "repetition": 6,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_dict"
+      ],
+      "started_at": "2026-09-26T22:57:45.465738+00:00",
+      "duration": 0.0001461729989387095,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 1.2599921319633722e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.7499987734481692e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 5.999900167807937e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.5999906938523054e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.1999661587178707e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 3.110006218776107e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "failed",
+          "duration": 1.4399993233382702e-06,
+          "error": "AssertionError: 顺序相关失败：test_order_source 已先执行"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 7.00005330145359e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 7,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_failure"
+      ],
+      "started_at": "2026-09-26T22:57:45.465785+00:00",
+      "duration": 0.000124092010082677,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 7.500057108700275e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 7.700000423938036e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 3.699969965964556e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 3.8999132812023163e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.6999623514711857e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.199973773211241e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 1.9000435713678598e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.0999938240274787e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.0999868866056204e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        }
+      ]
+    },
+    {
+      "repetition": 8,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_tuple"
+      ],
+      "started_at": "2026-09-26T22:57:45.466080+00:00",
+      "duration": 0.0001055020111380145,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 7.00005330145359e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 5.00003807246685e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.799934009090066e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.00001522898674e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 3.699969965964556e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.0499934433028102e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.499896360561252e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.7999991541728377e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.0999945010989904e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 9,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_string"
+      ],
+      "started_at": "2026-09-26T22:57:45.466374+00:00",
+      "duration": 0.00010794200352393091,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 7.00005330145359e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.199989002197981e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.0999868866056204e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 3.8999132812023163e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.0899966582655907e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.5999983083456755e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.9500002963468432e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.9998773243278265e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 3.699969965964556e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 10,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_failure"
+      ],
+      "started_at": "2026-09-26T22:57:45.466708+00:00",
+      "duration": 0.00011097200331278145,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 6.299960659816861e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 6.299960659816861e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.299937816336751e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 3.699969965964556e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.4998887460678816e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.500019036233425e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.199981387704611e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1800002539530396e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.9699946278706193e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        }
+      ]
+    },
+    {
+      "repetition": 11,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_dict"
+      ],
+      "started_at": "2026-09-26T22:57:45.466907+00:00",
+      "duration": 0.00010710200876928866,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 6.799964467063546e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 2.310000127181411e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.400054993107915e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1200027074664831e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.0999945010989904e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.299945430830121e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 6.500049494206905e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.299930201843381e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.100009730085731e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 12,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_flaky_random"
+      ],
+      "started_at": "2026-09-26T22:57:45.466951+00:00",
+      "duration": 0.00010060200293082744,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 8.00006091594696e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 3.9000588003546e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.0999945010989904e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.0999868866056204e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.0200019460171461e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.8499995348975062e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.0999868866056204e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 4.799949238076806e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 5.500041879713535e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 13,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_dict"
+      ],
+      "started_at": "2026-09-26T22:57:45.466981+00:00",
+      "duration": 0.00010654200741555542,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 2.5799963623285294e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 4.3000909499824047e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "failed",
+          "duration": 1.0099902283400297e-06,
+          "error": "AssertionError: 顺序相关失败：test_order_source 已先执行"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.500019036233425e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1599913705140352e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.8000795282423496e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.6000059228390455e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 5.600013537332416e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.299953045323491e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 14,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_flaky_random"
+      ],
+      "started_at": "2026-09-26T22:57:45.467004+00:00",
+      "duration": 0.0001430730044376105,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 1.1899974197149277e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 5.600013537332416e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.4998735170811415e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.5999983083456755e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 7.299968274310231e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "failed",
+          "duration": 3.110006218776107e-06,
+          "error": "AssertionError: 顺序相关失败：test_order_source 已先执行"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.0199873941019177e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.571010216139257e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 1.0799994925037026e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        }
+      ]
+    },
+    {
+      "repetition": 15,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_order_victim"
+      ],
+      "started_at": "2026-09-26T22:57:45.467060+00:00",
+      "duration": 7.334099791478366e-05,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 6.199989002197981e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 6.899936124682426e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 4.3999170884490013e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 7.499911589547992e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 2.8000795282423496e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 1.8998980522155762e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 1.4000397641211748e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "failed",
+          "duration": 6.999907782301307e-07,
+          "error": "AssertionError: 顺序相关失败：test_order_source 已先执行"
+        }
+      ]
+    },
+    {
+      "repetition": 16,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_tuple"
+      ],
+      "started_at": "2026-09-26T22:57:45.467352+00:00",
+      "duration": 0.00010415200085844845,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 5.500041879713535e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.9000588003546e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.8799910321831703e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 8.600036380812526e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.00003045797348e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.0400108294561505e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.099856596440077e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "failed",
+          "duration": 7.399939931929111e-07,
+          "error": "AssertionError: 顺序相关失败：test_order_source 已先执行"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.0999945010989904e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 17,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim"
+      ],
+      "started_at": "2026-09-26T22:57:45.467439+00:00",
+      "duration": 0.00010679199476726353,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 7.999915396794677e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 3.9998849388211966e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 1.91100116353482e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 6.099871825426817e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.0999868866056204e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.0600051609799266e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.500019036233425e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.1000021155923605e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "failed",
+          "duration": 8.00006091594696e-07,
+          "error": "AssertionError: 顺序相关失败：test_order_source 已先执行"
+        }
+      ]
+    },
+    {
+      "repetition": 18,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_stable_failure",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_order_source"
+      ],
+      "started_at": "2026-09-26T22:57:45.468359+00:00",
+      "duration": 0.00010253199434373528,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 2.2099993657320738e-06,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1899974197149277e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "passed",
+          "duration": 4.699977580457926e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 2.1999585442245007e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.00003807246685e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 4.00003045797348e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 2.5999906938523054e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 3.00002284348011e-07,
+          "error": ""
+        }
+      ]
+    },
+    {
+      "repetition": 19,
+      "mode": "shuffled",
+      "seed": 42,
+      "jobs": 4,
+      "order": [
+        "selftest.suite.test_order_victim",
+        "selftest.suite.test_stable_tuple",
+        "selftest.suite.test_stable_dict",
+        "selftest.suite.test_stable_list",
+        "selftest.suite.test_order_source",
+        "selftest.suite.test_flaky_random",
+        "selftest.suite.test_stable_addition",
+        "selftest.suite.test_stable_string",
+        "selftest.suite.test_stable_failure"
+      ],
+      "started_at": "2026-09-26T22:57:45.468675+00:00",
+      "duration": 0.00010922299406956881,
+      "results": [
+        {
+          "test_id": "selftest.suite.test_order_victim",
+          "status": "passed",
+          "duration": 7.100024959072471e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_tuple",
+          "status": "passed",
+          "duration": 4.1000021155923605e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_dict",
+          "status": "passed",
+          "duration": 5.699985194951296e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_list",
+          "status": "passed",
+          "duration": 1.1599913705140352e-06,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_order_source",
+          "status": "passed",
+          "duration": 2.399901859462261e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_flaky_random",
+          "status": "failed",
+          "duration": 2.230997779406607e-06,
+          "error": "AssertionError: 注入的随机不稳定失败"
+        },
+        {
+          "test_id": "selftest.suite.test_stable_addition",
+          "status": "passed",
+          "duration": 1.8998980522155762e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_string",
+          "status": "passed",
+          "duration": 3.8999132812023163e-07,
+          "error": ""
+        },
+        {
+          "test_id": "selftest.suite.test_stable_failure",
+          "status": "failed",
+          "duration": 5.600013537332416e-07,
+          "error": "AssertionError: 故意注入的稳定失败：每次必失败"
+        }
+      ]
+    }
+  ]
+}

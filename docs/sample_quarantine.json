@@ -1,0 +1,29 @@
+{
+  "entries": [
+    {
+      "test_id": "selftest.suite.test_flaky_random",
+      "who": "alice",
+      "reason": "随机失败约30%，疑似依赖未初始化缓存，排查中",
+      "quarantined_at": "2026-09-26T22:58:03.953240+00:00",
+      "review_after": "2026-10-10T22:58:03.953250+00:00",
+      "status": "resolved",
+      "history": [
+        {
+          "action": "resolved",
+          "who": "carol",
+          "at": "2026-09-26T23:04:40.326811+00:00",
+          "note": "已定位并修复缓存初始化"
+        }
+      ]
+    },
+    {
+      "test_id": "selftest.suite.test_order_victim",
+      "who": "bob",
+      "reason": "顺序相关失败，依赖 test_order_source 的执行先后",
+      "quarantined_at": "2026-09-26T22:58:03.990925+00:00",
+      "review_after": "2026-10-03T22:58:03.990947+00:00",
+      "status": "active",
+      "history": []
+    }
+  ]
+}
