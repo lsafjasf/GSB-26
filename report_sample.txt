@@ -1,0 +1,112 @@
+
+=== 1. Reproducibility: same seed => identical samples ===
+  [ok] uniform: same seed identical
+  [ok] uniform: different seed differs
+  [ok] exponential: same seed identical
+  [ok] exponential: different seed differs
+  [ok] normal: same seed identical
+  [ok] normal: different seed differs
+  [ok] binomial: same seed identical
+  [ok] binomial: different seed differs
+
+=== 2. Edge cases: n=0 and invalid parameters ===
+  [ok] uniform n=0 returns []
+  [ok] normal n=0 returns []
+  [ok] uniform low>=high rejected -- raised ValueError: require low < high
+  [ok] exponential lam<=0 rejected -- raised ValueError: require lam > 0
+  [ok] exponential negative lam rejected -- raised ValueError: require lam > 0
+  [ok] normal sigma<=0 rejected -- raised ValueError: require sigma > 0
+  [ok] binomial p out of range rejected -- raised ValueError: require 0 <= p <= 1
+  [ok] binomial negative trials rejected -- raised ValueError: require integer trials >= 0
+  [ok] negative n rejected -- raised ValueError: sample size n must be a non-negative integer
+  [ok] chi-square on empty sample rejected -- raised ValueError: cannot test an empty sample
+  [ok] KS on empty sample rejected -- raised ValueError: cannot test an empty sample
+  [ok] fit on empty sample rejected -- raised ValueError: cannot fit an empty sample
+
+=== 3. Sampling correctness via distribution-level tests (n=20000) ===
+-- uniform(-2,5)
+   [chi-square] statistic=99.18 critical(0.05)=123.225 p-value=0.476 -> PASS: no evidence against the hypothesized distribution
+   [kolmogorov-smirnov] statistic=0.00697137 critical(0.05)=0.00960321 p-value=0.2854 -> PASS: no evidence against the hypothesized distribution
+   [quantile-check] statistic=0 critical(0.05)=0 p-value=0 -> PASS: empirical quantiles within binomial acceptance bands
+  [ok] uniform(-2,5) chi-square passes -- stat=99.180 crit=123.225
+  [ok] uniform(-2,5) KS passes -- D=0.0070 crit=0.0096
+  [ok] uniform(-2,5) quantile check passes
+-- exponential(1.5)
+   [chi-square] statistic=83.54 critical(0.05)=123.225 p-value=0.8673 -> PASS: no evidence against the hypothesized distribution
+   [kolmogorov-smirnov] statistic=0.0083315 critical(0.05)=0.00960321 p-value=0.1245 -> PASS: no evidence against the hypothesized distribution
+   [quantile-check] statistic=0 critical(0.05)=0 p-value=0 -> PASS: empirical quantiles within binomial acceptance bands
+  [ok] exponential(1.5) chi-square passes -- stat=83.540 crit=123.225
+  [ok] exponential(1.5) KS passes -- D=0.0083 crit=0.0096
+  [ok] exponential(1.5) quantile check passes
+-- normal(10,2)
+   [chi-square] statistic=93.32 critical(0.05)=123.225 p-value=0.6421 -> PASS: no evidence against the hypothesized distribution
+   [kolmogorov-smirnov] statistic=0.00398743 critical(0.05)=0.00960321 p-value=0.9082 -> PASS: no evidence against the hypothesized distribution
+   [quantile-check] statistic=0 critical(0.05)=0 p-value=0 -> PASS: empirical quantiles within binomial acceptance bands
+  [ok] normal(10,2) chi-square passes -- stat=93.320 crit=123.225
+  [ok] normal(10,2) KS passes -- D=0.0040 crit=0.0096
+  [ok] normal(10,2) quantile check passes
+-- binomial(20,0.3)
+   [chi-square(discrete)] statistic=19.0525 critical(0.05)=23.6848 p-value=0.163 -> PASS: no evidence against the hypothesized distribution
+  [ok] binomial(20,0.3) chi-square passes -- stat=19.052 crit=23.685
+
+=== 4. Mismatched samples are rejected (with evidence) ===
+-- exponential(1.5) data vs normal(0.66,0.66) hypothesis
+   [chi-square] statistic=15574 critical(0.05)=123.225 p-value=0 -> FAIL: sample is inconsistent with the hypothesized distribution
+  [ok] rejected: exponential(1.5) data vs normal(0.66,0.66) hypothesis -- stat=15574.0 >> crit=123.2, p=0.00e+00
+-- uniform(0,1) data vs exponential(1) hypothesis
+   [chi-square] statistic=14329.4 critical(0.05)=123.225 p-value=0 -> FAIL: sample is inconsistent with the hypothesized distribution
+  [ok] rejected: uniform(0,1) data vs exponential(1) hypothesis -- stat=14329.4 >> crit=123.2, p=0.00e+00
+-- normal data vs uniform hypothesis
+   [chi-square] statistic=25423.6 critical(0.05)=123.225 p-value=0 -> FAIL: sample is inconsistent with the hypothesized distribution
+  [ok] rejected: normal data vs uniform hypothesis -- stat=25423.6 >> crit=123.2, p=0.00e+00
+
+=== 5. Parameter recovery and fit quality ===
+-- uniform
+   fit uniform(low=3.00041, high=8.99999)
+[chi-square] statistic=118.16 critical(0.05)=120.99 p-value=0.07105 -> PASS: no evidence against the hypothesized distribution
+  [ok] fit uniform: GoF passes
+  [ok] fit uniform: low=3 within 5% of 3.0
+  [ok] fit uniform: high=9 within 5% of 9.0
+-- exponential
+   fit exponential(lam=2.50012)
+[chi-square] statistic=94.11 critical(0.05)=122.108 p-value=0.5924 -> PASS: no evidence against the hypothesized distribution
+  [ok] fit exponential: GoF passes
+  [ok] fit exponential: lam=2.5 within 5% of 2.5
+-- normal
+   fit normal(mu=-3.99548, sigma=0.501501)
+[chi-square] statistic=85.85 critical(0.05)=120.99 p-value=0.7838 -> PASS: no evidence against the hypothesized distribution
+  [ok] fit normal: GoF passes
+  [ok] fit normal: mu=-3.995 within 5% of -4.0
+  [ok] fit normal: sigma=0.5015 within 5% of 0.5
+-- binomial
+   fit binomial(trials=30, p=0.399802)
+[chi-square(discrete)] statistic=18.9441 critical(0.05)=27.5871 p-value=0.3318 -> PASS: no evidence against the hypothesized distribution
+  [ok] fit binomial: GoF passes
+  [ok] fit binomial: trials=30 within 5% of 30
+  [ok] fit binomial: p=0.3998 within 5% of 0.4
+-- fit binomial with unknown trials (moment estimate)
+   fit binomial(trials=15, p=0.600167)
+[chi-square(discrete)] statistic=16.4923 critical(0.05)=21.0261 p-value=0.1697 -> PASS: no evidence against the hypothesized distribution
+  [ok] binomial trials recovered -- estimated trials=15
+-- mismatched fit: exponential data fitted as normal must be rejected
+   fit normal(mu=0.998947, sigma=0.99377)
+[chi-square] statistic=14461.7 critical(0.05)=120.99 p-value=0 -> FAIL: sample is inconsistent with the hypothesized distribution
+  [ok] normal fit to exponential data rejected -- stat=14461.7 >> crit=121.0, p=0.00e+00
+-- mismatched fit: normal data fitted as exponential must be rejected
+   fit exponential(lam=1.26236)
+[chi-square] statistic=1853.18 critical(0.05)=122.108 p-value=0 -> FAIL: sample is inconsistent with the hypothesized distribution
+  [ok] exponential fit to |normal| data rejected -- stat=1853.2 >> crit=122.1
+
+=== 6. Small samples (single digits) and tail behaviour ===
+-- n=5 chi-square
+   [chi-square] statistic=3.8 critical(0.05)=7.81473 p-value=0.2839 -> PASS: no evidence against the hypothesized distribution
+  WARNING: expected count per bin is 1.25 (< 5); chi-square approximation unreliable, treat result as indicative only
+  WARNING: sample size 5 is very small; no distribution test has meaningful power here
+  [ok] n=5 emits small-sample warning
+  [ok] n=5 emits expected-count warning
+-- heavy-tail contamination: mean/var alone cannot see it
+   [quantile-check] statistic=3 critical(0.05)=0 p-value=0.4286 -> FAIL: quantiles [0.01, 0.75, 0.99] fall outside acceptance bands
+  [ok] quantile check flags contaminated tails
+
+=== SUMMARY ===
+all checks passed
