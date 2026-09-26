@@ -1,0 +1,22 @@
+== 1. 误判检查：稳定测试不得被判为 flaky ==
+  稳定测试 20 个 x 100 次执行 = 2000 条记录，误判为 flaky 的测试数: 0 (误判率 0/20 = 0.0%)
+  [PASS] 稳定测试零误判 misjudged=[]
+  stable_pass 判定最低置信度: 0.9941 (n=100, p0=0.05)
+== 2. 检出检查：注入 flaky 必须被检出，稳定失败必须判 stable_fail ==
+  [PASS] test_flaky_p010 -> flaky (实际=flaky, 失败率=0.120 CI=[0.070,0.198])
+  [PASS] test_flaky_p030 -> flaky (实际=flaky, 失败率=0.240 CI=[0.167,0.332])
+  [PASS] test_flaky_p050 -> flaky (实际=flaky, 失败率=0.460 CI=[0.366,0.557])
+  [PASS] test_flaky_p080 -> flaky (实际=flaky, 失败率=0.840 CI=[0.756,0.899])
+  [PASS] test_stable_fail -> stable_fail (实际=stable_fail, 失败率=1.000 CI=[0.963,1.000])
+== 3. 顺序相关性：固定 vs 打乱对比 ==
+  victim: fixed 50/50 失败, shuffled 26/50 失败
+  [PASS] victim 固定顺序下高失败率 fixed_rate=1.00
+  [PASS] victim 被标记为顺序相关 shuffled_rate=0.52
+  [PASS] independent 不被标记为顺序相关 
+== 4. 隔离清单：可审计、仍执行、到期复查 ==
+  [PASS] 隔离记录包含审计字段 
+  [PASS] 到期复查列表非空 
+  [PASS] 隔离测试仍被执行 runs=10
+  [PASS] 缺少操作人/原因时拒绝隔离 
+
+自测全部通过

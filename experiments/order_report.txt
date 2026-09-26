@@ -1,0 +1,4 @@
+test_id                                       fixed   shuffled  顺序相关?
+test_order_a_polluter                       0/50       0/50     no
+test_order_b_victim                        50/50      24/50     YES
+test_order_c_independent                    0/50       0/50     no

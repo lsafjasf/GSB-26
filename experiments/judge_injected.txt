@@ -1,0 +1,52 @@
+test_flaky_p010: flaky (runs=100, failures=10, errors=0, failure_rate=0.100 95%CI=[0.055,0.174], avg_duration=0.01ms)
+    判定依据: 0 < failures < runs，同一测试出现两种结果
+test_flaky_p030: flaky (runs=100, failures=29, errors=0, failure_rate=0.290 95%CI=[0.210,0.385], avg_duration=0.01ms)
+    判定依据: 0 < failures < runs，同一测试出现两种结果
+test_flaky_p050: flaky (runs=100, failures=46, errors=0, failure_rate=0.460 95%CI=[0.366,0.557], avg_duration=0.01ms)
+    判定依据: 0 < failures < runs，同一测试出现两种结果
+test_flaky_p080: flaky (runs=100, failures=78, errors=0, failure_rate=0.780 95%CI=[0.689,0.850], avg_duration=0.01ms)
+    判定依据: 0 < failures < runs，同一测试出现两种结果
+test_stable_00: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_01: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_02: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_03: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_04: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_05: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_06: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_07: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_08: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_09: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_10: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_11: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_12: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_13: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_14: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_15: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_16: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_17: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_18: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_19: stable_pass (runs=100, failures=0, errors=0, failure_rate=0.000 95%CI=[0.000,0.037], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+test_stable_fail: stable_fail (runs=100, failures=100, errors=0, failure_rate=1.000 95%CI=[0.963,1.000], avg_duration=0.00ms)
+    判定依据: 100 次结果一致；若真实失败率>=0.05，出现该结果的概率仅 0.0059，故置信度 0.9941
+
+共 25 个测试：flaky=4，阈值 p0=0.05（stable 判定置信度 = 1-(1-p0)^n）

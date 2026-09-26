@@ -1,0 +1,16 @@
+[
+  {
+    "test_id": "test_flaky_p050",
+    "quarantined_by": "zhangsan",
+    "reason": "注入的 p=0.5 不稳定测试，演示隔离流程",
+    "quarantined_at": "2026-09-26T22:08:24+00:00",
+    "review_after": "2026-10-01"
+  },
+  {
+    "test_id": "test_flaky_p010",
+    "quarantined_by": "lisi",
+    "reason": "注入的 p=0.1 不稳定测试",
+    "quarantined_at": "2026-09-26T22:08:24+00:00",
+    "review_after": "2026-09-20"
+  }
+]
