@@ -1,0 +1,40 @@
+{
+  "chunk_size": 64,
+  "chunk_count": 6,
+  "replica_count": 3,
+  "consistent": false,
+  "divergent": [
+    3
+  ],
+  "replicas": [
+    {
+      "path": "replica-a.bin",
+      "missing": [],
+      "mismatched": [],
+      "checksum_failed": [],
+      "extra": []
+    },
+    {
+      "path": "replica-b.bin",
+      "missing": [],
+      "mismatched": [],
+      "checksum_failed": [
+        2,
+        3
+      ],
+      "extra": []
+    },
+    {
+      "path": "replica-c.bin",
+      "missing": [
+        4,
+        5
+      ],
+      "mismatched": [
+        1
+      ],
+      "checksum_failed": [],
+      "extra": []
+    }
+  ]
+}

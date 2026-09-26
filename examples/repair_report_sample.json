@@ -1,0 +1,19 @@
+{
+  "applied": {
+    "replica-b.bin": [
+      2
+    ],
+    "replica-c.bin": [
+      1,
+      4,
+      5
+    ]
+  },
+  "truncated": {},
+  "manifests_updated": {},
+  "skipped_concurrent": {},
+  "divergent": [
+    3
+  ],
+  "refused": true
+}
