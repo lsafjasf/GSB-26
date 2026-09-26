@@ -1,0 +1,52 @@
+{
+  "result": "FAIL",
+  "checks_total": 6,
+  "failures_total": 5,
+  "failures": [
+    {
+      "check_id": "artifacts-match-manifest",
+      "severity": "critical",
+      "file": "artifacts/app-1.4.2.bad-linux-amd64.tar.gz",
+      "field": "artifacts[0].sha256",
+      "expected": "0000000000000000000000000000000000000000000000000000000000000000",
+      "actual": "2438425687f818403346861e44f4f925a0c50c5dd3debe5d8dddb6827821bab8",
+      "fix": "重新生成产物与 manifest，确保每个声明产物存在且 sha256/size 一致"
+    },
+    {
+      "check_id": "artifacts-match-manifest",
+      "severity": "critical",
+      "file": "artifacts/app-missing.tar.gz",
+      "field": "artifacts[2].path",
+      "expected": "声明的产物存在于磁盘",
+      "actual": "文件缺失",
+      "fix": "重新生成产物与 manifest，确保每个声明产物存在且 sha256/size 一致"
+    },
+    {
+      "check_id": "linux-artifact-sha",
+      "severity": "critical",
+      "file": "artifacts/app-1.4.2-linux-amd64.tar.gz",
+      "field": "<sha256>",
+      "expected": "0000000000000000000000000000000000000000000000000000000000000000 (来自 manifest.json:artifacts.0.sha256)",
+      "actual": "文件缺失，无法计算校验值",
+      "fix": "重新构建 linux-amd64 产物并更新 manifest 中的 sha256"
+    },
+    {
+      "check_id": "metadata-version-semver",
+      "severity": "critical",
+      "file": "metadata.json",
+      "field": "version",
+      "expected": "匹配 semver",
+      "actual": "1.4.2.bad",
+      "fix": "将 metadata.json 的 version 改为合法 semver，例如 1.4.2"
+    },
+    {
+      "check_id": "manifest-version-match",
+      "severity": "major",
+      "file": "manifest.json",
+      "field": "version",
+      "expected": "匹配 /^1\\.4\\.2$/",
+      "actual": "1.4.2.bad",
+      "fix": "确认 manifest.json 的 version 与本次发布版本一致"
+    }
+  ]
+}

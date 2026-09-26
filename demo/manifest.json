@@ -1,0 +1,17 @@
+{
+  "version": "1.4.2",
+  "artifacts": [
+    {
+      "name": "app-1.4.2-linux-amd64.tar.gz",
+      "path": "artifacts/app-1.4.2-linux-amd64.tar.gz",
+      "sha256": "14a4ff7393028f2a41e0774f04c0ee9d7ba8cf9e654dd1f8720a9643c7132505",
+      "size": 518
+    },
+    {
+      "name": "app-1.4.2-darwin-arm64.tar.gz",
+      "path": "artifacts/app-1.4.2-darwin-arm64.tar.gz",
+      "sha256": "8036d618b9e3b1cff142f314294303bb62cae37b330682576f9fecef08176f80",
+      "size": 519
+    }
+  ]
+}

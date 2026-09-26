@@ -1,0 +1,36 @@
+============================================================
+RELEASE CHECK REPORT
+============================================================
+checks: 6  passed: 2  failed-checks: 4  failures: 5
+RESULT: FAIL — 5 处失败（已按严重级别排序）
+------------------------------------------------------------
+1. [CRITICAL] artifacts-match-manifest
+  file:     artifacts/app-1.4.2.bad-linux-amd64.tar.gz
+  field:    artifacts[0].sha256
+  expected: 0000000000000000000000000000000000000000000000000000000000000000
+  actual:   2438425687f818403346861e44f4f925a0c50c5dd3debe5d8dddb6827821bab8
+  fix:      重新生成产物与 manifest，确保每个声明产物存在且 sha256/size 一致
+2. [CRITICAL] artifacts-match-manifest
+  file:     artifacts/app-missing.tar.gz
+  field:    artifacts[2].path
+  expected: 声明的产物存在于磁盘
+  actual:   文件缺失
+  fix:      重新生成产物与 manifest，确保每个声明产物存在且 sha256/size 一致
+3. [CRITICAL] linux-artifact-sha
+  file:     artifacts/app-1.4.2-linux-amd64.tar.gz
+  field:    <sha256>
+  expected: 0000000000000000000000000000000000000000000000000000000000000000 (来自 manifest.json:artifacts.0.sha256)
+  actual:   文件缺失，无法计算校验值
+  fix:      重新构建 linux-amd64 产物并更新 manifest 中的 sha256
+4. [CRITICAL] metadata-version-semver
+  file:     metadata.json
+  field:    version
+  expected: 匹配 semver
+  actual:   1.4.2.bad
+  fix:      将 metadata.json 的 version 改为合法 semver，例如 1.4.2
+5. [MAJOR] manifest-version-match
+  file:     manifest.json
+  field:    version
+  expected: 匹配 /^1\.4\.2$/
+  actual:   1.4.2.bad
+  fix:      确认 manifest.json 的 version 与本次发布版本一致

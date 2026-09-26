@@ -1,0 +1,23 @@
+{
+  "version": "1.4.2.bad",
+  "artifacts": [
+    {
+      "name": "app-1.4.2.bad-linux-amd64.tar.gz",
+      "path": "artifacts/app-1.4.2.bad-linux-amd64.tar.gz",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size": 918
+    },
+    {
+      "name": "app-1.4.2.bad-darwin-arm64.tar.gz",
+      "path": "artifacts/app-1.4.2.bad-darwin-arm64.tar.gz",
+      "sha256": "2ba09e5aedd37d66d8e092f29ba1cdb05c177a232a8972161a0d3b18c39e7d7e",
+      "size": 919
+    },
+    {
+      "name": "app-missing.tar.gz",
+      "path": "artifacts/app-missing.tar.gz",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "size": 1234
+    }
+  ]
+}

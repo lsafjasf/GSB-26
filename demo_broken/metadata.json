@@ -1,0 +1,8 @@
+{
+  "name": "demo-app",
+  "version": "1.4.2.bad",
+  "channel": "stable",
+  "build": {
+    "commit": "abc1234"
+  }
+}

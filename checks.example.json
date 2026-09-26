@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "base_dir": "demo",
+  "checks": [
+    {
+      "id": "changelog-exists",
+      "type": "file_exists",
+      "path": "CHANGELOG.md",
+      "severity": "major",
+      "fix": "补充 CHANGELOG.md 并记录本次发布的变更条目"
+    },
+    {
+      "id": "metadata-version-semver",
+      "type": "version_format",
+      "file": "metadata.json",
+      "field": "version",
+      "pattern": "semver",
+      "severity": "critical",
+      "fix": "将 metadata.json 的 version 改为合法 semver，例如 1.4.2"
+    },
+    {
+      "id": "metadata-channel",
+      "type": "metadata_field",
+      "file": "metadata.json",
+      "field": "channel",
+      "equals": "stable",
+      "severity": "minor",
+      "fix": "正式发布前将 channel 置为 stable"
+    },
+    {
+      "id": "manifest-version-match",
+      "type": "metadata_field",
+      "file": "manifest.json",
+      "field": "version",
+      "pattern": "^1\\.4\\.2$",
+      "severity": "major",
+      "fix": "确认 manifest.json 的 version 与本次发布版本一致"
+    },
+    {
+      "id": "linux-artifact-sha",
+      "type": "checksum",
+      "path": "artifacts/app-1.4.2-linux-amd64.tar.gz",
+      "algo": "sha256",
+      "expected_from": {"file": "manifest.json", "field": "artifacts.0.sha256"},
+      "severity": "critical",
+      "fix": "重新构建 linux-amd64 产物并更新 manifest 中的 sha256"
+    },
+    {
+      "id": "artifacts-match-manifest",
+      "type": "manifest_consistency",
+      "manifest": "manifest.json",
+      "artifacts_field": "artifacts",
+      "severity": "critical",
+      "fix": "重新生成产物与 manifest，确保每个声明产物存在且 sha256/size 一致"
+    }
+  ]
+}
