@@ -1,0 +1,39 @@
+================================================================
+发布前检查报告  (共 7 项检查，耗时 0.000s)
+================================================================
+结果: 5 项失败 ✘（按严重级别排序）
+
+[1] [CRITICAL] 检查项: manifest-consistency
+    文件:   app-1.4.2.tar.gz
+    字段:   sha256
+    期望:   f004feabb6c0e3ac4ed7cfe6ac7cc899da19416393cc82e6dd62e82f8cb3ac2c
+    实际:   4750cd8cff0bba99d31720da9e9ddecff5dd4a4cd8bb4a9be0472d4352587a0c
+    修复:   重新生成 manifest.json 使其与真实产物一致
+
+[2] [CRITICAL] 检查项: manifest-consistency
+    文件:   app-1.4.2.whl
+    字段:   <existence>
+    期望:   文件存在
+    实际:   文件不存在
+    修复:   重新生成 manifest.json 使其与真实产物一致
+
+[3] [CRITICAL] 检查项: meta-version
+    文件:   metadata.json
+    字段:   version
+    期望:   '1.4.2'
+    实际:   '1.4.1'
+    修复:   使 metadata.json 的 version 与 VERSION 文件一致
+
+[4] [CRITICAL] 检查项: tarball-checksum
+    文件:   app-1.4.2.tar.gz
+    字段:   sha256
+    期望:   f004feabb6c0e3ac4ed7cfe6ac7cc899da19416393cc82e6dd62e82f8cb3ac2c
+    实际:   4750cd8cff0bba99d31720da9e9ddecff5dd4a4cd8bb4a9be0472d4352587a0c
+    修复:   产物被篡改或配置过期，重新打包并更新校验值
+
+[5] [MAJOR] 检查项: version-format
+    文件:   VERSION
+    字段:   <content>
+    期望:   匹配正则 \d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?
+    实际:   'v1.4'
+    修复:   将 VERSION 修正为 semver 格式，如 1.4.2

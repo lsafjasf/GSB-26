@@ -1,0 +1,52 @@
+{
+  "total_checks": 7,
+  "elapsed_seconds": 0.00032,
+  "passed": false,
+  "failures": [
+    {
+      "check_id": "manifest-consistency",
+      "severity": "critical",
+      "file": "app-1.4.2.tar.gz",
+      "field": "sha256",
+      "expected": "f004feabb6c0e3ac4ed7cfe6ac7cc899da19416393cc82e6dd62e82f8cb3ac2c",
+      "actual": "4750cd8cff0bba99d31720da9e9ddecff5dd4a4cd8bb4a9be0472d4352587a0c",
+      "fix": "重新生成 manifest.json 使其与真实产物一致"
+    },
+    {
+      "check_id": "manifest-consistency",
+      "severity": "critical",
+      "file": "app-1.4.2.whl",
+      "field": "<existence>",
+      "expected": "文件存在",
+      "actual": "文件不存在",
+      "fix": "重新生成 manifest.json 使其与真实产物一致"
+    },
+    {
+      "check_id": "meta-version",
+      "severity": "critical",
+      "file": "metadata.json",
+      "field": "version",
+      "expected": "'1.4.2'",
+      "actual": "'1.4.1'",
+      "fix": "使 metadata.json 的 version 与 VERSION 文件一致"
+    },
+    {
+      "check_id": "tarball-checksum",
+      "severity": "critical",
+      "file": "app-1.4.2.tar.gz",
+      "field": "sha256",
+      "expected": "f004feabb6c0e3ac4ed7cfe6ac7cc899da19416393cc82e6dd62e82f8cb3ac2c",
+      "actual": "4750cd8cff0bba99d31720da9e9ddecff5dd4a4cd8bb4a9be0472d4352587a0c",
+      "fix": "产物被篡改或配置过期，重新打包并更新校验值"
+    },
+    {
+      "check_id": "version-format",
+      "severity": "major",
+      "file": "VERSION",
+      "field": "<content>",
+      "expected": "匹配正则 \\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?",
+      "actual": "'v1.4'",
+      "fix": "将 VERSION 修正为 semver 格式，如 1.4.2"
+    }
+  ]
+}

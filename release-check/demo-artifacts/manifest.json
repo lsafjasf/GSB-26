@@ -1,0 +1,12 @@
+{
+  "artifacts": [
+    {
+      "path": "app-1.4.2.tar.gz",
+      "sha256": "f004feabb6c0e3ac4ed7cfe6ac7cc899da19416393cc82e6dd62e82f8cb3ac2c"
+    },
+    {
+      "path": "app-1.4.2.whl",
+      "sha256": "f0152d4360a3cd0a93aa13159e99702f2ebb8a3f0fa093c1c79e8c2cd91eb2a0"
+    }
+  ]
+}

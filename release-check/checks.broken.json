@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "base_dir": "demo-artifacts-broken",
+  "checks": [
+    {
+      "id": "tarball-exists",
+      "type": "file_exists",
+      "path": "app-1.4.2.tar.gz",
+      "severity": "critical",
+      "fix": "重新执行打包流水线生成 tar.gz 产物"
+    },
+    {
+      "id": "tarball-checksum",
+      "type": "checksum",
+      "path": "app-1.4.2.tar.gz",
+      "algorithm": "sha256",
+      "expected": "f004feabb6c0e3ac4ed7cfe6ac7cc899da19416393cc82e6dd62e82f8cb3ac2c",
+      "severity": "critical",
+      "fix": "产物被篡改或配置过期，重新打包并更新校验值"
+    },
+    {
+      "id": "version-format",
+      "type": "version_format",
+      "path": "VERSION",
+      "pattern": "\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?",
+      "severity": "major",
+      "fix": "将 VERSION 修正为 semver 格式，如 1.4.2"
+    },
+    {
+      "id": "meta-name",
+      "type": "metadata_field",
+      "path": "metadata.json",
+      "field": "name",
+      "expected": "demo-app",
+      "severity": "major",
+      "fix": "修正 metadata.json 中的 name 字段"
+    },
+    {
+      "id": "meta-version",
+      "type": "metadata_field",
+      "path": "metadata.json",
+      "field": "version",
+      "expected": "1.4.2",
+      "severity": "critical",
+      "fix": "使 metadata.json 的 version 与 VERSION 文件一致"
+    },
+    {
+      "id": "meta-license",
+      "type": "metadata_field",
+      "path": "metadata.json",
+      "field": "license",
+      "severity": "minor",
+      "fix": "在 metadata.json 中补充 license 字段"
+    },
+    {
+      "id": "manifest-consistency",
+      "type": "artifact_consistency",
+      "manifest": "manifest.json",
+      "severity": "critical",
+      "fix": "重新生成 manifest.json 使其与真实产物一致"
+    }
+  ]
+}
