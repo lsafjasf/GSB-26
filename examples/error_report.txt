@@ -1,0 +1,33 @@
+========================================================================
+1) Cross-language comparison report (reference: en)
+========================================================================
+[ja] 3:5 OUT_OF_SCOPE: 'm' is a loop variable introduced by an {#each ... as m} section and cannot be referenced here (placeholder)
+[zh] MISSING_PLACEHOLDER: placeholder 'since' exists in 'en' (1:59) but is missing here
+[zh] 4:4 EXTRA_PLACEHOLDER: placeholder 'level' does not exist in 'en'
+[zh] 1:4 TYPE_CONFLICT: placeholder 'count' is 'int' in 'en' but 'str' here
+[zh] ORDER_MISMATCH: placeholder order differs from 'en': expected ['name', 'count', 'msgs', 'vip'], got ['count', 'name', 'msgs', 'vip']
+[ja] MISSING_PLACEHOLDER: placeholder 'since' exists in 'en' (1:59) but is missing here
+[ja] MISSING_PLACEHOLDER: placeholder 'vip' exists in 'en' (3:1) but is missing here
+
+consistent: False
+
+========================================================================
+2) Single-template validation
+========================================================================
+template: '{#each items as it}{it:str}{/each}\nLast item: {it}\nTotal: {total:int} {total:str}'
+valid: False
+  2:12 OUT_OF_SCOPE: 'it' is a loop variable introduced by an {#each ... as it} section and cannot be referenced here (placeholder)
+  3:20 TYPE_CONFLICT: parameter 'total' used with incompatible types 'int' and 'str'
+
+========================================================================
+3) Differential check: validator verdict vs. renderer outcome
+========================================================================
+template                                             validator  renderer
+------------------------------------------------------------------------
+{x:int} + {y:str}                                    ACCEPT     ok -> '1 + a'
+{x:int} {x:str}                                      REJECT     FAIL (RenderError: placeholder '{x}' at 1:9: expected str, got int (1))
+{#each xs as x}{x}{/each}{x}                         REJECT     FAIL (RenderError: placeholder '{x}' at 1:26: missing argument 'x')
+{n:int}{#each n as i}{i}{/each}                      REJECT     FAIL (RenderError: {#each n as i} at 1:8: expected list, got int (3))
+{f:str}{#if f}yes{/if}                               REJECT     FAIL (RenderError: {#if f} at 1:8: expected bool, got str ('y'))
+{#if a}{#each xs as x}{x:int}{/each}{/if}            ACCEPT     ok -> '12'
+{a?} {b}                                             ACCEPT     ok -> ' z'
