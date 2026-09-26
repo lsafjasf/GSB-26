@@ -1,0 +1,61 @@
+==============================================================================
+[local]    single thread, no merge: 5,627,458 adds/s (pending=2,000,000)
+           one flush of 2,000,000 pending adds: 0.026 ms, global=2,000,000
+
+[writes]   threads=  1 ops/thread=  200000 flush_every=0
+           throughput :    4,635,146 local adds/s (wall 0.043s, total merged = 200,000)
+           global snapshot latency (ns): p50=320 p99=700 p99.9=584062 max=15323535  (n=9960)
+
+[writes]   threads=  1 ops/thread=  200000 flush_every=1000
+           throughput :    3,237,684 local adds/s (wall 0.062s, total merged = 200,000)
+           flush latency (ns): p50=980 p99=5260 p99.9=7240 max=7240  (n=199)
+           global snapshot latency (ns): p50=320 p99=660 p99.9=1750 max=20448427  (n=41637)
+
+[writes]   threads=  1 ops/thread=  200000 flush_every=100
+           throughput :      494,520 local adds/s (wall 0.404s, total merged = 200,000)
+           flush latency (ns): p50=175734 p99=248185 p99.9=340345 max=351387  (n=1999)
+           global snapshot latency (ns): p50=320 p99=203386 p99.9=315585 max=426709  (n=19347)
+
+[writes]   threads=  2 ops/thread=  200000 flush_every=0
+           throughput :    4,154,101 local adds/s (wall 0.096s, total merged = 400,000)
+           global snapshot latency (ns): p50=320 p99=670 p99.9=1380 max=64213693  (n=30277)
+
+[writes]   threads=  2 ops/thread=  200000 flush_every=1000
+           throughput :    4,139,906 local adds/s (wall 0.097s, total merged = 400,000)
+           flush latency (ns): p50=980 p99=8060 p99.9=10050 max=10050  (n=398)
+           global snapshot latency (ns): p50=320 p99=670 p99.9=20010 max=35736599  (n=20684)
+
+[writes]   threads=  2 ops/thread=  200000 flush_every=100
+           throughput :    1,305,122 local adds/s (wall 0.306s, total merged = 400,000)
+           flush latency (ns): p50=770 p99=390108 p99.9=465089 max=556261  (n=3998)
+           global snapshot latency (ns): p50=310 p99=261056 p99.9=331665 max=36413223  (n=36171)
+
+[writes]   threads=  4 ops/thread=  200000 flush_every=0
+           throughput :    4,916,033 local adds/s (wall 0.163s, total merged = 800,000)
+           global snapshot latency (ns): p50=310 p99=640 p99.9=20070 max=51653364  (n=21599)
+
+[writes]   threads=  4 ops/thread=  200000 flush_every=1000
+           throughput :    4,111,682 local adds/s (wall 0.195s, total merged = 800,000)
+           flush latency (ns): p50=1110 p99=8140 p99.9=18000 max=18000  (n=796)
+           global snapshot latency (ns): p50=320 p99=640 p99.9=2610 max=69927926  (n=42288)
+
+[writes]   threads=  4 ops/thread=  200000 flush_every=100
+           throughput :    4,223,667 local adds/s (wall 0.189s, total merged = 800,000)
+           flush latency (ns): p50=740 p99=4290 p99.9=13970 max=51102943  (n=7996)
+           global snapshot latency (ns): p50=310 p99=350 p99.9=14240 max=67346156  (n=33793)
+
+[writes]   threads=  8 ops/thread=  100000 flush_every=0
+           throughput :    3,893,474 local adds/s (wall 0.205s, total merged = 800,000)
+           global snapshot latency (ns): p50=320 p99=780 p99.9=2670 max=70328675  (n=70381)
+
+[writes]   threads=  8 ops/thread=  100000 flush_every=1000
+           throughput :    3,216,891 local adds/s (wall 0.249s, total merged = 800,000)
+           flush latency (ns): p50=1723414 p99=4662971 p99.9=6589040 max=6589040  (n=792)
+           global snapshot latency (ns): p50=320 p99=22451 p99.9=2156763 max=5281213  (n=31219)
+
+[writes]   threads=  8 ops/thread=  100000 flush_every=100
+           throughput :    4,403,843 local adds/s (wall 0.182s, total merged = 800,000)
+           flush latency (ns): p50=740 p99=4230 p99.9=14700 max=6867476  (n=7992)
+           global snapshot latency (ns): p50=310 p99=510 p99.9=22470 max=100114985  (n=22270)
+
+benchmark done: every run asserts final total == total local adds (no loss / no double count).
