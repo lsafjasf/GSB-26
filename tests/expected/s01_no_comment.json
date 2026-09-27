@@ -1,0 +1,97 @@
+{
+  "file": "<sample>",
+  "module_docstring": null,
+  "entries": [
+    {
+      "name": "plain",
+      "qualified_name": "plain",
+      "kind": "function",
+      "parent": null,
+      "lineno": 1,
+      "end_lineno": 2,
+      "signature": "def plain(a, b)",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "a",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "b",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "Empty",
+      "qualified_name": "Empty",
+      "kind": "class",
+      "parent": null,
+      "lineno": 5,
+      "end_lineno": 7,
+      "signature": "class Empty()",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      }
+    },
+    {
+      "name": "method",
+      "qualified_name": "Empty.method",
+      "kind": "method",
+      "parent": "Empty",
+      "lineno": 6,
+      "end_lineno": 7,
+      "signature": "def method(self)",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    }
+  ],
+  "unattached_comments": [],
+  "stats": {
+    "lines": 7,
+    "comments": 0,
+    "entries": 3
+  }
+}

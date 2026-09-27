@@ -1,0 +1,203 @@
+{
+  "file": "<sample>",
+  "module_docstring": null,
+  "entries": [
+    {
+      "name": "Service",
+      "qualified_name": "Service",
+      "kind": "class",
+      "parent": null,
+      "lineno": 1,
+      "end_lineno": 29,
+      "signature": "class Service()",
+      "decorators": [],
+      "docstring": "服务类。",
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "服务类。",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      }
+    },
+    {
+      "name": "start",
+      "qualified_name": "Service.start",
+      "kind": "method",
+      "parent": "Service",
+      "lineno": 5,
+      "end_lineno": 14,
+      "signature": "def start(self, port: int=8080) -> bool",
+      "decorators": [],
+      "docstring": "启动服务。\n\nArgs:\n    port (int): 监听端口\n\nReturns:\n    bool: 是否成功",
+      "leading_comment": {
+        "text": "方法文档",
+        "start_line": 4,
+        "end_line": 4
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "方法文档\n\n启动服务。",
+        "params": [
+          {
+            "name": "port",
+            "type": "int",
+            "description": "监听端口",
+            "parsed": true
+          }
+        ],
+        "returns": {
+          "type": "bool",
+          "description": "是否成功",
+          "parsed": true
+        },
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "port",
+          "kind": "positional_or_keyword",
+          "annotation": "int",
+          "default": "8080"
+        }
+      ]
+    },
+    {
+      "name": "chain",
+      "qualified_name": "Service.chain",
+      "kind": "method",
+      "parent": "Service",
+      "lineno": 17,
+      "end_lineno": 19,
+      "signature": "def chain()",
+      "decorators": [
+        "staticmethod"
+      ],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [
+        {
+          "line": 18,
+          "text": "方法链调用不应干扰解析",
+          "position": "standalone"
+        }
+      ],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": []
+    },
+    {
+      "name": "fetch",
+      "qualified_name": "Service.fetch",
+      "kind": "async_method",
+      "parent": "Service",
+      "lineno": 21,
+      "end_lineno": 23,
+      "signature": "async def fetch(self, url)",
+      "decorators": [],
+      "docstring": "异步抓取。",
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "异步抓取。",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "url",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "outer",
+      "qualified_name": "Service.outer",
+      "kind": "method",
+      "parent": "Service",
+      "lineno": 25,
+      "end_lineno": 29,
+      "signature": "def outer(self)",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "helper",
+      "qualified_name": "Service.outer.helper",
+      "kind": "function",
+      "parent": "Service.outer",
+      "lineno": 27,
+      "end_lineno": 28,
+      "signature": "def helper()",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": {
+        "text": "嵌套函数前的注释属于嵌套函数",
+        "start_line": 26,
+        "end_line": 26
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "嵌套函数前的注释属于嵌套函数",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": []
+    }
+  ],
+  "unattached_comments": [],
+  "stats": {
+    "lines": 29,
+    "comments": 3,
+    "entries": 6
+  }
+}

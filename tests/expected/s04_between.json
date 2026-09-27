@@ -1,0 +1,88 @@
+{
+  "file": "<sample>",
+  "module_docstring": null,
+  "entries": [
+    {
+      "name": "first",
+      "qualified_name": "first",
+      "kind": "function",
+      "parent": null,
+      "lineno": 1,
+      "end_lineno": 2,
+      "signature": "def first()",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": []
+    },
+    {
+      "name": "second",
+      "qualified_name": "second",
+      "kind": "function",
+      "parent": null,
+      "lineno": 7,
+      "end_lineno": 8,
+      "signature": "def second()",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": []
+    },
+    {
+      "name": "third",
+      "qualified_name": "third",
+      "kind": "function",
+      "parent": null,
+      "lineno": 12,
+      "end_lineno": 13,
+      "signature": "def third()",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": {
+        "text": "third 的文档注释（紧贴 def，无空行）",
+        "start_line": 11,
+        "end_line": 11
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "third 的文档注释（紧贴 def，无空行）",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": []
+    }
+  ],
+  "unattached_comments": [
+    {
+      "line": 5,
+      "text": "first 的尾部备注：与 second 之间有空行，属于游离注释",
+      "position": "standalone"
+    }
+  ],
+  "stats": {
+    "lines": 13,
+    "comments": 2,
+    "entries": 3
+  }
+}

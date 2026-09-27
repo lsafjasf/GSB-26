@@ -1,0 +1,84 @@
+{
+  "file": "<sample>",
+  "module_docstring": null,
+  "entries": [
+    {
+      "name": "f",
+      "qualified_name": "f",
+      "kind": "function",
+      "parent": null,
+      "lineno": 1,
+      "end_lineno": 3,
+      "signature": "def f(x)",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": {
+        "text": "这是 f 的行尾注释，不是文档",
+        "line": 1
+      },
+      "inner_comments": [
+        {
+          "line": 2,
+          "text": "翻倍",
+          "position": "end_of_line"
+        },
+        {
+          "line": 3,
+          "text": "返回结果",
+          "position": "end_of_line"
+        }
+      ],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "x",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "g",
+      "qualified_name": "g",
+      "kind": "function",
+      "parent": null,
+      "lineno": 6,
+      "end_lineno": 7,
+      "signature": "def g(x)",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "x",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    }
+  ],
+  "unattached_comments": [],
+  "stats": {
+    "lines": 7,
+    "comments": 3,
+    "entries": 2
+  }
+}

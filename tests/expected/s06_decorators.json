@@ -1,0 +1,146 @@
+{
+  "file": "<sample>",
+  "module_docstring": null,
+  "entries": [
+    {
+      "name": "deco",
+      "qualified_name": "deco",
+      "kind": "function",
+      "parent": null,
+      "lineno": 1,
+      "end_lineno": 2,
+      "signature": "def deco(fn)",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "fn",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "wrapped",
+      "qualified_name": "wrapped",
+      "kind": "function",
+      "parent": null,
+      "lineno": 8,
+      "end_lineno": 9,
+      "signature": "def wrapped(a)",
+      "decorators": [
+        "deco",
+        "deco"
+      ],
+      "docstring": null,
+      "leading_comment": {
+        "text": "属于 wrapped 的文档（在装饰器之上）",
+        "start_line": 5,
+        "end_line": 5
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "属于 wrapped 的文档（在装饰器之上）",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "a",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "wrapped2",
+      "qualified_name": "wrapped2",
+      "kind": "function",
+      "parent": null,
+      "lineno": 14,
+      "end_lineno": 15,
+      "signature": "def wrapped2(a)",
+      "decorators": [
+        "deco"
+      ],
+      "docstring": null,
+      "leading_comment": {
+        "text": "装饰器与 def 之间的注释也算 leading",
+        "start_line": 13,
+        "end_line": 13
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "装饰器与 def 之间的注释也算 leading",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "a",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "wrapped3",
+      "qualified_name": "wrapped3",
+      "kind": "function",
+      "parent": null,
+      "lineno": 19,
+      "end_lineno": 20,
+      "signature": "def wrapped3(a)",
+      "decorators": [
+        "deco"
+      ],
+      "docstring": null,
+      "leading_comment": null,
+      "header_comment": {
+        "text": "装饰器行尾注释",
+        "line": 18
+      },
+      "inner_comments": [],
+      "doc": {
+        "body": "",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "a",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    }
+  ],
+  "unattached_comments": [],
+  "stats": {
+    "lines": 20,
+    "comments": 3,
+    "entries": 4
+  }
+}

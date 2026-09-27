@@ -1,0 +1,109 @@
+{
+  "file": "<sample>",
+  "module_docstring": null,
+  "entries": [
+    {
+      "name": "add",
+      "qualified_name": "add",
+      "kind": "function",
+      "parent": null,
+      "lineno": 3,
+      "end_lineno": 4,
+      "signature": "def add(a, b)",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": {
+        "text": "计算两个数的和。\n支持任意可相加对象。",
+        "start_line": 1,
+        "end_line": 2
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "计算两个数的和。\n支持任意可相加对象。",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "a",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "b",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "Util",
+      "qualified_name": "Util",
+      "kind": "class",
+      "parent": null,
+      "lineno": 8,
+      "end_lineno": 11,
+      "signature": "class Util()",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": {
+        "text": "工具类",
+        "start_line": 7,
+        "end_line": 7
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "工具类",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      }
+    },
+    {
+      "name": "run",
+      "qualified_name": "Util.run",
+      "kind": "method",
+      "parent": "Util",
+      "lineno": 10,
+      "end_lineno": 11,
+      "signature": "def run(self)",
+      "decorators": [],
+      "docstring": null,
+      "leading_comment": {
+        "text": "实例方法说明",
+        "start_line": 9,
+        "end_line": 9
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "实例方法说明",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    }
+  ],
+  "unattached_comments": [],
+  "stats": {
+    "lines": 11,
+    "comments": 4,
+    "entries": 3
+  }
+}

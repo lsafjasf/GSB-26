@@ -1,0 +1,247 @@
+{
+  "file": "<sample>",
+  "module_docstring": null,
+  "entries": [
+    {
+      "name": "google_style",
+      "qualified_name": "google_style",
+      "kind": "function",
+      "parent": null,
+      "lineno": 1,
+      "end_lineno": 16,
+      "signature": "def google_style(name, count, flag=True)",
+      "decorators": [],
+      "docstring": "Google 风格示例。\n\nArgs:\n    name (str): 名称\n    count (int): 重复次数，\n        支持多行描述\n    flag: 是否启用\n\nReturns:\n    str: 拼接结果\n\nRaises:\n    ValueError: 参数非法时抛出",
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "Google 风格示例。",
+        "params": [
+          {
+            "name": "name",
+            "type": "str",
+            "description": "名称",
+            "parsed": true
+          },
+          {
+            "name": "count",
+            "type": "int",
+            "description": "重复次数， 支持多行描述",
+            "parsed": true
+          },
+          {
+            "name": "flag",
+            "type": null,
+            "description": "是否启用",
+            "parsed": true
+          }
+        ],
+        "returns": {
+          "type": "str",
+          "description": "拼接结果",
+          "parsed": true
+        },
+        "raises": [
+          {
+            "name": "ValueError",
+            "description": "参数非法时抛出",
+            "parsed": true
+          }
+        ],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "name",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "count",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "flag",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": "True"
+        }
+      ]
+    },
+    {
+      "name": "numpy_style",
+      "qualified_name": "numpy_style",
+      "kind": "function",
+      "parent": null,
+      "lineno": 19,
+      "end_lineno": 34,
+      "signature": "def numpy_style(x, y)",
+      "decorators": [],
+      "docstring": "NumPy 风格示例。\n\nParameters\n----------\nx : float\n    横坐标\ny : float\n    纵坐标\n\nReturns\n-------\nfloat\n    到原点的距离平方",
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "NumPy 风格示例。",
+        "params": [
+          {
+            "name": "x",
+            "type": "float",
+            "description": "横坐标",
+            "parsed": true
+          },
+          {
+            "name": "y",
+            "type": "float",
+            "description": "纵坐标",
+            "parsed": true
+          }
+        ],
+        "returns": {
+          "type": "float",
+          "description": "到原点的距离平方",
+          "parsed": true
+        },
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "x",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "y",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "sphinx_style",
+      "qualified_name": "sphinx_style",
+      "kind": "function",
+      "parent": null,
+      "lineno": 36,
+      "end_lineno": 46,
+      "signature": "def sphinx_style(path, mode)",
+      "decorators": [],
+      "docstring": "Sphinx 风格示例。\n\n:param path: 文件路径\n:type path: str\n:param mode: 打开模式\n:return: 文件内容\n:rtype: str\n:raises IOError: 读取失败",
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "Sphinx 风格示例。",
+        "params": [
+          {
+            "name": "path",
+            "type": "str",
+            "description": "文件路径",
+            "parsed": true
+          },
+          {
+            "name": "mode",
+            "type": null,
+            "description": "打开模式",
+            "parsed": true
+          }
+        ],
+        "returns": {
+          "type": "str",
+          "description": "文件内容",
+          "parsed": true
+        },
+        "raises": [
+          {
+            "name": "IOError",
+            "description": "读取失败",
+            "parsed": true
+          }
+        ],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "path",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "mode",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    },
+    {
+      "name": "malformed",
+      "qualified_name": "malformed",
+      "kind": "function",
+      "parent": null,
+      "lineno": 48,
+      "end_lineno": 59,
+      "signature": "def malformed(a, b)",
+      "decorators": [],
+      "docstring": "格式不匹配的行要保留原文。\n\nArgs:\n    a (int): 正常条目\n    这一行没有遵循 name: desc 格式\n    - 也不是列表项格式\n\nReturns:\n    没有类型前缀的自由文本返回说明",
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "格式不匹配的行要保留原文。",
+        "params": [
+          {
+            "name": "a",
+            "type": "int",
+            "description": "正常条目",
+            "parsed": true
+          }
+        ],
+        "returns": {
+          "type": null,
+          "description": "没有类型前缀的自由文本返回说明",
+          "parsed": false
+        },
+        "raises": [],
+        "unparsed": [
+          {
+            "raw": "    这一行没有遵循 name: desc 格式",
+            "parsed": false
+          },
+          {
+            "raw": "    - 也不是列表项格式",
+            "parsed": false
+          }
+        ]
+      },
+      "params": [
+        {
+          "name": "a",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "b",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    }
+  ],
+  "unattached_comments": [],
+  "stats": {
+    "lines": 59,
+    "comments": 0,
+    "entries": 4
+  }
+}

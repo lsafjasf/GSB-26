@@ -1,0 +1,57 @@
+{
+  "file": "<sample>",
+  "module_docstring": null,
+  "entries": [
+    {
+      "name": "process",
+      "qualified_name": "process",
+      "kind": "function",
+      "parent": null,
+      "lineno": 1,
+      "end_lineno": 7,
+      "signature": "def process(items)",
+      "decorators": [],
+      "docstring": "处理列表。",
+      "leading_comment": null,
+      "header_comment": null,
+      "inner_comments": [
+        {
+          "line": 3,
+          "text": "第一步：过滤空值",
+          "position": "standalone"
+        },
+        {
+          "line": 4,
+          "text": "过滤",
+          "position": "end_of_line"
+        },
+        {
+          "line": 5,
+          "text": "第二步：排序",
+          "position": "standalone"
+        }
+      ],
+      "doc": {
+        "body": "处理列表。",
+        "params": [],
+        "returns": null,
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "items",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        }
+      ]
+    }
+  ],
+  "unattached_comments": [],
+  "stats": {
+    "lines": 7,
+    "comments": 3,
+    "entries": 1
+  }
+}

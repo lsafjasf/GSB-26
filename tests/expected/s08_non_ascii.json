@@ -1,0 +1,74 @@
+{
+  "file": "<sample>",
+  "module_docstring": "模块说明：支持中文、日文、émojis 🎉。",
+  "entries": [
+    {
+      "name": "greet",
+      "qualified_name": "greet",
+      "kind": "function",
+      "parent": null,
+      "lineno": 5,
+      "end_lineno": 15,
+      "signature": "def greet(名前, 言語='中文')",
+      "decorators": [],
+      "docstring": "生成问候语。\n\nArgs:\n    名前 (str): 用户名字\n    言語 (str): 问候语言，默认中文\n\nReturns:\n    str: 问候语，例如「你好，世界」",
+      "leading_comment": {
+        "text": "问候函数：根据名字生成问候语",
+        "start_line": 4,
+        "end_line": 4
+      },
+      "header_comment": null,
+      "inner_comments": [],
+      "doc": {
+        "body": "问候函数：根据名字生成问候语\n\n生成问候语。",
+        "params": [
+          {
+            "name": "名前",
+            "type": "str",
+            "description": "用户名字",
+            "parsed": true
+          },
+          {
+            "name": "言語",
+            "type": "str",
+            "description": "问候语言，默认中文",
+            "parsed": true
+          }
+        ],
+        "returns": {
+          "type": "str",
+          "description": "问候语，例如「你好，世界」",
+          "parsed": true
+        },
+        "raises": [],
+        "unparsed": []
+      },
+      "params": [
+        {
+          "name": "名前",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "言語",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": "'中文'"
+        }
+      ]
+    }
+  ],
+  "unattached_comments": [
+    {
+      "line": 1,
+      "text": "-*- coding: utf-8 -*-",
+      "position": "standalone"
+    }
+  ],
+  "stats": {
+    "lines": 15,
+    "comments": 2,
+    "entries": 1
+  }
+}
