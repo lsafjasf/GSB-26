@@ -1,0 +1,53 @@
+{
+  "en_US": {
+    "decimal_sep": ".",
+    "group_sep": ",",
+    "group_width": [3],
+    "currency_symbol": "$",
+    "currency_position": "prefix"
+  },
+  "de_DE": {
+    "decimal_sep": ",",
+    "group_sep": ".",
+    "group_width": [3],
+    "currency_symbol": "€",
+    "currency_position": "suffix",
+    "currency_space": true
+  },
+  "fr_FR": {
+    "decimal_sep": ",",
+    "group_sep": " ",
+    "group_width": [3],
+    "currency_symbol": "€",
+    "currency_position": "suffix",
+    "currency_space": true
+  },
+  "zh_CN": {
+    "decimal_sep": ".",
+    "group_sep": ",",
+    "group_width": [3],
+    "currency_symbol": "¥",
+    "currency_position": "prefix"
+  },
+  "hi_IN": {
+    "decimal_sep": ".",
+    "group_sep": ",",
+    "group_width": [3, 2],
+    "currency_symbol": "₹",
+    "currency_position": "prefix"
+  },
+  "en_US_accounting": {
+    "decimal_sep": ".",
+    "group_sep": ",",
+    "group_width": [3],
+    "negative_parens": true,
+    "currency_symbol": "$",
+    "currency_position": "prefix"
+  },
+  "de_DE_signed": {
+    "decimal_sep": ",",
+    "group_sep": ".",
+    "group_width": [3],
+    "positive_sign": "+"
+  }
+}
