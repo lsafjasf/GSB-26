@@ -15,7 +15,7 @@ stream (see EventStore.read_all), i.e. "the last processed event position".
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from .events import Event
 
@@ -49,7 +49,11 @@ class Projection:
     def __init__(self) -> None:
         self.state: Dict[str, Any] = self.initial_state()
         self.seen_event_ids: Set[str] = set()
-        self.processed_count: int = 0  # offset into the canonical stream
+        self.processed_count: int = 0  # number of distinct events applied
+        # Identity-based resume boundary: the (stream_id, seq) of the last
+        # processed event. None until the first event is applied.
+        self.last_stream_id: Optional[str] = None
+        self.last_seq: Optional[int] = None
 
     def initial_state(self) -> Dict[str, Any]:
         return {}
@@ -79,11 +83,36 @@ class Projection:
         self.handlers[event.type](self.state, data, event)
         self.seen_event_ids.add(event.event_id)
 
+    def reset_to_initial(self) -> None:
+        """Forget all derived state (used when a late event inserted before
+        the checkpoint boundary forces a full rebuild)."""
+        self.state = self.initial_state()
+        self.seen_event_ids = set()
+        self.processed_count = 0
+        self.last_stream_id = None
+        self.last_seq = None
+
+    def mark_applied(self, event: Event) -> None:
+        """Advance the identity-based checkpoint boundary past `event`.
+        Called by the Replayer after every distinct event is applied."""
+        self.processed_count += 1
+        self.last_stream_id = event.stream_id
+        self.last_seq = event.seq
+
+    @property
+    def boundary_key(self) -> Optional[Tuple[str, int]]:
+        """Canonical-order key of the last processed event."""
+        if self.last_stream_id is None:
+            return None
+        return self.last_stream_id, self.last_seq
+
     # -- checkpointing -----------------------------------------------------
     def to_checkpoint(self) -> Dict[str, Any]:
         return {
             "name": self.name,
             "processed_count": self.processed_count,
+            "last_stream_id": self.last_stream_id,
+            "last_seq": self.last_seq,
             "seen_event_ids": sorted(self.seen_event_ids),
             "state": self.state,
         }
@@ -95,6 +124,11 @@ class Projection:
         self.processed_count = snap["processed_count"]
         self.seen_event_ids = set(snap["seen_event_ids"])
         self.state = snap["state"]
+        # Identity-based boundary. Checkpoints written by older versions only
+        # stored processed_count; they cannot be resumed by offset, so the
+        # Replayer rebuilds them from scratch (handled there).
+        self.last_stream_id = snap.get("last_stream_id")
+        self.last_seq = snap.get("last_seq")
 
 
 # --------------------------------------------------------------------------

@@ -258,7 +258,118 @@ class TestKillResume(EventSourcingTestCase):
             snap = json.load(fh)
         self.assertEqual(snap["processed_count"], 4)
         self.assertEqual(len(snap["seen_event_ids"]), 4)
+        # The resume boundary is the identity (stream_id, seq) of the last
+        # processed event -- not a count/offset.
+        self.assertEqual(snap["last_stream_id"], "acct-000")
+        self.assertEqual(snap["last_seq"], 3)
 
+
+# --------------------------------------------------------------------------
+# Scenario: late events inserted into the log WHILE the projection is down
+#
+# A count/offset-based resume slices events[processed_count:]. If a late event
+# is inserted before that canonical position during downtime, every index
+# shifts and the new event is skipped forever. The resume boundary must be the
+# identity (stream_id, seq) of the last processed event, and a late event that
+# sorts before it must still be applied (via a rebuild) so that the resumed
+# result equals a full replay item by item.
+# --------------------------------------------------------------------------
+
+class TestLateEventDuringDowntime(EventSourcingTestCase):
+    def _mk(self, etype, sid, seq, data, version=2):
+        return Event(new_event_id(), sid, seq, etype, version, data)
+
+    def test_late_event_inserted_before_boundary_matches_full_replay(self):
+        # Initial log: stream B only (two events). Canonical order: B#0, B#1.
+        initial = [
+            self._mk("AccountOpened", "B", 0, {"owner": "b"}, version=1),
+            self._mk("Deposited", "B", 1, {"amount_cents": 500}),
+        ]
+        store = self.make_store(initial, name="late.jsonl")
+
+        # Late events "arrive during downtime":
+        #   A#0, A#1  -> new stream A sorts *before* the boundary (B, 1)
+        #   Z#0       -> new stream Z sorts *after* the boundary
+        late = [
+            self._mk("AccountOpened", "A", 0, {"owner": "a"}, version=1),
+            self._mk("Deposited", "A", 1, {"amount_cents": 300}),
+            self._mk("AccountOpened", "Z", 0, {"owner": "z"}, version=1),
+        ]
+
+        # Ground truth: uninterrupted full replay over the FINAL log content.
+        final_events = initial + late
+        full_store = self.make_store(final_events, name="full.jsonl")
+        full_dir = os.path.join(self.dir, "full")
+        os.makedirs(full_dir)
+        full_detail, full_agg = replay_to_completion(
+            full_store, full_dir, tag="-full")
+
+        # Kill after 0 or 1 of the 2 initial events (a mid-replay kill), and
+        # also exercise the "completed before downtime, late events arrive
+        # afterwards" case via kill_after == len(initial): the first run
+        # finishes the initial log cleanly and commits a boundary checkpoint
+        # without raising.
+        kill_points = list(range(len(initial) + 1))
+        for kill_after in kill_points:
+            ck_dir = os.path.join(self.dir, f"resume-{kill_after}")
+            os.makedirs(ck_dir)
+            checkpoints = {}
+            for cls in (DetailViewProjection, AggregateViewProjection):
+                ckpt = os.path.join(ck_dir, f"{cls.name}.json")
+                checkpoints[cls] = ckpt
+                first = Replayer(store, cls(), ckpt,
+                                 kill_after=kill_after)
+                if kill_after < len(initial):
+                    with self.assertRaises(ProjectionKilled):
+                        first.run()
+                else:
+                    first.run()  # completed before the downtime
+
+            # --- the projection is now "down": append late events ---
+            for e in late:
+                store.append(e)
+
+            resumed = {}
+            for cls in (DetailViewProjection, AggregateViewProjection):
+                resumed[cls] = Replayer(store, cls(), checkpoints[cls]).run()
+            rd, ra = resumed[DetailViewProjection], resumed[AggregateViewProjection]
+
+            # Item-by-item equality with a full replay from scratch.
+            self.assertEqual(rd.state, full_detail.state,
+                             f"kill={kill_after}: detail state diverged")
+            self.assertEqual(ra.state, full_agg.state,
+                             f"kill={kill_after}: aggregate state diverged")
+            self.assertEqual(rd.seen_event_ids, full_detail.seen_event_ids)
+            self.assertEqual(ra.seen_event_ids, full_agg.seen_event_ids)
+            self.assertEqual(rd.processed_count, len(final_events))
+            self.assertEqual(ra.processed_count, len(final_events))
+            # The late stream A must be present (the old offset bug lost it).
+            self.assertEqual(
+                sorted(rd.state["accounts"]), ["A", "B", "Z"])
+            self.assertEqual(
+                [t["event_id"] for t in rd.state["accounts"]["A"]["txs"]],
+                [e.event_id for e in late
+                 if e.stream_id == "A" and e.type != "AccountOpened"])
+            self.assertEqual(
+                ra.state["accounts"]["A"]["balance_cents"], 300)
+            self.assertEqual(
+                ra.state["accounts"]["B"]["balance_cents"], 500)
+            self.assertEqual(
+                ra.state["accounts"]["Z"]["balance_cents"], 0)
+            self.assert_views_consistent(rd, ra)
+
+            print(f"[late-event] kill_after={kill_after}: resumed accounts="
+                  f"{sorted(rd.state['accounts'])}, A txs="
+                  f"{[t['seq'] for t in rd.state['accounts']['A']['txs']]}, "
+                  f"processed={rd.processed_count}, "
+                  f"matches_full_replay=True")
+
+            # Rebuild the initial-only log so the next kill-point run starts
+            # from the same two-event log.
+            os.remove(os.path.join(self.dir, "late.jsonl"))
+            store = self.make_store(initial, name="late.jsonl")
+
+        self.assert_matches_model(final_events, full_agg)
 
 # --------------------------------------------------------------------------
 # Scenario: event version compatibility
