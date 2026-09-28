@@ -145,21 +145,61 @@ class TestTornWrites(TempDirCase):
 # ---------------------------------------------------------------------------
 
 class TestPerStageKill(TempDirCase):
-    def run_writer_killed_at(self, stage):
-        env = dict(os.environ, GSB_KILL_AT_STAGE=stage)
+    def run_committer_killed_at(self, stage):
+        # Start a REAL second subprocess committing seq=2 and deliver a real
+        # SIGKILL from this parent at the exact commit stage (rendezvous in
+        # kill_matrix guarantees the child is parked at `stage`, not merely
+        # somewhere near it).
+        import kill_matrix
+        sync_dir = os.path.join(self.dir, "sync")
+        os.makedirs(sync_dir, exist_ok=True)
+        stage_file = os.path.join(sync_dir, "stage")
+        gate = os.path.join(sync_dir, "gate")
+        payload_file = os.path.join(self.dir, "new.json")
+        with open(payload_file, "w") as fh:
+            json.dump(make_payload(2), fh)
+        if os.path.exists(stage_file):
+            os.remove(stage_file)
+        with open(gate, "w") as fh:
+            fh.write("0")
+        env = dict(os.environ, GSB_SYNC_DIR=sync_dir)
         proc = subprocess.Popen(
-            [sys.executable, WRITER, "writer", self.dir, "1"], env=env,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            [sys.executable, WRITER, "commit-file", self.path, payload_file],
+            env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        target = ds.COMMIT_STAGES.index(stage)
+        acked = -1
+        observed = None
+        deadline = time.time() + 30
+        while time.time() < deadline:
+            if os.path.exists(stage_file):
+                with open(stage_file) as fh:
+                    published = fh.read().strip()
+                idx = ds.COMMIT_STAGES.index(published)
+                if idx > acked:
+                    observed = published
+                    if idx == target:
+                        proc.send_signal(signal.SIGKILL)
+                        proc.wait(timeout=30)
+                        proc.stderr.close()
+                        return proc.returncode, observed
+                    with open(gate, "w") as fh:
+                        fh.write(str(idx + 1))
+                    acked = idx
+            time.sleep(0.001)
+        proc.kill()
         proc.wait()
-        self.assertEqual(proc.returncode, 137)
+        proc.stderr.close()
+        self.fail("child never reached stage %s" % stage)
 
-    def test_kill_at_every_commit_stage(self):
+    def test_kill_at_every_commit_stage_real_sigkill(self):
         for stage in ds.COMMIT_STAGES:
             with self.subTest(stage=stage):
                 shutil.rmtree(self.dir, ignore_errors=True)
                 os.mkdir(self.dir)
                 self.store().commit(make_payload(1))  # committed seq=1
-                self.run_writer_killed_at(stage)      # dies committing seq=2
+                rc, observed = self.run_committer_killed_at(stage)
+                self.assertEqual(observed, stage)     # killed exactly here
+                self.assertEqual(rc, -9)              # real SIGKILL
                 store, state = self.load()
                 if ds.COMMIT_STAGES.index(stage) < ds.COMMIT_STAGES.index("renamed"):
                     # Killed before the atomic rename: old complete state.
@@ -169,7 +209,32 @@ class TestPerStageKill(TempDirCase):
                     # Killed at/after the rename: new complete state.
                     self.assertEqual(state["counter"], 2, stage)
                     self.assertEqual(store.seq, 2, stage)
+                self.assertEqual(state["items"], [1, 2][:state["counter"]])
                 # In both branches check_invariants() already rejected mixes.
+
+    def test_full_kill_matrix_matches_boundary_table(self):
+        # The one-command matrix: real SIGKILL at every stage, two recovery
+        # rounds each, full invariant + content-digest assertions.
+        import kill_matrix
+        rows, base_dir = kill_matrix.run_matrix(
+            base_dir=os.path.join(self.dir, "matrix"))
+        try:
+            self.assertEqual([r["stage"] for r in rows],
+                             list(ds.COMMIT_STAGES))
+            for row in rows:
+                self.assertEqual(row["verdict"], "PASS",
+                                 "%s: %s" % (row["stage"], row["failures"]))
+                expected = ("OLD" if ds.COMMIT_STAGES.index(row["stage"])
+                            < ds.COMMIT_STAGES.index("renamed") else "NEW")
+                self.assertEqual(row["expected"], expected)
+                self.assertEqual(row["labels"], [expected, expected])
+                self.assertTrue(row["invariant"])
+                self.assertTrue(row["idempotent"])
+                self.assertEqual(row["returncode"], -9)
+                self.assertEqual(row["phases"][0], "locate")
+                self.assertEqual(row["phases"][-1], "ready")
+        finally:
+            shutil.rmtree(base_dir, ignore_errors=True)
 
     def test_two_consecutive_kills(self):
         for round_no in (1, 2):

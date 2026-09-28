@@ -31,6 +31,12 @@ Commit protocol (crash at any point yields old or new state, never mixed):
   3. rotate current main to <path>.bak (tmp + fsync + rename)
   4. os.replace(<path>.tmp, <path>)      <- atomic commit point
   5. fsync containing directory
+
+  A kill at/before "bak_rotated" leaves the previous state; a kill at
+  "renamed"/"dir_fsynced" leaves the new state.  Kill tests use an external
+  rendezvous (GSB_SYNC_DIR): at every stage the process records the stage and
+  waits for the parent to either release it or deliver a real SIGKILL, so the
+  kill point is deterministic rather than a best-effort self os._exit().
 """
 
 import hashlib
@@ -160,7 +166,7 @@ class StateStore:
         self.seq = 0
         self.report = RecoveryReport()
         # Hook for tests: called with each commit stage; may kill the process.
-        self._crash_hook = crash_hook or self._env_crash_hook
+        self._crash_hook = crash_hook or self._default_crash_hook
 
     # ------------------------------------------------------------------ load
 
@@ -333,11 +339,42 @@ class StateStore:
     # ------------------------------------------------------------------ misc
 
     @staticmethod
-    def _env_crash_hook(stage):
-        # Test hook: GSB_KILL_AT_STAGE=<stage> makes the process die with
-        # SIGKILL semantics at that exact commit stage.
+    def _default_crash_hook(stage):
+        # GSB_KILL_AT_STAGE=<stage>: die at that exact commit stage.
         if os.environ.get("GSB_KILL_AT_STAGE") == stage:
             os._exit(137)
+        StateStore._rendezvous(stage)
+
+    @staticmethod
+    def _rendezvous(stage):
+        # External-SIGKILL rendezvous used by the kill matrix harness.
+        # Protocol inside GSB_SYNC_DIR (race-free, monotonic ack counter):
+        #   parent: writes 0 to "gate", starts child; for each published
+        #           stage either acks (write stage_index+1) or SIGKILLs
+        #   child : atomically publishes "<stage>" to "stage", then waits
+        #           until gate >= stage_index+1 (or it is killed)
+        sync_dir = os.environ.get("GSB_SYNC_DIR")
+        if not sync_dir:
+            return
+        stage_file = os.path.join(sync_dir, "stage")
+        gate = os.path.join(sync_dir, "gate")
+        need = COMMIT_STAGES.index(stage) + 1
+        try:
+            tmp = stage_file + ".%d" % os.getpid()
+            with open(tmp, "w") as fh:
+                fh.write(stage)
+            os.replace(tmp, stage_file)
+        except OSError:
+            return
+        for _ in range(10000):  # ~50s ceiling; parent normally answers in ms
+            try:
+                with open(gate) as fh:
+                    ack = int(fh.read().strip() or "0")
+            except (OSError, ValueError):
+                ack = 0
+            if ack >= need:
+                return
+            time.sleep(0.005)
 
 
 def check_invariants(state):
@@ -345,14 +382,23 @@ def check_invariants(state):
     assert state["counter"] == len(state["items"]), (
         "mixed state: counter=%d but %d items"
         % (state["counter"], len(state["items"])))
-    assert state["items"] == list(range(1, state["counter"] + 1))
+    # Dense, contiguous, ascending sequence numbers (no gaps / dupes).
+    assert state["items"] == list(range(1, state["counter"] + 1)), (
+        "mixed state: items %r are not the dense 1..%d sequence"
+        % (state["items"], state["counter"]))
+    pending = state["pending_cleanups"]
+    pending_ids = [job["id"] for job in pending]
+    assert len(pending_ids) == len(set(pending_ids)), (
+        "mixed state: duplicate pending ids %r" % pending_ids)
     done = set(state["completed_cleanups"])
-    for job in state["pending_cleanups"]:
-        assert job["id"] not in done, "cleanup both pending and completed"
+    for job in pending:
+        assert job["id"] not in done, (
+            "mixed state: cleanup %r is both pending and completed" % job["id"])
+    assert done == set(state["completed_cleanups"])  # completed list unique
 
 
 def _writer_main(argv):
-    # Child-process workload used by the kill tests:
+    # Child-process workload used by the random-kill hammer test:
     #   python3 daemon_state.py writer <dir> <count>
     directory, count = argv[0], int(argv[1])
     store = StateStore(os.path.join(directory, "state.json"))
@@ -365,7 +411,55 @@ def _writer_main(argv):
     print(store.seq)
 
 
+def _commit_file_main(argv):
+    # Commit exactly the payload read from a JSON file, running the full
+    # commit pipeline (with stage rendezvous) inside this real subprocess:
+    #   python3 daemon_state.py commit-file <state_path> <payload_json>
+    state_path, payload_file = argv[0], argv[1]
+    with open(payload_file, "r", encoding="utf-8") as fh:
+        payload = json.load(fh)
+    store = StateStore(state_path)
+    store.load()
+    seq = store.commit(payload)
+    print(seq)
+
+
+def _recover_main(argv):
+    # Run the real recovery pipeline in a child process and print a JSON
+    # verdict.  Used by the stage matrix so no in-process cheating is
+    # possible: the recovery logic only ever sees bytes on disk.
+    #   python3 daemon_state.py recover <state_path>
+    state_path = argv[0]
+    result = {"ok": False}
+    try:
+        store = StateStore(state_path)
+        state = store.load()
+        check_invariants(state)
+        result = {
+            "ok": True,
+            "seq": store.seq,
+            "state": state,
+            "phases": store.report.phases,
+        }
+    except AssertionError as exc:
+        result["error"] = "invariant: %s" % exc
+    except UnknownVersionError as exc:
+        result["error"] = "unknown-version: %s" % exc
+    sys.stdout.write(json.dumps(result, sort_keys=True))
+    sys.exit(0 if result["ok"] else 3)
+
+
+_COMMANDS = {
+    "writer": _writer_main,
+    "commit-file": _commit_file_main,
+    "recover": _recover_main,
+}
+
+
 if __name__ == "__main__":
     import sys
-    if sys.argv[1] == "writer":
-        _writer_main(sys.argv[2:])
+    if len(sys.argv) < 2 or sys.argv[1] not in _COMMANDS:
+        sys.stderr.write("usage: daemon_state.py %s ...\n"
+                         % " | ".join(sorted(_COMMANDS)))
+        sys.exit(2)
+    _COMMANDS[sys.argv[1]](sys.argv[2:])

@@ -1,0 +1,28 @@
+$ python3 kill_matrix.py
+Real-SIGKILL per-stage recovery matrix
+state dir (per-stage cases): /tmp/gsb-kill-matrix-g589prqb
+OLD state: counter=1 items=[1] pending=['p-old'] completed=['c-old'] digest=6630323ed4aa
+NEW state: counter=2 items=[1, 2] pending=['p-new'] completed=['c-new'] digest=bb3fa5df72f8
+boundary rule: stages before 'renamed' must recover OLD; 'renamed' and after must recover NEW
+
+#  stage        expect  SIGKILL  disk after kill (main/bak/tmp)  seq R1/R2  content R1/R2  digest R1/R2       invariants  idempotent  verdict
+-  -----------  ------  -------  ------------------------------  ---------  -------------  -----------------  ----------  ----------  -------
+0  serialize    OLD     -9       OLD/--/--                       1/1        OLD/OLD        6630323e/6630323e  ok          ok          PASS   
+1  tmp_written  OLD     -9       OLD/--/NEW                      1/1        OLD/OLD        6630323e/6630323e  ok          ok          PASS   
+2  tmp_fsynced  OLD     -9       OLD/--/NEW                      1/1        OLD/OLD        6630323e/6630323e  ok          ok          PASS   
+3  bak_rotated  OLD     -9       OLD/OLD/NEW                     1/1        OLD/OLD        6630323e/6630323e  ok          ok          PASS   
+4  renamed      NEW     -9       NEW/OLD/--                      2/2        NEW/NEW        bb3fa5df/bb3fa5df  ok          ok          PASS   
+5  dir_fsynced  NEW     -9       NEW/OLD/--                      2/2        NEW/NEW        bb3fa5df/bb3fa5df  ok          ok          PASS   
+
+stage semantics:
+  0 serialize     record serialized (nothing on disk yet)
+  1 tmp_written   tmp written, not fsynced
+  2 tmp_fsynced   tmp durable, main untouched
+  3 bak_rotated   old main rotated to .bak, main still old
+  4 renamed       atomic rename done -> NEW committed
+  5 dir_fsynced   directory fsynced, NEW durable
+
+RESULT: 6/6 stages PASS -- every kill yields exactly one complete state (OLD before commit point, NEW after), never a mixture
+
+$ echo $?
+0
