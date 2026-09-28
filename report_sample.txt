@@ -1,9 +1,9 @@
 distfit 检验报告样例
 Python 3.12.3 / Linux-6.18.33.1-microsoft-standard-WSL2-x86_64-with-glibc2.39
-生成时间: 2026-09-27 05:30:22 CST
+生成时间: 2026-09-28 19:53:33 CST
 
 ====================================================================
-1. 四种分布采样 + 拟合优度检验 (n=5000, alpha=0.05, seed=2026)
+1. 六种分布采样 + 拟合优度检验 (n=5000, alpha=0.05, seed=2026)
 ====================================================================
 
 --- uniform(-2, 5) ---
@@ -30,12 +30,28 @@ p-value    : 0.976361
 df         : 49
 conclusion : accept
 
+--- lognormal(0.5, 0.8) ---
+method     : chi-square
+statistic  : 54.72
+critical   : 66.3386 (alpha=0.05)
+p-value    : 0.266472
+df         : 49
+conclusion : accept
+
 --- binomial(12, 0.4) ---
 method     : chi-square
-statistic  : 5.87581
+statistic  : 7.90836
 critical   : 18.307 (alpha=0.05)
-p-value    : 0.825587
+p-value    : 0.637787
 df         : 10
+conclusion : accept
+
+--- poisson(4) ---
+method     : chi-square
+statistic  : 6.49994
+critical   : 19.6751 (alpha=0.05)
+p-value    : 0.838015
+df         : 11
 conclusion : accept
 
 ====================================================================
@@ -84,15 +100,35 @@ df         : 47
 conclusion : accept
 note       : 2 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
 
---- fit 'binomial' (真值见上) ---
-family=binomial  params: n=15, p=0.29974
+--- fit 'lognormal' (真值见上) ---
+family=lognormal  params: mu=0.500079, sigma=0.796989
 method     : chi-square
-statistic  : 11.6679
+statistic  : 48.605
+critical   : 64.0011 (alpha=0.05)
+p-value    : 0.40814
+df         : 47
+conclusion : accept
+note       : 2 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
+
+--- fit 'binomial' (真值见上) ---
+family=binomial  params: n=15, p=0.2998
+method     : chi-square
+statistic  : 13.5582
 critical   : 16.919 (alpha=0.05)
-p-value    : 0.232685
+p-value    : 0.13893
 df         : 9
 conclusion : accept
 note       : 2 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
+
+--- fit 'poisson' (真值见上) ---
+family=poisson  params: lam=3.18835
+method     : chi-square
+statistic  : 6.63903
+critical   : 18.307 (alpha=0.05)
+p-value    : 0.759027
+df         : 10
+conclusion : accept
+note       : 1 parameter(s) estimated from data; df reduced accordingly (p-value is approximate)
 
 ====================================================================
 4. 明显不匹配的样本：必须拒绝
@@ -121,7 +157,37 @@ conclusion : reject
   exponential  p-value=0          conclusion=reject
 
 ====================================================================
-5. 小样本 (n=6) 与尾部极端值
+5. 分位数对比检验 (quantile_test)
+====================================================================
+--- 正态样本 vs Normal(1,2)：应 accept ---
+method     : quantile-comparison
+statistic  : 5.07077
+critical   : 11.0705 (alpha=0.05)
+p-value    : 0.407305
+df         : 5
+conclusion : accept
+note       : asymptotic chi-square using the joint covariance of sample quantiles; reliable for n >= ~100
+
+--- 指数样本 vs Normal(1,1)：应 reject ---
+method     : quantile-comparison
+statistic  : 1447.52
+critical   : 11.0705 (alpha=0.05)
+p-value    : 6.94965e-311
+df         : 5
+conclusion : reject
+note       : asymptotic chi-square using the joint covariance of sample quantiles; reliable for n >= ~100
+
+--- 对数正态样本 vs LogNormal(0,1)：应 accept ---
+method     : quantile-comparison
+statistic  : 8.9549
+critical   : 11.0705 (alpha=0.05)
+p-value    : 0.110877
+df         : 5
+conclusion : accept
+note       : asymptotic chi-square using the joint covariance of sample quantiles; reliable for n >= ~100
+
+====================================================================
+6. 小样本 (n=6) 与尾部极端值
 ====================================================================
 样本: [-0.072, -1.395, 1.666, -0.63, 1.45, -0.77]
 method     : kolmogorov-smirnov

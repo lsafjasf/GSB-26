@@ -5,7 +5,8 @@ import sys
 import time
 
 from distfit import (Sampler, StdRandomSource, Uniform, Exponential, Normal,
-                     Binomial, goodness_of_fit, quantile_comparison, fit, fit_best)
+                     LogNormal, Binomial, Poisson, goodness_of_fit,
+                     quantile_comparison, quantile_test, fit, fit_best)
 
 
 def section(title):
@@ -19,12 +20,15 @@ def main():
     print(f"Python {sys.version.split()[0]} / {platform.platform()}")
     print(f"生成时间: {time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
-    section("1. 四种分布采样 + 拟合优度检验 (n=5000, alpha=0.05, seed=2026)")
+    section("1. 六种分布采样 + 拟合优度检验 (n=5000, alpha=0.05, seed=2026)")
     cases = [
         ("uniform(-2, 5)", Uniform(-2, 5), lambda s: s.uniform(5000, -2, 5)),
         ("exponential(0.7)", Exponential(0.7), lambda s: s.exponential(5000, 0.7)),
         ("normal(3, 2.5)", Normal(3, 2.5), lambda s: s.normal(5000, 3, 2.5)),
+        ("lognormal(0.5, 0.8)", LogNormal(0.5, 0.8),
+         lambda s: s.lognormal(5000, 0.5, 0.8)),
         ("binomial(12, 0.4)", Binomial(12, 0.4), lambda s: s.binomial(5000, 12, 0.4)),
+        ("poisson(4)", Poisson(4), lambda s: s.poisson(5000, 4.0)),
     ]
     for i, (label, dist, gen) in enumerate(cases):
         samples = gen(Sampler(StdRandomSource(2026 + i)))
@@ -42,7 +46,9 @@ def main():
         ("uniform", lambda s: s.uniform(20000, -1.5, 4.0)),
         ("exponential", lambda s: s.exponential(20000, 2.0)),
         ("normal", lambda s: s.normal(20000, 1.0, 2.0)),
+        ("lognormal", lambda s: s.lognormal(20000, 0.5, 0.8)),
         ("binomial", lambda s: s.binomial(20000, 15, 0.3)),
+        ("poisson", lambda s: s.poisson(20000, 3.2)),
     ]
     for i, (family, gen) in enumerate(fits):
         print(f"\n--- fit '{family}' (真值见上) ---")
@@ -61,7 +67,18 @@ def main():
         pv = f"{r.test.p_value:.4g}" if r.test.p_value == r.test.p_value else "NaN"
         print(f"  {r.family:<12} p-value={pv:<10} conclusion={r.test.conclusion}")
 
-    section("5. 小样本 (n=6) 与尾部极端值")
+    section("5. 分位数对比检验 (quantile_test)")
+    print("--- 正态样本 vs Normal(1,2)：应 accept ---")
+    samples = Sampler(StdRandomSource(130)).normal(5000, 1, 2)
+    print(quantile_test(samples, Normal(1, 2)))
+    print("\n--- 指数样本 vs Normal(1,1)：应 reject ---")
+    samples = Sampler(StdRandomSource(131)).exponential(5000, 1.0)
+    print(quantile_test(samples, Normal(1, 1)))
+    print("\n--- 对数正态样本 vs LogNormal(0,1)：应 accept ---")
+    samples = Sampler(StdRandomSource(132)).lognormal(5000, 0.0, 1.0)
+    print(quantile_test(samples, LogNormal(0, 1)))
+
+    section("6. 小样本 (n=6) 与尾部极端值")
     small = Sampler(StdRandomSource(5)).normal(6)
     print(f"样本: {[round(x, 3) for x in small]}")
     print(goodness_of_fit(small, Normal(0, 1)))

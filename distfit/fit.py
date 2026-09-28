@@ -8,7 +8,7 @@ import math
 from . import distributions as dist_mod
 from . import gof
 
-FAMILIES = ("uniform", "exponential", "normal", "binomial")
+FAMILIES = ("uniform", "exponential", "normal", "lognormal", "binomial", "poisson")
 
 
 class FitResult:
@@ -61,6 +61,22 @@ def fit(samples, family, alpha=0.05):
         if sigma == 0.0:
             raise ValueError("degenerate sample (zero variance): cannot fit normal")
         dist = dist_mod.Normal(mean, sigma)      # MLE
+    elif family == "lognormal":
+        if any(x <= 0 for x in xs):
+            raise ValueError("lognormal fit requires strictly positive observations")
+        logs = [math.log(x) for x in xs]
+        lmean = sum(logs) / n
+        lvar = sum((v - lmean) ** 2 for v in logs) / n
+        if lvar == 0.0:
+            raise ValueError("degenerate sample (zero log-variance): "
+                             "cannot fit lognormal")
+        dist = dist_mod.LogNormal(lmean, math.sqrt(lvar))  # MLE
+    elif family == "poisson":
+        rounded = [round(x) for x in xs]
+        if any(abs(x - r) > 1e-9 or r < 0 for x, r in zip(xs, rounded)):
+            raise ValueError("poisson fit requires non-negative integer observations")
+        # MLE: lam = 样本均值；mean=0 时为 Poisson(0) 退化分布（零方差）
+        dist = dist_mod.Poisson(mean)
     else:  # binomial
         rounded = [round(x) for x in xs]
         if any(abs(x - r) > 1e-9 or r < 0 for x, r in zip(xs, rounded)):

@@ -1,7 +1,8 @@
 """性能基准：各分布采样 1,000,000 次的耗时。python3 benchmark.py"""
 import time
 
-from distfit import Sampler, StdRandomSource, Uniform, Exponential, Normal, Binomial
+from distfit import (Sampler, StdRandomSource, Uniform, Exponential, Normal,
+                     LogNormal, Binomial, Poisson)
 
 N = 1_000_000
 
@@ -19,8 +20,11 @@ def main():
     bench("uniform(0,1)", lambda: s.draw(Uniform(0, 1), N))
     bench("exponential(1)", lambda: s.draw(Exponential(1), N))
     bench("normal(0,1)", lambda: s.draw(Normal(0, 1), N))
+    bench("lognormal(0,1)", lambda: s.draw(LogNormal(0, 1), N))
     bench("binomial(10,0.3)", lambda: s.draw(Binomial(10, 0.3), N))
     bench("binomial(100,0.5)", lambda: s.draw(Binomial(100, 0.5), N))
+    bench("poisson(4)", lambda: s.draw(Poisson(4), N))
+    bench("poisson(1000)", lambda: s.draw(Poisson(1000), N))
 
 
 if __name__ == "__main__":

@@ -3,8 +3,8 @@ import math
 import unittest
 
 from distfit import (Sampler, StdRandomSource, Uniform, Exponential, Normal,
-                     Binomial, goodness_of_fit, ks_test, quantile_comparison,
-                     fit, fit_best)
+                     LogNormal, Binomial, Poisson, goodness_of_fit, ks_test,
+                     quantile_comparison, quantile_test, fit, fit_best)
 from distfit import special
 
 
@@ -26,7 +26,10 @@ class TestSampling(unittest.TestCase):
         for make in (lambda: Sampler(StdRandomSource(42)).normal(200, 1, 2),
                      lambda: Sampler(StdRandomSource(42)).exponential(200, 0.5),
                      lambda: Sampler(StdRandomSource(42)).uniform(200, -1, 3),
-                     lambda: Sampler(StdRandomSource(42)).binomial(200, 10, 0.3)):
+                     lambda: Sampler(StdRandomSource(42)).binomial(200, 10, 0.3),
+                     lambda: Sampler(StdRandomSource(42)).poisson(200, 3.5),
+                     lambda: Sampler(StdRandomSource(42)).poisson(200, 500.0),
+                     lambda: Sampler(StdRandomSource(42)).lognormal(200, 0.5, 1.5)):
             self.assertEqual(make(), make())
 
     def test_injected_source_is_used(self):
@@ -36,6 +39,11 @@ class TestSampling(unittest.TestCase):
         s = Sampler(ConstantSource())
         self.assertEqual(s.uniform(3, 2.0, 4.0), [3.0, 3.0, 3.0])
         self.assertAlmostEqual(s.exponential(1, 2.0)[0], math.log(2) / 2.0)
+        # 泊松 Knuth 分支：e^-1≈0.368，0.5 > 0.368 >= 0.25 -> 恒为 1
+        self.assertEqual(s.poisson(3, 1.0), [1, 1, 1])
+        # 对数正态完全由注入源驱动：两个相同常量源结果一致
+        self.assertEqual(Sampler(ConstantSource()).lognormal(4, 0.5, 1.5),
+                         Sampler(ConstantSource()).lognormal(4, 0.5, 1.5))
 
     def test_zero_samples(self):
         s = Sampler(StdRandomSource(1))
@@ -50,6 +58,10 @@ class TestSampling(unittest.TestCase):
         for bad in (lambda: Uniform(1, 1), lambda: Uniform(2, 1),
                     lambda: Exponential(0), lambda: Exponential(-1),
                     lambda: Normal(0, 0), lambda: Normal(0, -2),
+                    lambda: LogNormal(0, 0), lambda: LogNormal(0, -1),
+                    lambda: LogNormal(float("inf"), 1),
+                    lambda: Poisson(-1), lambda: Poisson(float("inf")),
+                    lambda: Poisson(float("nan")),
                     lambda: Binomial(-1, 0.5), lambda: Binomial(5, 1.5),
                     lambda: Binomial(2.5, 0.5)):
             with self.assertRaises(ValueError):
@@ -61,6 +73,48 @@ class TestSampling(unittest.TestCase):
         s = Sampler(StdRandomSource(7))
         draws = s.binomial(1000, 8, 0.25)
         self.assertTrue(all(isinstance(x, int) and 0 <= x <= 8 for x in draws))
+
+
+class TestNewDistributionBoundaries(unittest.TestCase):
+    def test_poisson_zero_lam_is_degenerate(self):
+        # 零方差退化：Poisson(0) 采样恒为 0，pmf/cdf 集中于 0
+        d = Poisson(0)
+        self.assertEqual(Sampler(StdRandomSource(1)).draw(d, 5), [0] * 5)
+        self.assertEqual(d.pmf(0), 1.0)
+        self.assertEqual(d.pmf(1), 0.0)
+        self.assertEqual(d.cdf(0), 1.0)
+        self.assertEqual(list(d.support()), [0])
+
+    def test_poisson_extreme_lam_ptrs_branch(self):
+        # 极端大 lam 走 PTRS 分支，均值与方差仍应约等于 lam
+        draws = Sampler(StdRandomSource(2)).poisson(20000, 1000.0)
+        mean = sum(draws) / len(draws)
+        var = sum((x - mean) ** 2 for x in draws) / len(draws)
+        self.assertAlmostEqual(mean, 1000.0, delta=3.0)
+        self.assertAlmostEqual(var, 1000.0, delta=60.0)
+        self.assertTrue(all(isinstance(x, int) and x >= 0 for x in draws))
+
+    def test_poisson_pmf_sums_to_one(self):
+        for lam in (0.3, 4.0, 25.0):
+            total = sum(Poisson(lam).pmf(k) for k in range(0, 200))
+            self.assertAlmostEqual(total, 1.0, places=10)
+
+    def test_lognormal_extreme_params(self):
+        # sigma 极小：样本集中在 exp(mu) 附近（近退化但合法）
+        draws = Sampler(StdRandomSource(3)).lognormal(1000, 2.0, 1e-3)
+        center = math.exp(2.0)
+        self.assertTrue(all(abs(x - center) < 0.02 * center for x in draws))
+        # sigma 很大：样本仍为正有限值，且跨度极大
+        draws = Sampler(StdRandomSource(4)).lognormal(5000, 0.0, 3.0)
+        self.assertTrue(all(x > 0 and math.isfinite(x) for x in draws))
+        self.assertGreater(max(draws) / min(draws), 1e6)
+
+    def test_lognormal_cdf_ppf_roundtrip(self):
+        d = LogNormal(0.5, 1.5)
+        for p in (1e-4, 0.01, 0.5, 0.99, 0.9999):
+            self.assertAlmostEqual(d.cdf(d.ppf(p)), p, places=9)
+        self.assertEqual(d.cdf(0.0), 0.0)
+        self.assertEqual(d.cdf(-3.0), 0.0)
 
 
 class TestGoodnessOfFit(unittest.TestCase):
@@ -105,6 +159,62 @@ class TestGoodnessOfFit(unittest.TestCase):
         rows = quantile_comparison(samples, Normal(0, 1).ppf)
         for q, theo, samp, rel in rows:
             self.assertLess(rel, 0.1, f"quantile {q}: theo={theo} samp={samp}")
+
+    def test_poisson_accept_and_reject(self):
+        samples = Sampler(StdRandomSource(120)).poisson(5000, 4.0)
+        self.assertEqual(goodness_of_fit(samples, Poisson(4.0)).conclusion,
+                         "accept")
+        result = goodness_of_fit(samples, Poisson(10.0))
+        self.assertEqual(result.conclusion, "reject")
+        self.assertGreater(result.statistic, result.critical)
+
+    def test_lognormal_accept_and_reject(self):
+        samples = Sampler(StdRandomSource(121)).lognormal(5000, 0.5, 0.8)
+        self.assertEqual(goodness_of_fit(samples, LogNormal(0.5, 0.8)).conclusion,
+                         "accept")
+        # 对数正态样本明显不是对称正态
+        self.assertEqual(goodness_of_fit(samples, Normal(1, 1)).conclusion,
+                         "reject")
+
+
+class TestQuantileTest(unittest.TestCase):
+    def test_correct_distribution_accepted(self):
+        samples = Sampler(StdRandomSource(130)).normal(5000, 1, 2)
+        result = quantile_test(samples, Normal(1, 2))
+        self.assertEqual(result.method, "quantile-comparison")
+        self.assertEqual(result.df, 5)
+        self.assertEqual(result.conclusion, "accept")
+        self.assertLess(result.statistic, result.critical)
+
+    def test_wrong_distribution_rejected(self):
+        samples = Sampler(StdRandomSource(131)).exponential(5000, 1.0)
+        result = quantile_test(samples, Normal(1, 1))
+        self.assertEqual(result.conclusion, "reject")
+        self.assertGreater(result.statistic, result.critical)
+
+    def test_lognormal_samples(self):
+        samples = Sampler(StdRandomSource(132)).lognormal(5000, 0.0, 1.0)
+        self.assertEqual(quantile_test(samples, LogNormal(0, 1)).conclusion,
+                         "accept")
+        self.assertEqual(quantile_test(samples, Normal(1, 1)).conclusion,
+                         "reject")
+
+    def test_df_reduced_by_estimated_params(self):
+        samples = Sampler(StdRandomSource(133)).normal(5000, 0, 1)
+        result = quantile_test(samples, Normal(0, 1), n_estimated=2)
+        self.assertEqual(result.df, 3)
+
+    def test_discrete_distribution_rejected_by_api(self):
+        samples = Sampler(StdRandomSource(134)).poisson(500, 3.0)
+        with self.assertRaises(ValueError):
+            quantile_test(samples, Poisson(3.0))
+
+    def test_invalid_quantiles(self):
+        samples = Sampler(StdRandomSource(135)).normal(500, 0, 1)
+        with self.assertRaises(ValueError):
+            quantile_test(samples, Normal(0, 1), quantiles=[])
+        with self.assertRaises(ValueError):
+            quantile_test(samples, Normal(0, 1), quantiles=[0.5, 1.0])
 
 
 class TestFit(unittest.TestCase):
@@ -155,6 +265,37 @@ class TestFit(unittest.TestCase):
             fit([3.0] * 100, "normal")
         with self.assertRaises(ValueError):
             fit([2.0] * 100, "uniform")
+
+    def test_fit_poisson_recovers_lam(self):
+        samples = Sampler(StdRandomSource(210)).poisson(20000, 3.2)
+        result = fit(samples, "poisson")
+        self.assertEqual(result.test.conclusion, "accept")
+        self.assertAlmostEqual(result.params()["lam"], 3.2, delta=0.06)
+
+    def test_fit_lognormal_recovers_params(self):
+        samples = Sampler(StdRandomSource(211)).lognormal(20000, 0.5, 0.8)
+        result = fit(samples, "lognormal")
+        self.assertEqual(result.test.conclusion, "accept")
+        self.assertAlmostEqual(result.params()["mu"], 0.5, delta=0.02)
+        self.assertAlmostEqual(result.params()["sigma"], 0.8, delta=0.02)
+
+    def test_fit_poisson_rejects_non_integer(self):
+        with self.assertRaises(ValueError):
+            fit([1.5, 2.5, 3.5], "poisson")
+        with self.assertRaises(ValueError):
+            fit([-1, 0, 1], "poisson")
+
+    def test_fit_lognormal_rejects_non_positive(self):
+        with self.assertRaises(ValueError):
+            fit([1.0, 0.0, 2.0], "lognormal")
+        with self.assertRaises(ValueError):
+            fit([1.0, -2.0, 3.0], "lognormal")
+
+    def test_fit_best_picks_lognormal(self):
+        samples = Sampler(StdRandomSource(212)).lognormal(5000, 0.3, 0.9)
+        best = fit_best(samples)[0]
+        self.assertEqual(best.family, "lognormal")
+        self.assertEqual(best.test.conclusion, "accept")
 
 
 if __name__ == "__main__":
