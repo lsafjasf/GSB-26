@@ -6,11 +6,11 @@
     for m in result.matches:
         print(m.type, m.start, m.end, m.score, m.reasons)
 """
-from .engine import CONFLICT_RULE, Scanner, scan_text
+from .engine import CONFLICT_RULE, Scanner, normalization_diff, scan_text
 from .types import Conflict, Match, Rejection, ScanResult, Scored
 
 __all__ = [
-    "Scanner", "scan_text", "CONFLICT_RULE",
+    "Scanner", "scan_text", "normalization_diff", "CONFLICT_RULE",
     "Match", "Rejection", "Conflict", "Scored", "ScanResult",
 ]
 __version__ = "0.1.0"

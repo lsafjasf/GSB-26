@@ -19,6 +19,9 @@ python3 bench.py
 python3 -m sensid scan 某文件.txt --threshold 0.5 --show-rejected
 cat 某文件.txt | python3 -m sensid scan
 
+# 逐条列出规范化（剔除零宽/格式控制字符）前后的命中集合差异
+python3 -m sensid scan 某文件.txt --diff-normalization
+
 # 一键全跑
 bash run_all.sh
 ```
@@ -34,7 +37,21 @@ for r in result.rejected:     # 被否定候选及原因
     print(r.type, r.raw, r.reason)
 for c in result.conflicts:    # 重叠冲突记录
     print(c.kept_type, "压制", c.dropped_type)
+
+# 规范化前后命中集合差异（recovered=规范化找回的命中，lost=规范化后消失的命中）
+from sensid import normalization_diff
+diff = normalization_diff(text)
 ```
+
+## 扫描前规范化（零宽/格式控制字符）
+
+扫描前先剔除 Unicode Cf 类字符（零宽空格 U+200B、ZWNJ/ZWJ、双向格式控制、
+Word Joiner、软连字符、BOM/ZWNBSP 等），再执行候选生成与校验，避免肉眼相同、
+字面被不可见字符拆开的号码漏报。规范化时同步维护"规范化下标 -> 原文下标"
+映射，命中、否定与冲突记录中的 start/end/raw 均换算回原文偏移，
+`text[m.start:m.end] == m.raw` 恒成立，报告位置可直接在原文中使用。
+`Scanner(normalize=False)` 可关闭该行为；`normalization_diff(text)` 或
+CLI 的 `--diff-normalization` 逐条列出两种模式下的命中集合差异。
 
 ## 判定依据（正则初筛 + 校验的组合判定）
 
@@ -84,6 +101,6 @@ for c in result.conflicts:    # 重叠冲突记录
 
 ## 已知边界
 
-- 全角数字、号码内插零宽字符不属于分隔符，不会归一化命中（不会崩溃）。
+- 全角数字不属于分隔符，不会归一化命中（不会崩溃）。
 - 号码允许的分隔符：空格、制表符、换行、连字符。
 - 手机号段表、BIN 表为内置快照，可按需扩充（`sensid/detectors.py`）。

@@ -5,7 +5,7 @@ import argparse
 import json
 import sys
 
-from .engine import Scanner
+from .engine import Scanner, normalization_diff
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -14,6 +14,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("path", nargs="?", help="待扫描文本文件，缺省读 stdin")
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--show-rejected", action="store_true", help="同时输出被否定的候选")
+    parser.add_argument("--diff-normalization", action="store_true",
+                        help="逐条列出规范化（剔除零宽/格式控制字符）前后的命中集合差异")
     args = parser.parse_args(argv)
 
     if args.path:
@@ -41,6 +43,18 @@ def main(argv: list[str] | None = None) -> int:
             {"type": r.type, "start": r.start, "end": r.end, "raw": r.raw, "reason": r.reason}
             for r in result.rejected
         ]
+    if args.diff_normalization:
+        diff = normalization_diff(text, threshold=args.threshold)
+        out["normalization_diff"] = {
+            "recovered": [
+                {"type": t, "start": s, "end": e, "normalized": n}
+                for t, s, e, n in diff["recovered"]
+            ],
+            "lost": [
+                {"type": t, "start": s, "end": e, "normalized": n}
+                for t, s, e, n in diff["lost"]
+            ],
+        }
     json.dump(out, sys.stdout, ensure_ascii=False, indent=2)
     sys.stdout.write("\n")
     return 0
