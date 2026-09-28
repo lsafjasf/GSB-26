@@ -172,6 +172,33 @@ class StaticValidation(unittest.TestCase):
     def test_syntax_error_has_position(self):
         self.assert_error("step {\n}", "expected IDENT", line=1)
 
+    def test_multi_token_line_error_col_matches_source(self):
+        # 同一行里有多个记号：列号必须随每个字符推进，而不是停在第一个记号处。
+        text = (
+            "param retries: int = 3\n"
+            "step build {\n"
+            "  args: { n: $retries, missing: $ghost }\n"
+            "}\n"
+        )
+        with self.assertRaises(CompileError) as ctx:
+            compile(text)
+        self.assertIn("unknown parameter $ghost", str(ctx.exception))
+        marker = "$ghost"
+        line_no = text[: text.index(marker)].count("\n") + 1
+        line_start = text.rfind("\n", 0, text.index(marker)) + 1
+        col = 1
+        for ch in text[line_start : line_start + text[line_start:].index(marker)]:
+            col += 8 - (col - 1) % 8 if ch == "\t" else 1
+        self.assertEqual((ctx.exception.line, ctx.exception.col), (line_no, col))
+        self.assertEqual((line_no, col), (3, 33))
+
+    def test_tab_advances_to_next_tab_stop(self):
+        # 制表符按 8 列制表位推进：\t 后 "needs" 首字符落在第 9 列。
+        text = "step a {\n\tneeds: ghost;\n}\n"
+        with self.assertRaises(CompileError) as ctx:
+            compile(text)
+        self.assertEqual((ctx.exception.line, ctx.exception.col), (2, 16))
+
 
 class ExecutionSemantics(unittest.TestCase):
     DIAMOND = (

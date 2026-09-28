@@ -26,6 +26,7 @@ from .errors import CompileError
 
 PUNCT = set("{}:,()[]=$;")
 _ESCAPES = {'"': '"', "\\": "\\", "n": "\n", "t": "\t", "r": "\r"}
+TAB_WIDTH = 8
 
 
 @dataclass(frozen=True)
@@ -42,35 +43,30 @@ def lex(text):
     length = len(text)
 
     def advance(n=1):
-        nonlocal i, col
+        nonlocal i, line, col
         for _ in range(n):
             if i < length and text[i] == "\n":
-                line_n = line + 1
-                col_n = 1
+                line += 1
+                col = 1
+            elif i < length and text[i] == "\t":
+                col += TAB_WIDTH - (col - 1) % TAB_WIDTH
             else:
-                line_n, col_n = line, col + 1
+                col += 1
             i += 1
-        return line_n, col_n
+        return line, col
 
     while i < length:
         c = text[i]
-        if c == "\n":
-            line, col = line + 1, 1
-            i += 1
-            continue
-        if c in " \t\r":
-            i += 1
-            col += 1
+        if c == "\n" or c in " \t\r":
+            advance()
             continue
         if c == "#":
             while i < length and text[i] != "\n":
-                i += 1
-                col += 1
+                advance()
             continue
         start_line, start_col = line, col
         if c == '"':
-            i += 1
-            col += 1
+            advance()
             buf = []
             while i < length and text[i] != '"':
                 ch = text[i]
@@ -83,16 +79,13 @@ def lex(text):
                     if esc not in _ESCAPES:
                         raise CompileError(f"unknown escape '\\{esc}'", line, col)
                     buf.append(_ESCAPES[esc])
-                    i += 2
-                    col += 2
+                    advance(2)
                 else:
                     buf.append(ch)
-                    i += 1
-                    col += 1
+                    advance()
             if i >= length:
                 raise CompileError("unterminated string literal", start_line, start_col)
-            i += 1
-            col += 1
+            advance()
             tokens.append(Token("STRING", "".join(buf), start_line, start_col))
             continue
         if c.isdigit() or (c == "-" and i + 1 < length and text[i + 1].isdigit()):
@@ -104,7 +97,7 @@ def lex(text):
                 number = float(raw) if "." in raw else int(raw)
             except ValueError:
                 raise CompileError(f"invalid number {raw!r}", start_line, start_col)
-            line, col = advance(j - i)
+            advance(j - i)
             tokens.append(Token("NUMBER", number, start_line, start_col))
             continue
         if c.isalpha() or c == "_":
@@ -112,12 +105,11 @@ def lex(text):
             while j < length and (text[j].isalnum() or text[j] == "_"):
                 j += 1
             word = text[i:j]
-            line, col = advance(j - i)
+            advance(j - i)
             tokens.append(Token("IDENT", word, start_line, start_col))
             continue
         if c in PUNCT:
-            i += 1
-            col += 1
+            advance()
             tokens.append(Token("PUNCT", c, start_line, start_col))
             continue
         raise CompileError(f"unexpected character {c!r}", start_line, start_col)
