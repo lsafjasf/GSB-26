@@ -27,21 +27,21 @@
 -- uniform(-2,5)
    [chi-square] statistic=99.18 critical(0.05)=123.225 p-value=0.476 -> PASS: no evidence against the hypothesized distribution
    [kolmogorov-smirnov] statistic=0.00697137 critical(0.05)=0.00960321 p-value=0.2854 -> PASS: no evidence against the hypothesized distribution
-   [quantile-check] statistic=0 critical(0.05)=0 p-value=0 -> PASS: empirical quantiles within binomial acceptance bands
+   [quantile-check] statistic=0 critical(0.05)=0 p-value=1 -> PASS: empirical quantiles within binomial acceptance bands
   [ok] uniform(-2,5) chi-square passes -- stat=99.180 crit=123.225
   [ok] uniform(-2,5) KS passes -- D=0.0070 crit=0.0096
   [ok] uniform(-2,5) quantile check passes
 -- exponential(1.5)
    [chi-square] statistic=83.54 critical(0.05)=123.225 p-value=0.8673 -> PASS: no evidence against the hypothesized distribution
    [kolmogorov-smirnov] statistic=0.0083315 critical(0.05)=0.00960321 p-value=0.1245 -> PASS: no evidence against the hypothesized distribution
-   [quantile-check] statistic=0 critical(0.05)=0 p-value=0 -> PASS: empirical quantiles within binomial acceptance bands
+   [quantile-check] statistic=0 critical(0.05)=0 p-value=1 -> PASS: empirical quantiles within binomial acceptance bands
   [ok] exponential(1.5) chi-square passes -- stat=83.540 crit=123.225
   [ok] exponential(1.5) KS passes -- D=0.0083 crit=0.0096
   [ok] exponential(1.5) quantile check passes
 -- normal(10,2)
    [chi-square] statistic=93.32 critical(0.05)=123.225 p-value=0.6421 -> PASS: no evidence against the hypothesized distribution
    [kolmogorov-smirnov] statistic=0.00398743 critical(0.05)=0.00960321 p-value=0.9082 -> PASS: no evidence against the hypothesized distribution
-   [quantile-check] statistic=0 critical(0.05)=0 p-value=0 -> PASS: empirical quantiles within binomial acceptance bands
+   [quantile-check] statistic=0 critical(0.05)=0 p-value=1 -> PASS: empirical quantiles within binomial acceptance bands
   [ok] normal(10,2) chi-square passes -- stat=93.320 crit=123.225
   [ok] normal(10,2) KS passes -- D=0.0040 crit=0.0096
   [ok] normal(10,2) quantile check passes
@@ -105,8 +105,22 @@
   [ok] n=5 emits small-sample warning
   [ok] n=5 emits expected-count warning
 -- heavy-tail contamination: mean/var alone cannot see it
-   [quantile-check] statistic=3 critical(0.05)=0 p-value=0.4286 -> FAIL: quantiles [0.01, 0.75, 0.99] fall outside acceptance bands
+   [quantile-check] statistic=3 critical(0.05)=0 p-value=1.248e-05 -> FAIL: quantiles [0.01, 0.75, 0.99] fall outside acceptance bands
   [ok] quantile check flags contaminated tails
+
+=== 7. Decision rule: statistic > critical <=> rejected, p <= alpha <=> rejected ===
+  [ok] chi-square (pass): statistic>critical <=> not passed -- stat=93.32 crit=123.225 passed=True
+  [ok] chi-square (pass): p-value<=alpha <=> not passed -- p=0.6421 alpha=0.05 passed=True
+  [ok] KS (pass): statistic>critical <=> not passed -- stat=0.00398743 crit=0.00960321 passed=True
+  [ok] KS (pass): p-value<=alpha <=> not passed -- p=0.9082 alpha=0.05 passed=True
+  [ok] quantile-check (pass): statistic>critical <=> not passed -- stat=0 crit=0 passed=True
+  [ok] quantile-check (pass): p-value<=alpha <=> not passed -- p=1 alpha=0.05 passed=True
+  [ok] quantile-check (fail): statistic>critical <=> not passed -- stat=3 crit=0 passed=False
+  [ok] quantile-check (fail): p-value<=alpha <=> not passed -- p=1.248e-05 alpha=0.05 passed=False
+  [ok] chi-square discrete (pass): statistic>critical <=> not passed -- stat=19.0525 crit=23.6848 passed=True
+  [ok] chi-square discrete (pass): p-value<=alpha <=> not passed -- p=0.163 alpha=0.05 passed=True
+  [ok] chi-square (fail): statistic>critical <=> not passed -- stat=14461.7 crit=120.99 passed=False
+  [ok] chi-square (fail): p-value<=alpha <=> not passed -- p=0 alpha=0.05 passed=False
 
 === SUMMARY ===
 all checks passed

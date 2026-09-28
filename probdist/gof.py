@@ -199,10 +199,19 @@ def quantile_check(samples, ppf, probs=(0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99)
     whose observed count falls outside a two-sided binomial acceptance band
     (Bonferroni-corrected across quantiles). Useful for tail behaviour,
     where mean/variance checks are blind.
+
+    The statistic is the number of out-of-band quantiles. Under H0 each
+    quantile falls outside its band with probability ~alpha/len(probs), so
+    the statistic follows ~Binomial(len(probs), alpha/len(probs)); the
+    critical value and the p-value are taken from that null distribution.
+    The decision rule matches the other tests: reject iff
+    statistic > critical value (equivalently p-value <= alpha).
     """
     n = len(samples)
     if n == 0:
         raise ValueError("cannot test an empty sample")
+    if not probs:
+        raise ValueError("at least one quantile probability is required")
     xs = sorted(samples)
     per_test_alpha = alpha / len(probs)
     mismatches = []
@@ -219,19 +228,53 @@ def quantile_check(samples, ppf, probs=(0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99)
         if not ok:
             mismatches.append(q)
     stat = float(len(mismatches))
-    crit = 0.0
+    m = len(probs)
+    crit = float(_binom_quantile(1.0 - alpha, m, per_test_alpha))
+    p = 1.0 - _binom_cdf(int(stat) - 1, m, per_test_alpha)
     warnings = []
     if n < 50:
         warnings.append(
             f"n={n}: quantile bands are wide for small n; tails "
             "(1%/99%) are essentially untestable")
-    passed = not mismatches
+    passed = stat <= crit
     conclusion = ("PASS: empirical quantiles within binomial acceptance bands"
                   if passed else
                   f"FAIL: quantiles {mismatches} fall outside acceptance bands")
-    return TestResult("quantile-check", stat, crit,
-                      float('nan') if n == 0 else len(mismatches) / len(probs),
-                      alpha, passed, conclusion, warnings, {"rows": rows})
+    return TestResult("quantile-check", stat, crit, p, alpha, passed,
+                      conclusion, warnings, {"rows": rows})
+
+
+def _binom_cdf(k, n, p):
+    """P(X <= k) for X ~ Binomial(n, p), via PMF recurrence from the mode."""
+    if k < 0:
+        return 0.0
+    if k >= n:
+        return 1.0
+    if p <= 0.0:
+        return 1.0
+    if p >= 1.0:
+        return 0.0
+    m = min(n, int((n + 1) * p))
+    logpmf = (math.lgamma(n + 1) - math.lgamma(m + 1) - math.lgamma(n - m + 1)
+              + m * math.log(p) + (n - m) * math.log(1.0 - p))
+    pmf_m = math.exp(logpmf)
+    # CDF at the mode: sum downward (terms shrink, no underflow issue).
+    cdf = pmf_m
+    pmf = pmf_m
+    for j in range(m, 0, -1):
+        pmf *= j * (1.0 - p) / ((n - j + 1) * p)
+        cdf += pmf
+    if k >= m:
+        pmf = pmf_m
+        for j in range(m, k):
+            pmf *= (n - j) * p / ((j + 1) * (1.0 - p))
+            cdf += pmf
+        return min(1.0, cdf)
+    pmf = pmf_m
+    for j in range(m, k, -1):
+        cdf -= pmf
+        pmf *= j * (1.0 - p) / ((n - j + 1) * p)
+    return max(0.0, cdf)
 
 
 def _binom_quantile(prob, n, p):

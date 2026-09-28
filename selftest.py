@@ -198,6 +198,28 @@ mq = gof.quantile_check(contaminated, lambda p: gof_norm_ppf(p))
 print(f"   {mq}")
 check("quantile check flags contaminated tails", not mq.passed)
 
+# ----------------------------- 7. decision-rule / field semantic consistency
+section("7. Decision rule: statistic > critical <=> rejected, p <= alpha <=> rejected")
+good = dist.sample_normal(random.Random(9), 10, 2, N)  # passes in section 3
+consistency_results = [
+    ("chi-square (pass)", gof.chi_square_uniform_bins(
+        good, lambda x: dist.normal_cdf(x, 10, 2),
+        lambda p: 10 + 2 * gof_norm_ppf(p))),
+    ("KS (pass)", gof.ks_test(good, lambda x: dist.normal_cdf(x, 10, 2))),
+    ("quantile-check (pass)",
+     gof.quantile_check(good, lambda p: 10 + 2 * gof_norm_ppf(p))),
+    ("quantile-check (fail)", mq),
+    ("chi-square discrete (pass)", rb),
+    ("chi-square (fail)", bad.gof),
+]
+for label, r in consistency_results:
+    check(f"{label}: statistic>critical <=> not passed",
+          (r.statistic > r.critical_value) == (not r.passed),
+          f"stat={r.statistic:.6g} crit={r.critical_value:.6g} passed={r.passed}")
+    check(f"{label}: p-value<=alpha <=> not passed",
+          (r.p_value <= r.alpha) == (not r.passed),
+          f"p={r.p_value:.4g} alpha={r.alpha} passed={r.passed}")
+
 # ------------------------------------------------------------- summary
 print("\n=== SUMMARY ===")
 if FAILURES:
