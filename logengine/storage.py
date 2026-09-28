@@ -44,6 +44,7 @@ class Block:
     block_id: int
     records: List[Dict[str, Any]]
     stats: BlockStats
+    base_seq: int  # 块内首条记录的全局写入序号（块内第 i 条为 base_seq + i）
 
 
 class Store:
@@ -58,6 +59,7 @@ class Store:
     def __init__(self) -> None:
         self._blocks: List[Block] = []
         self._pending: List[Dict[str, Any]] = []
+        self._total_rows: int = 0
 
     def append(self, record: Dict[str, Any]) -> None:
         if "ts" not in record:
@@ -81,8 +83,10 @@ class Store:
             block_id=len(self._blocks),
             records=records,
             stats=build_stats(records),
+            base_seq=self._total_rows,
         )
         self._blocks.append(block)
+        self._total_rows += len(records)
         return block
 
     def flush(self) -> None:

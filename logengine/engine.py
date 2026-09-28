@@ -8,6 +8,11 @@
    - 其他查询：按块封存顺序扫描全部候选块。
 3. 聚合：GROUP BY 时按键分组计数（排序输出保证确定性）。
 
+排序键为 (ts, 写入序号)：块内第 i 条记录的写入序号为
+block.base_seq + i。DESC 时两键同向取反，即并列时间戳组内
+后写入的记录在前——与提前终止分支 reversed(block.records)
+的取数方向一致，两条路径共用同一个全序。
+
 full_scan() 是禁用一切下推与提前终止的参考实现，用于对拍测试。
 """
 
@@ -127,29 +132,30 @@ def _run(query: Query, blocks, pushdown: bool) -> Tuple[Any, Metrics]:
                         return rows, metrics
         return rows, metrics
 
-    matched: List[Dict[str, Any]] = []
+    matched: List[Tuple[int, Dict[str, Any]]] = []
     for block in candidates:
         metrics.scanned_blocks += 1
         metrics.scanned_records += block.stats.row_count
-        for rec in block.records:
+        for offset, rec in enumerate(block.records):
             if record_matches(rec, query.conditions):
-                matched.append(rec)
+                matched.append((block.base_seq + offset, rec))
 
     if query.select == "count":
         if query.group_by is None:
             return len(matched), metrics
         groups: Dict[Any, int] = {}
-        for rec in matched:
+        for _, rec in matched:
             key = rec.get(query.group_by)
             groups[key] = groups.get(key, 0) + 1
         rows = sorted(groups.items(), key=lambda kv: _group_key(kv[0]))
         return rows, metrics
 
     if query.order_by == "ts":
-        matched.sort(key=lambda r: r["ts"], reverse=query.order_desc)
+        matched.sort(key=lambda p: (p[1]["ts"], p[0]), reverse=query.order_desc)
+    rows = [rec for _, rec in matched]
     if query.limit is not None:
-        matched = matched[: query.limit]
-    return matched, metrics
+        rows = rows[: query.limit]
+    return rows, metrics
 
 
 def execute(store: Store, query: Query) -> Result:

@@ -155,6 +155,19 @@ class TestDeterministic(unittest.TestCase):
         r = assert_same(self, self.store, "SELECT * WHERE ts >= 1 ORDER BY ts DESC LIMIT 0")
         self.assertEqual(r.data, [])
 
+    def test_limit_desc_tied_timestamps_cut_mid_group(self):
+        # 5 条记录共享同一时间戳，LIMIT 3 落在并列组中间：
+        # 两条路径必须按同一顺序（ts 降序 + 写入序号降序）取到相同记录
+        store = Store()
+        for i in range(5):
+            store.append({"ts": 100, "marker": i})
+        store.seal_block()
+        r = assert_same(self, store, "SELECT * WHERE ts >= 0 ORDER BY ts DESC LIMIT 3")
+        self.assertEqual([rec["marker"] for rec in r.data], [4, 3, 2])
+        self.assertEqual(r.metrics.scanned_blocks, 1)
+        r = assert_same(self, store, "SELECT * WHERE ts >= 0 ORDER BY ts ASC LIMIT 3")
+        self.assertEqual([rec["marker"] for rec in r.data], [0, 1, 2])
+
     def test_order_asc_no_early_termination(self):
         r = assert_same(self, self.store, "SELECT * WHERE ts >= 1 ORDER BY ts ASC LIMIT 3")
         self.assertEqual([rec["ts"] for rec in r.data], [1, 2, 3])
@@ -190,8 +203,9 @@ def build_random_store(seed: int, blocks: int, per_block: int) -> Store:
     levels = ["info", "warn", "error"]
     ts = 0
     for _ in range(blocks):
-        for _ in range(per_block):
-            ts += rng.randint(1, 3)
+        for j in range(per_block):
+            # 块内允许 0 步长制造并列时间戳；块首必须推进，满足块间严格递增
+            ts += rng.randint(0, 3) if j else rng.randint(1, 3)
             rec = {
                 "ts": ts,
                 "service": rng.choice(services),

@@ -57,6 +57,8 @@ SELECT COUNT(*) WHERE ts >= 1700000000 AND env = 'prod' GROUP BY service
 - 跨类型比较（如字符串与数值）恒为假，不抛异常。
 - `GROUP BY` 需配合 `SELECT COUNT(*)`，输出按分组键排序的 `(键, 计数)` 列表，保证确定性。
 - `SELECT *` 默认按块封存顺序（即 ts 升序）输出；`ORDER BY ts DESC` 为倒序。
+  排序键为 `(ts, 写入序号)`：并列时间戳时 DESC 取后写入者在前，ASC 取先写入者在前，
+  提前终止与全量扫描两条执行路径共用这一全序。
 
 ## 块级下推设计
 
