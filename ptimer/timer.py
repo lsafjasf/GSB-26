@@ -225,6 +225,10 @@ class PeriodicTimer:
         self._loop_thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
         self._resume = threading.Event()
+        # 专责打断真实时钟下的睡眠：pause/stop 置位，每次入睡前清零。
+        # 与 _resume（暂停态信号，运行期间保持置位）分离，避免等待一个
+        # 已置位的事件导致空转。
+        self._wakeup = threading.Event()
         self._paused_ack = threading.Event()
         self._paused = False
 
@@ -241,6 +245,7 @@ class PeriodicTimer:
             raise RuntimeError("计时器已在运行")
         self._stop.clear()
         self._resume.set()
+        self._wakeup.clear()
         self._paused = False
         self._paused_ack.clear()
         self._thread = threading.Thread(target=self._run_loop, args=(None,), daemon=True)
@@ -249,6 +254,7 @@ class PeriodicTimer:
     def stop(self, timeout: Optional[float] = None) -> None:
         self._stop.set()
         self._resume.set()
+        self._wakeup.set()
         if self._thread is not None:
             self._thread.join(timeout)
 
@@ -264,6 +270,7 @@ class PeriodicTimer:
         self._paused_ack.clear()
         self._paused = True
         self._resume.clear()
+        self._wakeup.set()
         if threading.current_thread() is self._loop_thread:
             return True
         return self._paused_ack.wait(timeout)
@@ -379,7 +386,11 @@ class PeriodicTimer:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     return
-                if self._resume.wait(remaining):
+                self._wakeup.clear()
+                # 清零后复查一次，避免与 pause/stop 的置位竞争丢失唤醒。
+                if self._stop.is_set() or self._paused:
+                    return
+                if self._wakeup.wait(remaining):
                     return
         else:
             self.clock.sleep(seconds)

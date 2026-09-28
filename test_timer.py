@@ -330,6 +330,33 @@ class TestSystemClockSmoke(unittest.TestCase):
         timer.stop(2.0)
         self.assertGreater(len(col.ticks), count_at_pause)
 
+    def test_real_clock_no_busy_wait(self):
+        """默认时钟跑若干周期：等待期间应睡眠让出 CPU（不空转），
+        且触发时刻精度不退化。"""
+        period = 0.05
+        want_ticks = 10
+        col = Collector()
+        timer = PeriodicTimer(period, col)  # 默认 SystemClock
+        wall_start = time.monotonic()
+        cpu_start = time.process_time()
+        timer.start()
+        deadline = time.monotonic() + 5.0
+        while len(col.ticks) < want_ticks and time.monotonic() < deadline:
+            time.sleep(0.01)
+        timer.stop(2.0)
+        wall_used = time.monotonic() - wall_start
+        cpu_used = time.process_time() - cpu_start
+        self.assertGreaterEqual(len(col.ticks), want_ticks)
+        # 忙等回归：空转时 cpu/wall ≈ 100%；真正睡眠应远低于墙钟时间。
+        self.assertLess(
+            cpu_used,
+            0.2 * wall_used,
+            f"疑似忙等：cpu={cpu_used:.3f}s wall={wall_used:.3f}s",
+        )
+        # 触发精度不退化：每次触发迟到有界（远小于一个周期）。
+        for tick in col.ticks:
+            self.assertLess(tick.lateness, 0.5 * period)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
