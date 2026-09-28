@@ -1,0 +1,28 @@
+{
+  "sources": {
+    "opencc_tscharacters": {
+      "url": "https://raw.githubusercontent.com/BYVoid/OpenCC/master/data/dictionary/TSCharacters.txt",
+      "sha256": "9ff46a7d30e5765375eb13d33f2b03a34d298913caf2b120380679f33ae1642d"
+    },
+    "unihan_readings": {
+      "url": "https://www.unicode.org/Public/UCD/latest/ucd/Unihan.zip",
+      "entry": "Unihan_Readings.txt",
+      "zip_sha256": "4c93ea9c1f636451729a840978f1667a53886af37ba854fdcce109721c63d43e"
+    }
+  },
+  "outputs": {
+    "t2s_chars.txt": {
+      "pairs": 3151
+    },
+    "homophone_groups.txt": {
+      "groups": 753,
+      "chars": 3372
+    }
+  },
+  "homophone_policy": {
+    "universe": "GB2312 level-1 common hanzi",
+    "readings": "Unihan kMandarin, single-reading chars only",
+    "grouping": "pinyin with tone, groups of size >= 2",
+    "fold_target": "minimum codepoint char in each group"
+  }
+}

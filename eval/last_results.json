@@ -1,0 +1,2284 @@
+{
+  "corpus": {
+    "samples": 19,
+    "expected_hits": 17,
+    "words": [
+      "cat",
+      "天安门",
+      "赌场",
+      "办证",
+      "攻击",
+      "攻势",
+      "法轮功"
+    ],
+    "whitelist": [
+      "天安门广场"
+    ],
+    "use_boundary": true
+  },
+  "diff_from": "base_default",
+  "profiles": {
+    "raw": {
+      "description": "全部归一化关闭，原样逐字匹配（召回下限，仅对照用）",
+      "reported": 6,
+      "tp": 6,
+      "fp": 0,
+      "fn": 11,
+      "precision": 1.0,
+      "recall": 0.352941,
+      "fp_records": [],
+      "fn_records": [
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 0,
+          "end": 3,
+          "orig_text": "CAT"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 8,
+          "end": 11,
+          "orig_text": "Cat"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 16,
+          "end": 19,
+          "orig_text": "cAt"
+        },
+        {
+          "sample_id": "S06",
+          "word": "cat",
+          "start": 1,
+          "end": 4,
+          "orig_text": "ＣＡＴ"
+        },
+        {
+          "sample_id": "S08",
+          "word": "赌场",
+          "start": 4,
+          "end": 6,
+          "orig_text": "賭場"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 11,
+          "end": 13,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势"
+        },
+        {
+          "sample_id": "S14",
+          "word": "法轮功",
+          "start": 0,
+          "end": 5,
+          "orig_text": "法​轮‌功"
+        },
+        {
+          "sample_id": "S15",
+          "word": "赌场",
+          "start": 2,
+          "end": 5,
+          "orig_text": "賭​場"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        }
+      ],
+      "hits": {
+        "S01": [
+          {
+            "sample_id": "S01",
+            "word": "cat",
+            "start": 38,
+            "end": 41,
+            "orig_text": "cat"
+          }
+        ],
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ],
+        "S19": [
+          {
+            "sample_id": "S19",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ]
+      }
+    },
+    "base_default": {
+      "description": "基线：大小写+全半角+繁简(1:1)+零宽+空白collapse；同音关",
+      "reported": 16,
+      "tp": 14,
+      "fp": 2,
+      "fn": 3,
+      "precision": 0.875,
+      "recall": 0.823529,
+      "fp_records": [
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證"
+        }
+      ],
+      "fn_records": [
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        }
+      ],
+      "hits": {
+        "S01": [
+          {
+            "sample_id": "S01",
+            "word": "cat",
+            "start": 38,
+            "end": 41,
+            "orig_text": "cat"
+          }
+        ],
+        "S02": [
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 0,
+            "end": 3,
+            "orig_text": "CAT"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 8,
+            "end": 11,
+            "orig_text": "Cat"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 16,
+            "end": 19,
+            "orig_text": "cAt"
+          }
+        ],
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S06": [
+          {
+            "sample_id": "S06",
+            "word": "cat",
+            "start": 1,
+            "end": 4,
+            "orig_text": "ＣＡＴ"
+          }
+        ],
+        "S08": [
+          {
+            "sample_id": "S08",
+            "word": "赌场",
+            "start": 4,
+            "end": 6,
+            "orig_text": "賭場"
+          }
+        ],
+        "S09": [
+          {
+            "sample_id": "S09",
+            "word": "办证",
+            "start": 1,
+            "end": 3,
+            "orig_text": "辦證"
+          }
+        ],
+        "S10": [
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "辦證"
+          },
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 11,
+            "end": 13,
+            "orig_text": "辦證"
+          }
+        ],
+        "S14": [
+          {
+            "sample_id": "S14",
+            "word": "法轮功",
+            "start": 0,
+            "end": 5,
+            "orig_text": "法​轮‌功"
+          }
+        ],
+        "S15": [
+          {
+            "sample_id": "S15",
+            "word": "赌场",
+            "start": 2,
+            "end": 5,
+            "orig_text": "賭​場"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ],
+        "S19": [
+          {
+            "sample_id": "S19",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ]
+      }
+    },
+    "no_casefold": {
+      "description": "关闭大小写折叠：基线之上只关 casefold，看大小写规避漏报",
+      "reported": 12,
+      "tp": 10,
+      "fp": 2,
+      "fn": 7,
+      "precision": 0.833333,
+      "recall": 0.588235,
+      "fp_records": [
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證"
+        }
+      ],
+      "fn_records": [
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 0,
+          "end": 3,
+          "orig_text": "CAT"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 8,
+          "end": 11,
+          "orig_text": "Cat"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 16,
+          "end": 19,
+          "orig_text": "cAt"
+        },
+        {
+          "sample_id": "S06",
+          "word": "cat",
+          "start": 1,
+          "end": 4,
+          "orig_text": "ＣＡＴ"
+        },
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        }
+      ],
+      "hits": {
+        "S01": [
+          {
+            "sample_id": "S01",
+            "word": "cat",
+            "start": 38,
+            "end": 41,
+            "orig_text": "cat"
+          }
+        ],
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S08": [
+          {
+            "sample_id": "S08",
+            "word": "赌场",
+            "start": 4,
+            "end": 6,
+            "orig_text": "賭場"
+          }
+        ],
+        "S09": [
+          {
+            "sample_id": "S09",
+            "word": "办证",
+            "start": 1,
+            "end": 3,
+            "orig_text": "辦證"
+          }
+        ],
+        "S10": [
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "辦證"
+          },
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 11,
+            "end": 13,
+            "orig_text": "辦證"
+          }
+        ],
+        "S14": [
+          {
+            "sample_id": "S14",
+            "word": "法轮功",
+            "start": 0,
+            "end": 5,
+            "orig_text": "法​轮‌功"
+          }
+        ],
+        "S15": [
+          {
+            "sample_id": "S15",
+            "word": "赌场",
+            "start": 2,
+            "end": 5,
+            "orig_text": "賭​場"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ],
+        "S19": [
+          {
+            "sample_id": "S19",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ]
+      }
+    },
+    "no_width": {
+      "description": "关闭全半角：基线之上只关 width，看全角字符规避漏报",
+      "reported": 15,
+      "tp": 13,
+      "fp": 2,
+      "fn": 4,
+      "precision": 0.866667,
+      "recall": 0.764706,
+      "fp_records": [
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證"
+        }
+      ],
+      "fn_records": [
+        {
+          "sample_id": "S06",
+          "word": "cat",
+          "start": 1,
+          "end": 4,
+          "orig_text": "ＣＡＴ"
+        },
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        }
+      ],
+      "hits": {
+        "S01": [
+          {
+            "sample_id": "S01",
+            "word": "cat",
+            "start": 38,
+            "end": 41,
+            "orig_text": "cat"
+          }
+        ],
+        "S02": [
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 0,
+            "end": 3,
+            "orig_text": "CAT"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 8,
+            "end": 11,
+            "orig_text": "Cat"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 16,
+            "end": 19,
+            "orig_text": "cAt"
+          }
+        ],
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S08": [
+          {
+            "sample_id": "S08",
+            "word": "赌场",
+            "start": 4,
+            "end": 6,
+            "orig_text": "賭場"
+          }
+        ],
+        "S09": [
+          {
+            "sample_id": "S09",
+            "word": "办证",
+            "start": 1,
+            "end": 3,
+            "orig_text": "辦證"
+          }
+        ],
+        "S10": [
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "辦證"
+          },
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 11,
+            "end": 13,
+            "orig_text": "辦證"
+          }
+        ],
+        "S14": [
+          {
+            "sample_id": "S14",
+            "word": "法轮功",
+            "start": 0,
+            "end": 5,
+            "orig_text": "法​轮‌功"
+          }
+        ],
+        "S15": [
+          {
+            "sample_id": "S15",
+            "word": "赌场",
+            "start": 2,
+            "end": 5,
+            "orig_text": "賭​場"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ],
+        "S19": [
+          {
+            "sample_id": "S19",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ]
+      }
+    },
+    "no_t2s": {
+      "description": "关闭繁→简：基线之上只关 t2s，看繁体规避漏报",
+      "reported": 11,
+      "tp": 11,
+      "fp": 0,
+      "fn": 6,
+      "precision": 1.0,
+      "recall": 0.647059,
+      "fp_records": [],
+      "fn_records": [
+        {
+          "sample_id": "S08",
+          "word": "赌场",
+          "start": 4,
+          "end": 6,
+          "orig_text": "賭場"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 11,
+          "end": 13,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势"
+        },
+        {
+          "sample_id": "S15",
+          "word": "赌场",
+          "start": 2,
+          "end": 5,
+          "orig_text": "賭​場"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        }
+      ],
+      "hits": {
+        "S01": [
+          {
+            "sample_id": "S01",
+            "word": "cat",
+            "start": 38,
+            "end": 41,
+            "orig_text": "cat"
+          }
+        ],
+        "S02": [
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 0,
+            "end": 3,
+            "orig_text": "CAT"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 8,
+            "end": 11,
+            "orig_text": "Cat"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 16,
+            "end": 19,
+            "orig_text": "cAt"
+          }
+        ],
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S06": [
+          {
+            "sample_id": "S06",
+            "word": "cat",
+            "start": 1,
+            "end": 4,
+            "orig_text": "ＣＡＴ"
+          }
+        ],
+        "S14": [
+          {
+            "sample_id": "S14",
+            "word": "法轮功",
+            "start": 0,
+            "end": 5,
+            "orig_text": "法​轮‌功"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ],
+        "S19": [
+          {
+            "sample_id": "S19",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ]
+      }
+    },
+    "no_zero_width": {
+      "description": "关闭零宽删除：基线之上只关 zero_width，看零宽拆字漏报",
+      "reported": 14,
+      "tp": 12,
+      "fp": 2,
+      "fn": 5,
+      "precision": 0.857143,
+      "recall": 0.705882,
+      "fp_records": [
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證"
+        }
+      ],
+      "fn_records": [
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势"
+        },
+        {
+          "sample_id": "S14",
+          "word": "法轮功",
+          "start": 0,
+          "end": 5,
+          "orig_text": "法​轮‌功"
+        },
+        {
+          "sample_id": "S15",
+          "word": "赌场",
+          "start": 2,
+          "end": 5,
+          "orig_text": "賭​場"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        }
+      ],
+      "hits": {
+        "S01": [
+          {
+            "sample_id": "S01",
+            "word": "cat",
+            "start": 38,
+            "end": 41,
+            "orig_text": "cat"
+          }
+        ],
+        "S02": [
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 0,
+            "end": 3,
+            "orig_text": "CAT"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 8,
+            "end": 11,
+            "orig_text": "Cat"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 16,
+            "end": 19,
+            "orig_text": "cAt"
+          }
+        ],
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S06": [
+          {
+            "sample_id": "S06",
+            "word": "cat",
+            "start": 1,
+            "end": 4,
+            "orig_text": "ＣＡＴ"
+          }
+        ],
+        "S08": [
+          {
+            "sample_id": "S08",
+            "word": "赌场",
+            "start": 4,
+            "end": 6,
+            "orig_text": "賭場"
+          }
+        ],
+        "S09": [
+          {
+            "sample_id": "S09",
+            "word": "办证",
+            "start": 1,
+            "end": 3,
+            "orig_text": "辦證"
+          }
+        ],
+        "S10": [
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "辦證"
+          },
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 11,
+            "end": 13,
+            "orig_text": "辦證"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ],
+        "S19": [
+          {
+            "sample_id": "S19",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ]
+      }
+    },
+    "ws_keep": {
+      "description": "空白保留 keep：相对 collapse，正常文本中的空格不再折叠",
+      "reported": 16,
+      "tp": 14,
+      "fp": 2,
+      "fn": 3,
+      "precision": 0.875,
+      "recall": 0.823529,
+      "fp_records": [
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證"
+        }
+      ],
+      "fn_records": [
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        }
+      ],
+      "hits": {
+        "S01": [
+          {
+            "sample_id": "S01",
+            "word": "cat",
+            "start": 38,
+            "end": 41,
+            "orig_text": "cat"
+          }
+        ],
+        "S02": [
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 0,
+            "end": 3,
+            "orig_text": "CAT"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 8,
+            "end": 11,
+            "orig_text": "Cat"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 16,
+            "end": 19,
+            "orig_text": "cAt"
+          }
+        ],
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S06": [
+          {
+            "sample_id": "S06",
+            "word": "cat",
+            "start": 1,
+            "end": 4,
+            "orig_text": "ＣＡＴ"
+          }
+        ],
+        "S08": [
+          {
+            "sample_id": "S08",
+            "word": "赌场",
+            "start": 4,
+            "end": 6,
+            "orig_text": "賭場"
+          }
+        ],
+        "S09": [
+          {
+            "sample_id": "S09",
+            "word": "办证",
+            "start": 1,
+            "end": 3,
+            "orig_text": "辦證"
+          }
+        ],
+        "S10": [
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "辦證"
+          },
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 11,
+            "end": 13,
+            "orig_text": "辦證"
+          }
+        ],
+        "S14": [
+          {
+            "sample_id": "S14",
+            "word": "法轮功",
+            "start": 0,
+            "end": 5,
+            "orig_text": "法​轮‌功"
+          }
+        ],
+        "S15": [
+          {
+            "sample_id": "S15",
+            "word": "赌场",
+            "start": 2,
+            "end": 5,
+            "orig_text": "賭​場"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ],
+        "S19": [
+          {
+            "sample_id": "S19",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ]
+      }
+    },
+    "ws_remove": {
+      "description": "空白删除 remove：相对 collapse 能抓拆字空格，跨词粘连误伤更大",
+      "reported": 12,
+      "tp": 9,
+      "fp": 3,
+      "fn": 8,
+      "precision": 0.75,
+      "recall": 0.529412,
+      "fp_records": [
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 4,
+          "end": 7,
+          "orig_text": "辦　證"
+        }
+      ],
+      "fn_records": [
+        {
+          "sample_id": "S01",
+          "word": "cat",
+          "start": 38,
+          "end": 41,
+          "orig_text": "cat"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 0,
+          "end": 3,
+          "orig_text": "CAT"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 8,
+          "end": 11,
+          "orig_text": "Cat"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 16,
+          "end": 19,
+          "orig_text": "cAt"
+        },
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        },
+        {
+          "sample_id": "S19",
+          "word": "cat",
+          "start": 3,
+          "end": 6,
+          "orig_text": "cat"
+        }
+      ],
+      "hits": {
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S06": [
+          {
+            "sample_id": "S06",
+            "word": "cat",
+            "start": 1,
+            "end": 4,
+            "orig_text": "ＣＡＴ"
+          }
+        ],
+        "S08": [
+          {
+            "sample_id": "S08",
+            "word": "赌场",
+            "start": 4,
+            "end": 6,
+            "orig_text": "賭場"
+          }
+        ],
+        "S09": [
+          {
+            "sample_id": "S09",
+            "word": "办证",
+            "start": 1,
+            "end": 3,
+            "orig_text": "辦證"
+          }
+        ],
+        "S10": [
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "辦證"
+          },
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 11,
+            "end": 13,
+            "orig_text": "辦證"
+          }
+        ],
+        "S14": [
+          {
+            "sample_id": "S14",
+            "word": "法轮功",
+            "start": 0,
+            "end": 5,
+            "orig_text": "法​轮‌功"
+          }
+        ],
+        "S15": [
+          {
+            "sample_id": "S15",
+            "word": "赌场",
+            "start": 2,
+            "end": 5,
+            "orig_text": "賭​場"
+          }
+        ],
+        "S16": [
+          {
+            "sample_id": "S16",
+            "word": "办证",
+            "start": 4,
+            "end": 7,
+            "orig_text": "辦　證"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ]
+      }
+    },
+    "homophone_on": {
+      "description": "开启同音折叠(带声调/常用字)：抓同音替字，但会误伤同音正常词",
+      "reported": 20,
+      "tp": 16,
+      "fp": 4,
+      "fn": 1,
+      "precision": 0.8,
+      "recall": 0.941176,
+      "fp_records": [
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S12",
+          "word": "攻势",
+          "start": 3,
+          "end": 5,
+          "orig_text": "公室"
+        },
+        {
+          "sample_id": "S12",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "公事"
+        }
+      ],
+      "fn_records": [
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        }
+      ],
+      "hits": {
+        "S01": [
+          {
+            "sample_id": "S01",
+            "word": "cat",
+            "start": 38,
+            "end": 41,
+            "orig_text": "cat"
+          }
+        ],
+        "S02": [
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 0,
+            "end": 3,
+            "orig_text": "CAT"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 8,
+            "end": 11,
+            "orig_text": "Cat"
+          },
+          {
+            "sample_id": "S02",
+            "word": "cat",
+            "start": 16,
+            "end": 19,
+            "orig_text": "cAt"
+          }
+        ],
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S06": [
+          {
+            "sample_id": "S06",
+            "word": "cat",
+            "start": 1,
+            "end": 4,
+            "orig_text": "ＣＡＴ"
+          }
+        ],
+        "S08": [
+          {
+            "sample_id": "S08",
+            "word": "赌场",
+            "start": 4,
+            "end": 6,
+            "orig_text": "賭場"
+          }
+        ],
+        "S09": [
+          {
+            "sample_id": "S09",
+            "word": "办证",
+            "start": 1,
+            "end": 3,
+            "orig_text": "辦證"
+          }
+        ],
+        "S10": [
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "辦證"
+          },
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 11,
+            "end": 13,
+            "orig_text": "辦證"
+          }
+        ],
+        "S11": [
+          {
+            "sample_id": "S11",
+            "word": "攻击",
+            "start": 4,
+            "end": 6,
+            "orig_text": "供击"
+          }
+        ],
+        "S12": [
+          {
+            "sample_id": "S12",
+            "word": "攻势",
+            "start": 3,
+            "end": 5,
+            "orig_text": "公室"
+          },
+          {
+            "sample_id": "S12",
+            "word": "攻势",
+            "start": 7,
+            "end": 9,
+            "orig_text": "公事"
+          }
+        ],
+        "S13": [
+          {
+            "sample_id": "S13",
+            "word": "攻势",
+            "start": 7,
+            "end": 9,
+            "orig_text": "供势"
+          }
+        ],
+        "S14": [
+          {
+            "sample_id": "S14",
+            "word": "法轮功",
+            "start": 0,
+            "end": 5,
+            "orig_text": "法​轮‌功"
+          }
+        ],
+        "S15": [
+          {
+            "sample_id": "S15",
+            "word": "赌场",
+            "start": 2,
+            "end": 5,
+            "orig_text": "賭​場"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ],
+        "S19": [
+          {
+            "sample_id": "S19",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ]
+      }
+    },
+    "all_aggressive": {
+      "description": "全攻：基线 + 同音折叠 + 空白删除（召回上限，误伤最大）",
+      "reported": 16,
+      "tp": 11,
+      "fp": 5,
+      "fn": 6,
+      "precision": 0.6875,
+      "recall": 0.647059,
+      "fp_records": [
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證"
+        },
+        {
+          "sample_id": "S12",
+          "word": "攻势",
+          "start": 3,
+          "end": 5,
+          "orig_text": "公室"
+        },
+        {
+          "sample_id": "S12",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "公事"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 4,
+          "end": 7,
+          "orig_text": "辦　證"
+        }
+      ],
+      "fn_records": [
+        {
+          "sample_id": "S01",
+          "word": "cat",
+          "start": 38,
+          "end": 41,
+          "orig_text": "cat"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 0,
+          "end": 3,
+          "orig_text": "CAT"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 8,
+          "end": 11,
+          "orig_text": "Cat"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 16,
+          "end": 19,
+          "orig_text": "cAt"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 2,
+          "end": 7,
+          "orig_text": "代　辦　證"
+        },
+        {
+          "sample_id": "S19",
+          "word": "cat",
+          "start": 3,
+          "end": 6,
+          "orig_text": "cat"
+        }
+      ],
+      "hits": {
+        "S03": [
+          {
+            "sample_id": "S03",
+            "word": "cat",
+            "start": 3,
+            "end": 6,
+            "orig_text": "cat"
+          }
+        ],
+        "S04": [
+          {
+            "sample_id": "S04",
+            "word": "天安门",
+            "start": 9,
+            "end": 12,
+            "orig_text": "天安门"
+          }
+        ],
+        "S06": [
+          {
+            "sample_id": "S06",
+            "word": "cat",
+            "start": 1,
+            "end": 4,
+            "orig_text": "ＣＡＴ"
+          }
+        ],
+        "S08": [
+          {
+            "sample_id": "S08",
+            "word": "赌场",
+            "start": 4,
+            "end": 6,
+            "orig_text": "賭場"
+          }
+        ],
+        "S09": [
+          {
+            "sample_id": "S09",
+            "word": "办证",
+            "start": 1,
+            "end": 3,
+            "orig_text": "辦證"
+          }
+        ],
+        "S10": [
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "辦證"
+          },
+          {
+            "sample_id": "S10",
+            "word": "办证",
+            "start": 11,
+            "end": 13,
+            "orig_text": "辦證"
+          }
+        ],
+        "S11": [
+          {
+            "sample_id": "S11",
+            "word": "攻击",
+            "start": 4,
+            "end": 6,
+            "orig_text": "供击"
+          }
+        ],
+        "S12": [
+          {
+            "sample_id": "S12",
+            "word": "攻势",
+            "start": 3,
+            "end": 5,
+            "orig_text": "公室"
+          },
+          {
+            "sample_id": "S12",
+            "word": "攻势",
+            "start": 7,
+            "end": 9,
+            "orig_text": "公事"
+          }
+        ],
+        "S13": [
+          {
+            "sample_id": "S13",
+            "word": "攻势",
+            "start": 7,
+            "end": 9,
+            "orig_text": "供势"
+          }
+        ],
+        "S14": [
+          {
+            "sample_id": "S14",
+            "word": "法轮功",
+            "start": 0,
+            "end": 5,
+            "orig_text": "法​轮‌功"
+          }
+        ],
+        "S15": [
+          {
+            "sample_id": "S15",
+            "word": "赌场",
+            "start": 2,
+            "end": 5,
+            "orig_text": "賭​場"
+          }
+        ],
+        "S16": [
+          {
+            "sample_id": "S16",
+            "word": "办证",
+            "start": 4,
+            "end": 7,
+            "orig_text": "辦　證"
+          }
+        ],
+        "S17": [
+          {
+            "sample_id": "S17",
+            "word": "办证",
+            "start": 2,
+            "end": 4,
+            "orig_text": "办证"
+          }
+        ],
+        "S18": [
+          {
+            "sample_id": "S18",
+            "word": "办证",
+            "start": 3,
+            "end": 5,
+            "orig_text": "办证"
+          }
+        ]
+      }
+    }
+  },
+  "diffs": {
+    "raw": {
+      "added": [],
+      "removed": [
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 0,
+          "end": 3,
+          "orig_text": "CAT",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 8,
+          "end": 11,
+          "orig_text": "Cat",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 16,
+          "end": 19,
+          "orig_text": "cAt",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S06",
+          "word": "cat",
+          "start": 1,
+          "end": 4,
+          "orig_text": "ＣＡＴ",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S08",
+          "word": "赌场",
+          "start": 4,
+          "end": 6,
+          "orig_text": "賭場",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證",
+          "kind": "FP"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證",
+          "kind": "FP"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 11,
+          "end": 13,
+          "orig_text": "辦證",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S14",
+          "word": "法轮功",
+          "start": 0,
+          "end": 5,
+          "orig_text": "法​轮‌功",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S15",
+          "word": "赌场",
+          "start": 2,
+          "end": 5,
+          "orig_text": "賭​場",
+          "kind": "TP"
+        }
+      ]
+    },
+    "no_casefold": {
+      "added": [],
+      "removed": [
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 0,
+          "end": 3,
+          "orig_text": "CAT",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 8,
+          "end": 11,
+          "orig_text": "Cat",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 16,
+          "end": 19,
+          "orig_text": "cAt",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S06",
+          "word": "cat",
+          "start": 1,
+          "end": 4,
+          "orig_text": "ＣＡＴ",
+          "kind": "TP"
+        }
+      ]
+    },
+    "no_width": {
+      "added": [],
+      "removed": [
+        {
+          "sample_id": "S06",
+          "word": "cat",
+          "start": 1,
+          "end": 4,
+          "orig_text": "ＣＡＴ",
+          "kind": "TP"
+        }
+      ]
+    },
+    "no_t2s": {
+      "added": [],
+      "removed": [
+        {
+          "sample_id": "S08",
+          "word": "赌场",
+          "start": 4,
+          "end": 6,
+          "orig_text": "賭場",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S09",
+          "word": "办证",
+          "start": 1,
+          "end": 3,
+          "orig_text": "辦證",
+          "kind": "FP"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 3,
+          "end": 5,
+          "orig_text": "辦證",
+          "kind": "FP"
+        },
+        {
+          "sample_id": "S10",
+          "word": "办证",
+          "start": 11,
+          "end": 13,
+          "orig_text": "辦證",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S15",
+          "word": "赌场",
+          "start": 2,
+          "end": 5,
+          "orig_text": "賭​場",
+          "kind": "TP"
+        }
+      ]
+    },
+    "no_zero_width": {
+      "added": [],
+      "removed": [
+        {
+          "sample_id": "S14",
+          "word": "法轮功",
+          "start": 0,
+          "end": 5,
+          "orig_text": "法​轮‌功",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S15",
+          "word": "赌场",
+          "start": 2,
+          "end": 5,
+          "orig_text": "賭​場",
+          "kind": "TP"
+        }
+      ]
+    },
+    "ws_keep": {
+      "added": [],
+      "removed": []
+    },
+    "ws_remove": {
+      "added": [
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 4,
+          "end": 7,
+          "orig_text": "辦　證",
+          "kind": "FP"
+        }
+      ],
+      "removed": [
+        {
+          "sample_id": "S01",
+          "word": "cat",
+          "start": 38,
+          "end": 41,
+          "orig_text": "cat",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 0,
+          "end": 3,
+          "orig_text": "CAT",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 8,
+          "end": 11,
+          "orig_text": "Cat",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 16,
+          "end": 19,
+          "orig_text": "cAt",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S19",
+          "word": "cat",
+          "start": 3,
+          "end": 6,
+          "orig_text": "cat",
+          "kind": "TP"
+        }
+      ]
+    },
+    "homophone_on": {
+      "added": [
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S12",
+          "word": "攻势",
+          "start": 3,
+          "end": 5,
+          "orig_text": "公室",
+          "kind": "FP"
+        },
+        {
+          "sample_id": "S12",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "公事",
+          "kind": "FP"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势",
+          "kind": "TP"
+        }
+      ],
+      "removed": []
+    },
+    "all_aggressive": {
+      "added": [
+        {
+          "sample_id": "S11",
+          "word": "攻击",
+          "start": 4,
+          "end": 6,
+          "orig_text": "供击",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S12",
+          "word": "攻势",
+          "start": 3,
+          "end": 5,
+          "orig_text": "公室",
+          "kind": "FP"
+        },
+        {
+          "sample_id": "S12",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "公事",
+          "kind": "FP"
+        },
+        {
+          "sample_id": "S13",
+          "word": "攻势",
+          "start": 7,
+          "end": 9,
+          "orig_text": "供势",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S16",
+          "word": "办证",
+          "start": 4,
+          "end": 7,
+          "orig_text": "辦　證",
+          "kind": "FP"
+        }
+      ],
+      "removed": [
+        {
+          "sample_id": "S01",
+          "word": "cat",
+          "start": 38,
+          "end": 41,
+          "orig_text": "cat",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 0,
+          "end": 3,
+          "orig_text": "CAT",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 8,
+          "end": 11,
+          "orig_text": "Cat",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S02",
+          "word": "cat",
+          "start": 16,
+          "end": 19,
+          "orig_text": "cAt",
+          "kind": "TP"
+        },
+        {
+          "sample_id": "S19",
+          "word": "cat",
+          "start": 3,
+          "end": 6,
+          "orig_text": "cat",
+          "kind": "TP"
+        }
+      ]
+    }
+  }
+}

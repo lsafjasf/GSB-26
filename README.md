@@ -10,6 +10,8 @@
 ```
 sensitive/
   normalize.py     归一化配置、Normalizer、Normalized（位置映射）
+  data/            繁简 1:1 / 同音字表（随包静态文件 + build_tables.py）
+eval/              标注样本集 + 可复跑误伤评估脚本（见 eval/README.md）
   ahocorasick.py   Aho-Corasick 自动机（Trie/失败指针/字典后缀链）
   engine.py        SensitiveEngine：归一化 + AC + 边界 + 白名单，Hit 结果
   naive.py         朴素逐词 str.find 扫描（参考实现，仅供对拍）
@@ -34,8 +36,14 @@ for h in eng.find_all("去天安门广场，练习法\u200b轮"):
 ## 运行命令
 
 ```bash
-# 全部自测（28 个：单测 + 60 组随机对拍 + 3000 词大规模对拍 + 误伤评估）
+# 全部自测（43 个：单测 + 60 组随机对拍 + 3000 词大规模对拍 + 评估管线）
 python3 -m unittest discover -s tests -v
+
+# 误伤评估：从标注集现场重算各策略 命中/误伤/P/R + 逐条策略差异
+python3 eval/run_eval.py --out eval/last_report.txt --json eval/last_results.json
+
+# 重建随包繁简/同音字表（需联网，产物已随库；运行期离线）
+python3 sensitive/data/build_tables.py
 
 # 大规模对拍 + 吞吐/内存（默认 10000 词 / 50 万码点，固定种子可复现）
 python3 bench/benchmark.py
@@ -63,8 +71,11 @@ python3 bench/benchmark.py --words 50000 --text 2000000 --runs 3
 ## 归一化与位置映射
 
 所有变换在码点层面进行，且**只做一对一替换或删除**（`str.casefold` 的一对多
-展开如 `ß→ss` 会跳过、不折叠），因此归一化文本的每个码点都能对应回原文一个
-码点。
+展开如 `ß→ss` 会跳过、不折叠；繁简只收单字 1:1），因此归一化文本的每个码点
+都能对应回原文一个码点。单码点变换按固定顺序串接：零宽删除 → 全半角 →
+繁→简 → 同音折叠 → 空白 → 大小写折叠。繁简/同音字表是随包的静态文本
+（`sensitive/data/`），运行期完全离线；`build_tables.py` 记录了上游来源与
+sha256，可重建复现。
 
 `Normalized` 结构：
 
@@ -78,8 +89,10 @@ python3 bench/benchmark.py --words 50000 --text 2000000 --runs 3
 
 | 选项 | 默认 | 说明 |
 | --- | --- | --- |
-| `casefold` | 开 | `str.casefold()` 一对一大小写折叠 |
+| `casefold` | 开 | `str.casefold()` 一对一大小写折叠（一对多展开跳过） |
 | `width` | 开 | 全角 ASCII（U+FF01–U+FF5E） → 半角；`U+3000` 全角空格 → 空格 |
+| `t2s` | 开 | 繁→简 **严格单字 1:1**（随包 3151 条，源自 OpenCC）；一对多/词级转换不处理 |
+| `homophone` | **关** | 同音折叠到代表字（带声调/单音字/GB2312 一级常用字，753 组）；`homophone_table` 可自定义。误伤面大，默认关 |
 | `whitespace` | `collapse` | `keep` 保留 / `collapse` 所有 Unicode 空白折叠成一个 ASCII 空格 / `remove` 全部删除 |
 | `zero_width` | 开 | 删除 U+200B/200C/200D/2060/FEFF/180E、U+2061–2064；变体选择符 U+FE00–FE0F 不删 |
 
@@ -109,20 +122,64 @@ python3 bench/benchmark.py --words 50000 --text 2000000 --runs 3
   （白名单允许更长，如敏感词「天安」被「天安门」覆盖；短白名单不能放行
   长敏感词）。多个重叠白名单区间都生效。
 
-### 3. 误伤评估方法与结果
+### 3. 误伤评估：标注集 + 可复跑脚本（各归一化策略对照）
 
-`tests/test_false_positives.py` 对刻意构造的样本逐句人工标注“应命中”区间，
-计算 precision / recall 并列出 FP/FN。关键结果：
+误伤评估已从少量手工样例升级为**可复跑的数据管线**（代码在 `eval/`，
+语料 `eval/corpus.py`、档位 `eval/profiles.py`、脚本 `eval/run_eval.py`）：
 
-- 样本 `scatter bobcat category concatenate a cat.`，不开边界上报 5 次，
-  其中 4 次是子串误伤，precision = **20%**（5 报 1 对），recall = 100%；
-  开启 `use_boundary` 后只剩独立 `cat`，precision/recall = **100%/100%**。
-- 规避样本：`ＣＡＴ\u200b`（全角+大写+零宽）归一化后照常命中，且返回原文
-  偏移；`cat123` 在边界模式下正确不上报。
-- 空白取舍：`collapse`（默认）下 `敏 感 词` 不命中（降低误伤，但可被空格
-  拆字绕过）；`whitespace="remove"` 下命中、原文区间包含被删空格
-  （防绕过，误伤面更大）。两种策略都提供，由业务选档。
-- 白名单：「去天安门，天安」中被「天安门」覆盖的命中放行，独立「天安」保留。
+- 19 条人工标注样本（17 个真值命中），覆盖大小写/全半角/繁体/零宽/
+  同音替字/拆字空格规避与正常文本、白名单；真值区间指原文，与策略无关。
+- 每条命身份为 `(样本, 词, 原文start, 原文end)`，可跨策略直接做集合差。
+- 脚本现场扫描重算每个档位的 reported/TP/FP/FN 与 precision/recall，
+  列出**每条误伤/漏报**，并相对基准档 **逐条** 输出 `+新增/-消失` 命中
+  （标明 TP/FP）。固定开词边界、统一白名单，差异只来自归一化。
+
+复跑：
+
+```bash
+python3 eval/run_eval.py --out eval/last_report.txt --json eval/last_results.json
+python3 eval/run_eval.py --diff-from base_default homophone_on ws_remove
+```
+
+本次真实输出（数字以脚本重跑为准，完整清单见 `eval/last_report.txt` 与
+`eval/README.md`）：
+
+| 档位 | reported | TP | FP(误伤) | FN | precision | recall |
+| --- | ---:| ---:| ---:| ---:| ---:| ---:|
+| `raw` 全关 | 6 | 6 | 0 | 11 | 100.0% | 35.3% |
+| `base_default` 基线 | 16 | 14 | 2 | 3 | 87.5% | 82.4% |
+| 关 `casefold` | 12 | 10 | 2 | 7 | 83.3% | 58.8% |
+| 关 `width` | 15 | 13 | 2 | 4 | 86.7% | 76.5% |
+| 关 `t2s` | 11 | 11 | 0 | 6 | 100.0% | 64.7% |
+| 关 `zero_width` | 14 | 12 | 2 | 5 | 85.7% | 70.6% |
+| `whitespace=remove` | 12 | 9 | 3 | 8 | 75.0% | 52.9% |
+| 开 `homophone` | 20 | 16 | 4 | 1 | 80.0% | 94.1% |
+| 全开（同音+remove） | 16 | 11 | 5 | 6 | 68.8% | 64.7% |
+
+代表性误伤/差异（逐条，节选自报告）：
+
+- 繁简：关 `t2s` 少 3 条繁体 TP，同时少 2 条误伤——「代辦證件」里的
+  「辦證」被折成「办证」邻接命中（S09/S10），属繁简带来的 FP。
+- 同音：开 `homophone` 净 +4 条：抓到「供击→攻击」「供势→攻势」2 条
+  对抗 TP，但「办公室」的「公室」与正常词「公事」被折成「攻势」，2 条
+  真误伤。带声调、限常用字、多音字剔除仍有此碰撞，故默认关闭。
+- 空白 remove：抓到「代　辦　證」拆字，但英文 `a cat sat` 删空格后
+  粘连成词，边界判词内，反漏 5 条英文 TP——对英文文本是净负收益。
+
+#### 各策略适用边界与关闭
+
+- `casefold` / `width`：解决大小写、全角规避，碰撞面极小，默认开；
+  关闭：`casefold=False` / `width=False`。
+- `t2s`：繁简混排建议开，单字 1:1 不猜词；双字词跨字邻接会多报，
+  需要时 `t2s=False`。一对多（發/髮、乾）本就不处理。
+- `homophone`：仅建议对少量重点词、高对抗渠道临时开启（或用
+  `homophone_table` 只折叠目标词涉及的字），全局开启会误伤同音正常词；
+  默认 `homophone=False`。
+- `zero_width`：通用默认开；代价仅是原文 span 会含不可见字符；
+  `zero_width=False` 关闭。
+- `whitespace`：一般文本用 `collapse`（默认）；纯 CJK 高对抗可
+  `remove`，但英文文本会跨词粘连；`keep` 最保守。
+- 词边界与白名单仍是两层基础误伤控制（见上两节），与归一化解耦。
 
 ## 实现要点
 

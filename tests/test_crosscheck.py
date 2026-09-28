@@ -11,7 +11,7 @@ from sensitive import SensitiveEngine, naive_find_all
 from sensitive.normalize import NormalizeConfig, WS_COLLAPSE, WS_KEEP, WS_REMOVE
 
 ALPHABET = list("abcathelo")  # 英文小字母表，提高重叠概率
-CJK = list("天安门敏感词法轮功练习广场")
+CJK = list("天安门敏感词法轮功练习广场攻击攻势办证赌场賭場辦證賭辦證體門廣場攻供公事势夫")
 NOISE = ["  ", "\u3000", "\u200b", "  \u200b "]  # 空白/零宽噪声
 
 
@@ -72,6 +72,11 @@ class TestCrossCheck(unittest.TestCase):
             NormalizeConfig(whitespace=WS_KEEP),
             NormalizeConfig(zero_width=False),
             NormalizeConfig(casefold=False, width=False, whitespace=WS_KEEP, zero_width=False),
+            NormalizeConfig(t2s=False),
+            NormalizeConfig(homophone=True),
+            NormalizeConfig(homophone=True, t2s=True, whitespace=WS_REMOVE),
+            NormalizeConfig(casefold=False, width=False, t2s=False,
+                            homophone=True, whitespace=WS_KEEP, zero_width=False),
         ]
         for seed in range(60):
             rng = random.Random(seed)

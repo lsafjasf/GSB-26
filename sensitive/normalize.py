@@ -1,7 +1,7 @@
 """文本归一化与位置映射。
 
 所有归一化都在 Unicode 码点层面进行，且保持 **单码点 -> 单码点/删除**
-的映射关系（``str.casefold`` 的多码点展开会被拒绝，见下），因此每个归一化
+的映射关系（``str.casefold`` 的多码点展开会被跳过，见下），因此每个归一化
 后的码点都能精确对应回原文中的一个码点偏移。
 
 归一化项目（均可独立开关）：
@@ -10,6 +10,15 @@
   例如 ß -> ss 的情形会因一对多而被跳过，不做折叠）。
 * ``width``      全半角转换：全角 ASCII（U+FF01..U+FF5E）-> 半角，
   全角空格 U+3000 -> 普通空格 U+0020。半角片假名不在处理范围内。
+* ``t2s``        繁→简 **严格单字 1:1** 映射（数据见
+  ``data/t2s_chars.txt``，源自 OpenCC，只收录单字且目标也是单字的
+  条目，3151 条）。一对多/词级繁简转换（如「乾→干/乾」「發/髮」）不在
+  表内，保持原字；因此仍是单码点变换，位置映射成立。
+* ``homophone``  同音折叠：把同音字（带声调、拼音相同）统一折叠到该
+  同音组的代表字（数据见 ``data/homophone_groups.txt``，753 组 / 3372
+  个 GB2312 一级常用字，多音字剔除）。误伤面很大，**默认关闭**，仅适合
+  对少量重点词做对抗拆字时开启，详见 README「同音折叠的边界」。
+  可用 ``homophone_table`` 传入自定义映射（``{原字: 折叠目标}``）。
 * ``whitespace`` 空白处理，三种模式：
   - ``"keep"``     原样保留（仅在 width 开启时 U+3000 变空格）；
   - ``"collapse"`` 所有 Unicode 空白折叠为一个 ASCII 空格，连续多个
@@ -22,11 +31,16 @@
 
 注意：选项的组合是确定的，词典与文本必须用同一套配置归一化，本模块的
 ``Normalizer`` 保证这一点。
+
+单码点变换固定按以下顺序串接：零宽删除 → 全半角 → 繁→简 → 同音折叠 →
+空白处理 → 大小写折叠；每一步都只做 1:1 替换或删除，因此全链路保持
+单码点对应。
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 
 WS_KEEP = "keep"
 WS_COLLAPSE = "collapse"
@@ -43,14 +57,48 @@ _ZERO_WIDTH = (
 )
 _ZERO_WIDTH_SET = frozenset(_ZERO_WIDTH)
 
+_DATA_DIR = Path(__file__).resolve().parent / "data"
+_T2S_TABLE_FILE = _DATA_DIR / "t2s_chars.txt"
+_HOMOPHONE_TABLE_FILE = _DATA_DIR / "homophone_groups.txt"
+
+
+def _load_t2s_table() -> dict[str, str]:
+    """加载繁→简严格 1:1 单字表（每行两个汉字）。"""
+    table: dict[str, str] = {}
+    with _T2S_TABLE_FILE.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if len(line) == 2:
+                table[line[0]] = line[1]
+    return table
+
+
+def _load_homophone_table() -> dict[str, str]:
+    """加载同音折叠表（每行一组，首列为折叠目标，其余字映射到首列）。"""
+    table: dict[str, str] = {}
+    with _HOMOPHONE_TABLE_FILE.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if len(line) >= 2:
+                target = line[0]
+                for ch in line[1:]:
+                    table[ch] = target
+    return table
+
 
 @dataclass(frozen=True)
 class NormalizeConfig:
     casefold: bool = True
     width: bool = True
+    # 繁→简单字 1:1（默认开启：覆盖面大、语义碰撞少；详见 README）
+    t2s: bool = True
+    # 同音折叠（默认关闭：误伤面大，仅重点词对抗场景开启）
+    homophone: bool = False
     # "keep" | "collapse" | "remove"
     whitespace: str = WS_COLLAPSE
     zero_width: bool = True
+    # 自定义同音映射（仅在 homophone=True 时生效）；None 表示用随包字表
+    homophone_table: dict[str, str] | None = field(default=None, compare=False)
 
     def __post_init__(self) -> None:
         if self.whitespace not in (WS_KEEP, WS_COLLAPSE, WS_REMOVE):
@@ -61,7 +109,12 @@ class NormalizeConfig:
 DEFAULT_CONFIG = NormalizeConfig()
 # 不归一化：原样匹配
 RAW_CONFIG = NormalizeConfig(
-    casefold=False, width=False, whitespace=WS_KEEP, zero_width=False
+    casefold=False,
+    width=False,
+    t2s=False,
+    homophone=False,
+    whitespace=WS_KEEP,
+    zero_width=False,
 )
 
 
@@ -97,8 +150,27 @@ class Normalized:
 class Normalizer:
     """按固定 :class:`NormalizeConfig` 归一化文本与敏感词。"""
 
+    # 随包静态字表惰性加载、进程内共享（不可变映射，只读安全）
+    _t2s_table: dict[str, str] | None = None
+    _homophone_table: dict[str, str] | None = None
+
     def __init__(self, config: NormalizeConfig = DEFAULT_CONFIG) -> None:
         self.config = config
+        if config.homophone:
+            if config.homophone_table is not None:
+                self._homophone = config.homophone_table
+            else:
+                if Normalizer._homophone_table is None:
+                    Normalizer._homophone_table = _load_homophone_table()
+                self._homophone = Normalizer._homophone_table
+        else:
+            self._homophone = {}
+        if config.t2s:
+            if Normalizer._t2s_table is None:
+                Normalizer._t2s_table = _load_t2s_table()
+            self._t2s = Normalizer._t2s_table
+        else:
+            self._t2s = {}
 
     # -- 单码点变换 -------------------------------------------------------
 
@@ -117,6 +189,14 @@ class Normalizer:
             elif cp == 0x3000:
                 ch = " "
                 cp = 0x20
+
+        # 繁→简（严格 1:1 单字表，未收录的字保持原样）
+        if cfg.t2s:
+            ch = self._t2s.get(ch, ch)
+
+        # 同音折叠（组内字 -> 代表字；未收录的字保持原样）
+        if cfg.homophone:
+            ch = self._homophone.get(ch, ch)
 
         if cfg.whitespace != WS_KEEP and ch.isspace():
             if cfg.whitespace == WS_REMOVE:

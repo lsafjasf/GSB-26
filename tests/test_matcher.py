@@ -110,6 +110,59 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(eng.word_count, 1)
         self.assertEqual(eng.skipped_words, ("\u200b",))
 
+    def test_t2s_traditional_evasion_and_position(self):
+        eng = SensitiveEngine(["赌场", "办证大厅"])
+        text = "這家地下賭場，去辦證大廳辦事"
+        hits = [(h.word, h.start, h.end) for h in eng.find_all(text)]
+        self.assertIn(("赌场", 4, 6), hits)
+        self.assertIn(("办证大厅", 8, 12), hits)
+        # 原文区间即繁体字形本身
+        self.assertEqual(text[4:6], "賭場")
+
+    def test_t2s_can_be_disabled(self):
+        eng = SensitiveEngine(
+            ["赌场"], config=NormalizeConfig(t2s=False)
+        )
+        self.assertEqual(eng.find_all("地下賭場"), [])
+        # 简体仍可命中
+        self.assertEqual(len(eng.find_all("地下赌场")), 1)
+
+    def test_t2s_is_strict_one_to_one_only(self):
+        # 不在 1:1 表中的字（如异体/一对多）保持原样，不做词级猜测
+        norm = Normalizer(DEFAULT_CONFIG)
+        # 「乾」属一对多（干/乾），表内不应收录 -> 保持原字
+        self.assertEqual(norm.normalize_pattern("乾"), "乾")
+
+    def test_homophone_evasion_caught_when_enabled(self):
+        eng = SensitiveEngine(
+            ["攻击"], config=NormalizeConfig(homophone=True)
+        )
+        # 功 gōng 被同音字 供 gōng 替换；折叠后命中
+        hits = [(h.word, h.start, h.end) for h in eng.find_all("遭供击了")]
+        self.assertEqual(hits, [("攻击", 1, 3)])
+
+    def test_homophone_off_by_default(self):
+        eng = SensitiveEngine(["攻击"])
+        self.assertEqual(eng.find_all("遭供击了"), [])
+
+    def test_homophone_uses_tone_sensitive_groups(self):
+        # 法 fǎ 同音组只有自身；伐 fá（不同声调）不折叠为法
+        eng = SensitiveEngine(
+            ["法"], config=NormalizeConfig(homophone=True)
+        )
+        self.assertEqual(eng.find_all("伐木"), [])
+        self.assertEqual(len(eng.find_all("法国")), 1)
+
+    def test_homophone_custom_table(self):
+        table = {"x": "a", "y": "a"}  # 自定义：x/y 都折叠到 a
+        cfg = NormalizeConfig(
+            homophone=True, homophone_table=table, t2s=False,
+            width=False, casefold=False, zero_width=False, whitespace="keep",
+        )
+        eng = SensitiveEngine(["ab"], config=cfg)
+        self.assertEqual(len(eng.find_all("xb")), 1)
+        self.assertEqual(len(eng.find_all("yb")), 1)
+
 
 class TestBoundary(unittest.TestCase):
     def test_ascii_boundary(self):
