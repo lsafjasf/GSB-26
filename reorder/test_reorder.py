@@ -133,6 +133,47 @@ class FixedRegressionTest(unittest.TestCase):
         self.assertEqual(buf.push(3, "d"), ["c", "d"])
         self.assertEqual(len(buf.gaps), 1)
 
+    def test_gap_timer_reset_after_skip_then_new_gap(self):
+        """跳过缺口后新增缺口：新缺口必须按完整窗口独立等待。"""
+        buf, clock = self.make_buf(gap_timeout=5.0)
+        buf.push(0, "m0")
+        buf.push(2, "m2")   # 缺口1：序号 1 缺失
+        buf.push(4, "m4")   # 预放：3 将来缺失（缺口2），保证跳过后缓冲非空
+        clock.advance(5.0)
+        self.assertEqual(buf.flush(), ["m2"])           # 跳过缺口 [1,1]
+        self.assertEqual([(g.gap_start, g.gap_end) for g in buf.gaps], [(1, 1)])
+
+        # 新缺口（序号 3）独立起算：仅过 0.1 绝不能被跳过
+        clock.advance(0.1)
+        self.assertEqual(buf.flush(), [])
+        self.assertEqual(len(buf.gaps), 1)
+        # 累计等待 4.9（< 完整窗口 5.0）仍不能跳过
+        clock.advance(4.8)
+        self.assertEqual(buf.flush(), [])
+        self.assertEqual(len(buf.gaps), 1)
+
+        # 真正迟到的 3 在超时前到达，必须正常交付而不是被当成重复丢弃
+        self.assertEqual(buf.push(3, "m3-late"), ["m3-late", "m4"])
+        self.assertEqual(buf.duplicates, 0)
+        self.assertEqual(len(buf.gaps), 1)
+
+    def test_gap_timer_reset_after_late_fill_then_new_gap(self):
+        """缺口在窗口内被补齐（非跳过）后出现新缺口：仍须独立起算。"""
+        buf, clock = self.make_buf(gap_timeout=5.0)
+        buf.push(0, "m0")
+        buf.push(2, "m2")   # 缺口1：序号 1 缺失
+        buf.push(4, "m4")   # 缺口2：序号 3 将缺失
+        clock.advance(4.9)
+        self.assertEqual(buf.push(1, "m1"), ["m1", "m2"])  # 补齐缺口1
+        self.assertEqual(len(buf.gaps), 0)
+
+        # 新缺口（序号 3）只独立等了 0.2，不能沿用旧锚点提前超时
+        clock.advance(0.2)
+        self.assertEqual(buf.flush(), [])
+        self.assertEqual(len(buf.gaps), 0)
+        self.assertEqual(buf.push(3, "m3-late"), ["m3-late", "m4"])
+        self.assertEqual(buf.duplicates, 0)
+
     # ---- 判重 ----
 
     def test_duplicate_delivered_once(self):

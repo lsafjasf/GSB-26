@@ -18,7 +18,9 @@
 3. 空洞处理：next_expected 缺失且缓冲非空时开始计时，超过
    gap_timeout 即报告缺口 [next_expected, min_buffered - 1]，
    把 next_expected 推进到最小缓冲序号并继续交付。基线单调前进，
-   已交付消息永远不会再次交付。
+   已交付消息永远不会再次交付。每个缺口独立起算：缺口等待锚点
+   (_gap_since) 只属于当前缺口，一旦基线向前推进（缺口被跳过或被
+   迟到消息补齐）即清除，新缺口重新计时，不会复用上一个缺口的时间。
 4. 缓冲上界：任意时刻缓冲条目数 <= max_window。溢出策略 on_full：
      - "reject"（默认）：拒绝新消息，计入 dropped；
      - "expire"：立即按空洞处理推进基线（等价于超时立即触发），
@@ -114,23 +116,32 @@ class ReorderBuffer:
 
     def _drain(self):
         delivered = []
-        now = self._now()
-
-        if self.next_expected not in self._buf:
-            if self._buf:
-                if self._gap_since is None:
-                    self._gap_since = now
-                elif now - self._gap_since >= self.gap_timeout:
-                    self._skip_gap()
-            else:
+        # 每个缺口必须独立起算：只要基线缺失被消除（缺口被跳过或被
+        # 补齐）而向前推进，旧锚点立即失效，新缺口重新计时。循环每次
+        # 排空后重新评估，因此一次调用内可连续处理多个缺口。
+        while True:
+            if self.next_expected in self._buf:
+                # 头部到位：此前的等待（若有）随缺口消除而结束
                 self._gap_since = None
+                while self.next_expected in self._buf:
+                    delivered.append(self._buf.pop(self.next_expected))
+                    self.next_expected = (self.next_expected + 1) % self.mod
 
-        while self.next_expected in self._buf:
-            delivered.append(self._buf.pop(self.next_expected))
-            self.next_expected = (self.next_expected + 1) % self.mod
+            if self.next_expected in self._buf:
+                continue
 
-        if not self._buf:
-            self._gap_since = None
+            # 基线缺失
+            if not self._buf:
+                self._gap_since = None
+                break
+
+            now = self._now()
+            if self._gap_since is None:
+                self._gap_since = now
+                break
+            if now - self._gap_since < self.gap_timeout:
+                break
+            self._skip_gap()  # 内部重置锚点，下一轮按新缺口独立起算
         return delivered
 
     def _skip_gap(self):
