@@ -1,0 +1,31 @@
+{
+  "large": {
+    "scenario": "random 1,000,000 nodes / 10,000,000 edges",
+    "nodes": 1000000,
+    "edges": 10000000,
+    "seed": 20260928,
+    "build_seconds": 28.011,
+    "freeze_seconds": 23.694,
+    "graph_rss_mb": 3232.3,
+    "walk_seconds_median": 8.777,
+    "walk_seconds_runs": [
+      8.921,
+      8.533,
+      8.777
+    ],
+    "edges_per_second": 1139340,
+    "visited_nodes": 1000000,
+    "processed_edges": 10000000,
+    "completed": true,
+    "walk_extra_peak_rss_mb": 80.3,
+    "walk_residual_rss_mb": 0.0,
+    "node_order_sha256": "7b8f269ab1f1ba01ea1cb69d69eb2abdd98b88311ce896f1083cc9e66112988b",
+    "edge_order_sha256": "93b0d31a3064d577cff0f4b6a3d19cff73fb8bd5d089431eda02e5cc35f4cc27",
+    "reproducibility_after_shuffle": {
+      "node_hash_identical": true,
+      "edge_hash_identical": true,
+      "shuffled_build_seconds": 37.61,
+      "shuffled_freeze_seconds": 22.831
+    }
+  }
+}

@@ -1,0 +1,30 @@
+test_100k_chain_iterative_no_recursion (test_dfs.FixedInvariantsTest.test_100k_chain_iterative_no_recursion) ... ok
+test_cycle_nodes_visited_once (test_dfs.FixedInvariantsTest.test_cycle_nodes_visited_once) ... ok
+test_exception_clears_state_and_rewalk_identical (test_dfs.FixedInvariantsTest.test_exception_clears_state_and_rewalk_identical) ... ok
+test_exception_during_on_edge_also_cleans_up (test_dfs.FixedInvariantsTest.test_exception_during_on_edge_also_cleans_up) ... ok
+test_parallel_edges_each_processed_once (test_dfs.FixedInvariantsTest.test_parallel_edges_each_processed_once) ... ok
+test_undirected_edge_processed_once_from_either_end (test_dfs.FixedInvariantsTest.test_undirected_edge_processed_once_from_either_end) ... ok
+test_deterministic_hashes_three_runs (test_dfs.OrderAndDedupTest.test_deterministic_hashes_three_runs) ... ok
+test_duplicate_edge_id_rejected (test_dfs.OrderAndDedupTest.test_duplicate_edge_id_rejected) ... ok
+test_insertion_policy_preserves_add_order (test_dfs.OrderAndDedupTest.test_insertion_policy_preserves_add_order)
+INSERTION 策略：邻接顺序即录入顺序（旧行为）。 ... ok
+test_matches_independent_reference_on_random_graph (test_dfs.OrderAndDedupTest.test_matches_independent_reference_on_random_graph) ... ok
+test_order_independent_of_insertion_order (test_dfs.OrderAndDedupTest.test_order_independent_of_insertion_order)
+打乱 add_edge 录入顺序，SORTED 下节点序/边序逐条不变。 ... ok
+test_reproducibility_shuffled_insertion (test_dfs.OrderAndDedupTest.test_reproducibility_shuffled_insertion) ... ok
+test_self_loop_stored_once (test_dfs.OrderAndDedupTest.test_self_loop_stored_once) ... ok
+test_simple_policy_folds_parallel_edges (test_dfs.OrderAndDedupTest.test_simple_policy_folds_parallel_edges) ... ok
+test_simple_policy_folds_self_loop_and_undirected (test_dfs.OrderAndDedupTest.test_simple_policy_folds_self_loop_and_undirected) ... ok
+test_sorted_diamond_order_matches_rule (test_dfs.OrderAndDedupTest.test_sorted_diamond_order_matches_rule) ... ok
+test_walk_all_source_order_is_sorted (test_dfs.OrderAndDedupTest.test_walk_all_source_order_is_sorted)
+全图遍历：源按节点键升序；含两个不连通分量。 ... ok
+test_bug1_deep_chain_stack_overflow (test_dfs.ReproduceBugsTest.test_bug1_deep_chain_stack_overflow) ... ok
+test_bug2_cycle_revisits_nodes (test_dfs.ReproduceBugsTest.test_bug2_cycle_revisits_nodes) ... ok
+test_bug3_parallel_undirected_edge_processed_twice (test_dfs.ReproduceBugsTest.test_bug3_parallel_undirected_edge_processed_twice) ... ok
+test_bug4_exception_poisons_later_walk (test_dfs.ReproduceBugsTest.test_bug4_exception_poisons_later_walk) ... ok
+test_100k_chain_order_equals_reference (test_dfs.ScaleChainTest.test_100k_chain_order_equals_reference) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.779s
+
+OK

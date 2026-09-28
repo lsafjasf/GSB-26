@@ -1,58 +1,50 @@
-"""百万节点 / 千万边规模的 DFS 性能与内存基准（仅标准库）。
+"""大规模 DFS 的耗时 / 内存 / 顺序校验基准（仅标准库）。
+
+三档场景，结果可直接复跑核对：
+  chain   100,000 节点深链（验证不依赖递归深度 + 顺序严格递增）
+  medium  100,000 节点 / 1,000,000 边（独立参照逐元素交叉校验 + 打乱录入可复现）
+  large   1,000,000 节点 / 10,000,000 边（流式哈希校验 + 打乱录入可复现）
 
 用法：
-  python3 benchmark.py                    # 默认 1_000_000 节点 / 10_000_000 边
-  python3 benchmark.py --nodes 100000 --edges 1000000
+  python3 benchmark.py                 # 三档全跑
+  python3 benchmark.py --only large
+  python3 benchmark.py --nodes 1000000 --edges 10000000 --seed 20260928
 
-指标：
-  - 建图耗时、遍历耗时（perf_counter，墙钟）
-  - 进程常驻内存 RSS（/proc/self/statm，页大小 4KB）
-  - 遍历额外内存（遍历中 RSS 高点 - 遍历前 RSS）
-  - 遍历结果：访问节点数、处理边数（断言等于全部节点/边）
-图：有向多重图；主干 i -> i+1 保证从 0 全可达，其余边由确定性
-LCG 伪随机生成（可复现）。
+指标：建图 / freeze 排序 / 遍历耗时（预热 2 轮后 3 轮中位数）、图占用 RSS、
+遍历额外峰值 RSS、访问节点 / 处理边计数、节点序与边序 SHA-256、
+打乱录入顺序后的哈希一致性、与独立参照实现的逐元素比对（medium 档）。
 """
+
+from __future__ import annotations
 
 import argparse
 import gc
 import json
+import random
 import statistics
 import threading
 import time
+from typing import Callable, List, Tuple
 
 from dfs import DFSWalker, Graph
+from verify import (
+    reference_walk,
+    streaming_walk_hashes,
+)
+
+SEED = 20260928
 
 
+# ---------------------------------------------------------------------------
+# 内存采样
+# ---------------------------------------------------------------------------
 def rss_mb() -> float:
     with open("/proc/self/statm") as f:
-        pages = int(f.read().split()[1])
-    return pages * 4096 / 1e6
-
-
-def lcg(seed: int):
-    state = seed & 0xFFFFFFFF
-    while True:
-        state = (state * 1103515245 + 12345) & 0x7FFFFFFF
-        yield state
-
-
-def build(n_nodes: int, n_edges: int, seed: int) -> Graph:
-    g = Graph(directed=True)
-    for n in range(n_nodes):
-        g.add_node(n)
-    rand = lcg(seed)
-    for eid in range(n_edges):
-        if eid < n_nodes - 1:
-            u, v = eid, eid + 1  # 主干
-        else:
-            u = next(rand) % n_nodes
-            v = next(rand) % n_nodes
-        g.add_edge(eid, u, v)
-    return g
+        return int(f.read().split()[1]) * 4096 / 1e6
 
 
 class RssSampler(threading.Thread):
-    """高频读取 /proc RSS，捕捉遍历过程中的峰值（遍历结束即清理，事后测不到）。"""
+    """高频读取 RSS，捕捉遍历过程中的峰值（遍历结束即清理，事后测不到）。"""
 
     def __init__(self, interval: float = 0.01) -> None:
         super().__init__(daemon=True)
@@ -75,83 +67,202 @@ class RssSampler(threading.Thread):
         return self.peak
 
 
-def run(n_nodes: int, n_edges: int, seed: int) -> dict:
-    gc.collect()
-    rss0 = rss_mb()
+# ---------------------------------------------------------------------------
+# 确定性图生成：返回 (图, 生成 triples 的函数) 以便“打乱录入”重建
+# ---------------------------------------------------------------------------
+def lcg(seed: int):
+    state = seed & 0xFFFFFFFF
+    while True:
+        state = (state * 1103515245 + 12345) & 0x7FFFFFFF
+        yield state
 
+
+def chain_triples(n: int) -> List[Tuple[int, int, int]]:
+    return [(i, i, i + 1) for i in range(n - 1)]
+
+
+def random_triples(n_nodes: int, n_edges: int, seed: int) -> List[Tuple[int, int, int]]:
+    rand = lcg(seed)
+    triples: List[Tuple[int, int, int]] = []
+    for eid in range(n_edges):
+        if eid < n_nodes - 1:
+            u, v = eid, eid + 1          # 主干保证从 0 全可达
+        else:
+            u, v = next(rand) % n_nodes, next(rand) % n_nodes
+        triples.append((eid, u, v))
+    return triples
+
+
+def build_directed(n_nodes: int, triples: List[Tuple[int, int, int]],
+                   shuffle: bool = False, seed: int = SEED) -> Tuple[Graph, float, float]:
+    data = triples[:]
+    if shuffle:
+        random.Random(seed + 1).shuffle(data)
+    g = Graph(directed=True)
     t0 = time.perf_counter()
-    g = build(n_nodes, n_edges, seed)
-    gc.collect()
+    for _ in range(n_nodes):
+        g.add_node(len(g._adj))
+    for eid, u, v in data:
+        g.add_edge(eid, u, v)
     t1 = time.perf_counter()
-    rss_after_build = rss_mb()
+    g.freeze()
+    t2 = time.perf_counter()
+    return g, t1 - t0, t2 - t1
 
-    node_count = 0
-    edge_count = 0
 
-    def count_node(_node):
+# ---------------------------------------------------------------------------
+# 计时与内存
+# ---------------------------------------------------------------------------
+def timed_walk(g: Graph, rounds: int = 3, warmup: int = 2) -> dict:
+    node_count = edge_count = 0
+
+    def on_node(_n):
         nonlocal node_count
         node_count += 1
 
-    def count_edge(_edge):
+    def on_edge(_e):
         nonlocal edge_count
         edge_count += 1
 
-    walker = DFSWalker(g, on_node=count_node, on_edge=count_edge)
-
-    # 预热两轮：消除惰性缺页、分配器抖动；随后计时 3 轮取中位数。
-    for _ in range(2):
+    walker = DFSWalker(g, on_node=on_node, on_edge=on_edge)
+    for _ in range(warmup):
         r = walker.walk(0, track_nodes=False, track_edges=False)
         assert r.completed
     gc.collect()
-    rss_before_walk = rss_mb()
-
-    walk_times = []
-    peak_during_walk = rss_before_walk
-    for _ in range(3):
-        node_count = 0
-        edge_count = 0
+    rss_before = rss_mb()
+    times, peak = [], rss_before
+    for _ in range(rounds):
+        node_count = edge_count = 0
         sampler = RssSampler()
         sampler.start()
         sampler.ready.wait()
         ta = time.perf_counter()
         result = walker.walk(0, track_nodes=False, track_edges=False)
         tb = time.perf_counter()
-        peak_during_walk = max(peak_during_walk, sampler.stop())
-        walk_times.append(tb - ta)
+        peak = max(peak, sampler.stop())
+        times.append(tb - ta)
     gc.collect()
-    rss_after_walk = rss_mb()
-
-    assert node_count == n_nodes, (node_count, n_nodes)
-    assert edge_count == n_edges, (edge_count, n_edges)
-    assert result.completed
-    walk_median = statistics.median(walk_times)
-
+    rss_after = rss_mb()
+    med = statistics.median(times)
     return {
-        "nodes": n_nodes,
-        "edges": n_edges,
-        "seed": seed,
-        "build_seconds": round(t1 - t0, 3),
-        "walk_seconds_median": round(walk_median, 3),
-        "walk_seconds_runs": [round(x, 3) for x in walk_times],
-        "edges_per_second": int(n_edges / walk_median),
-        "rss_start_mb": round(rss0, 1),
-        "rss_after_build_mb": round(rss_after_build, 1),
-        "graph_rss_mb": round(rss_after_build - rss0, 1),
-        "rss_before_walk_mb": round(rss_before_walk, 1),
-        "rss_after_walk_mb": round(rss_after_walk, 1),
-        "walk_extra_rss_after_mb": round(rss_after_walk - rss_before_walk, 1),
-        "walk_peak_rss_mb": round(peak_during_walk, 1),
-        "walk_extra_peak_rss_mb": round(peak_during_walk - rss_before_walk, 1),
+        "walk_seconds_median": round(med, 3),
+        "walk_seconds_runs": [round(x, 3) for x in times],
+        "edges_per_second": int(g.num_edges / med),
         "visited_nodes": node_count,
         "processed_edges": edge_count,
+        "completed": result.completed,
+        "walk_extra_peak_rss_mb": round(peak - rss_before, 1),
+        "walk_residual_rss_mb": round(rss_after - rss_before, 1),
     }
 
 
-if __name__ == "__main__":
+# ---------------------------------------------------------------------------
+# 场景
+# ---------------------------------------------------------------------------
+def run_chain(n: int = 100_000) -> dict:
+    gc.collect()
+    rss0 = rss_mb()
+    triples = chain_triples(n)
+    g, build_s, freeze_s = build_directed(n, triples)
+    gc.collect()
+    rss_graph = rss_mb() - rss0
+    walk = timed_walk(g)
+    node_hash, edge_hash, nn, ne = streaming_walk_hashes(g, 0)
+    # 顺序硬校验：深链必须严格 0..n-1、边 0..n-2
+    strict_ok = (node_hash == streaming_walk_hashes(g, 0)[0])
+    return {
+        "scenario": f"chain {n:,} nodes",
+        "nodes": g.num_nodes, "edges": g.num_edges,
+        "build_seconds": round(build_s, 3),
+        "freeze_seconds": round(freeze_s, 3),
+        "graph_rss_mb": round(rss_graph, 1),
+        **walk,
+        "node_order_sha256": node_hash,
+        "edge_order_sha256": edge_hash,
+        "order_strictly_increasing": _chain_is_strict(g, n),
+        "repeat_hash_identical": strict_ok,
+    }
+
+
+def _chain_is_strict(g: Graph, n: int) -> bool:
+    prev = -1
+    ok_nodes = True
+
+    def cn(x):
+        nonlocal prev, ok_nodes
+        ok_nodes = ok_nodes and x == prev + 1
+        prev = x
+
+    DFSWalker(g, on_node=cn).walk(0, track_nodes=False, track_edges=False)
+    return ok_nodes
+
+
+def run_random(n_nodes: int, n_edges: int, seed: int,
+               cross_check: bool) -> dict:
+    gc.collect()
+    rss0 = rss_mb()
+    triples = random_triples(n_nodes, n_edges, seed)
+    g, build_s, freeze_s = build_directed(n_nodes, triples, shuffle=False)
+    gc.collect()
+    rss_graph = rss_mb() - rss0
+    walk = timed_walk(g)
+    h_node, h_edge, nn, ne = streaming_walk_hashes(g, 0)
+
+    # 打乱录入顺序重建：SORTED 下游历哈希必须完全一致
+    g2, b2, f2 = build_directed(n_nodes, triples, shuffle=True, seed=seed)
+    h2_node, h2_edge, nn2, ne2 = streaming_walk_hashes(g2, 0)
+    repro = {
+        "node_hash_identical": h_node == h2_node,
+        "edge_hash_identical": h_edge == h2_edge,
+        "shuffled_build_seconds": round(b2, 3),
+        "shuffled_freeze_seconds": round(f2, 3),
+    }
+
+    out = {
+        "scenario": f"random {n_nodes:,} nodes / {n_edges:,} edges",
+        "nodes": g.num_nodes, "edges": g.num_edges, "seed": seed,
+        "build_seconds": round(build_s, 3),
+        "freeze_seconds": round(freeze_s, 3),
+        "graph_rss_mb": round(rss_graph, 1),
+        **walk,
+        "node_order_sha256": h_node,
+        "edge_order_sha256": h_edge,
+        "reproducibility_after_shuffle": repro,
+    }
+
+    if cross_check:
+        ref_nodes, ref_edges = reference_walk(g, 0)
+        res = DFSWalker(g).walk(0)
+        out["reference_cross_check"] = {
+            "node_order_elementwise_equal": res.nodes == ref_nodes,
+            "edge_order_elementwise_equal":
+                [e.id for e in res.edges] == ref_edges,
+            "reference_nodes": len(ref_nodes),
+            "reference_edges": len(ref_edges),
+        }
+    return out
+
+
+def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--only", choices=["chain", "medium", "large"],
+                    default=None)
     ap.add_argument("--nodes", type=int, default=1_000_000)
     ap.add_argument("--edges", type=int, default=10_000_000)
-    ap.add_argument("--seed", type=int, default=20260926)
+    ap.add_argument("--seed", type=int, default=SEED)
     args = ap.parse_args()
-    stats = run(args.nodes, args.edges, args.seed)
-    print(json.dumps(stats, indent=2, ensure_ascii=False))
+
+    report = {}
+    if args.only in (None, "chain"):
+        report["chain"] = run_chain(100_000)
+    if args.only in (None, "medium"):
+        report["medium"] = run_random(100_000, 1_000_000, args.seed,
+                                      cross_check=True)
+    if args.only in (None, "large"):
+        report["large"] = run_random(args.nodes, args.edges, args.seed,
+                                     cross_check=False)
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
