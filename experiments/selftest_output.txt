@@ -8,6 +8,9 @@
   [PASS] test_flaky_p050 -> flaky (实际=flaky, 失败率=0.460 CI=[0.366,0.557])
   [PASS] test_flaky_p080 -> flaky (实际=flaky, 失败率=0.840 CI=[0.756,0.899])
   [PASS] test_stable_fail -> stable_fail (实际=stable_fail, 失败率=1.000 CI=[0.963,1.000])
+  [PASS] stable_pass 置信度 = 1-(1-p0)^n（按失败率推导） confidence=0.9941 expect=0.9941
+  [PASS] stable_fail 置信度 = 1-p0^n（按通过率推导） confidence=1.0000 expect=1.0000
+  [PASS] 两类结论不共用同一置信度公式 stable_pass=0.994079 != stable_fail=1.000000
 == 3. 顺序相关性：固定 vs 打乱对比 ==
   victim: fixed 50/50 失败, shuffled 26/50 失败
   [PASS] victim 固定顺序下高失败率 fixed_rate=1.00

@@ -15,7 +15,8 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from flakyhunter.core import JsonlSink, execute_round, load_records, load_tests
-from flakyhunter.judge import judge_records
+from flakyhunter.judge import (DEFAULT_P0, judge_records,
+                               stable_fail_confidence, stable_pass_confidence)
 from flakyhunter.order_analysis import analyze_order
 from flakyhunter.quarantine import QuarantineRegistry
 
@@ -64,6 +65,24 @@ for tid, expect in [("test_flaky_p010", "flaky"), ("test_flaky_p030", "flaky"),
     check(f"{tid} -> {expect}", v.verdict == expect,
           f"(实际={v.verdict}, 失败率={v.failure_rate:.3f} "
           f"CI=[{v.ci_low:.3f},{v.ci_high:.3f}])")
+
+# 置信度公式：stable_pass 按失败率推导、stable_fail 按通过率推导，
+# 两类结论不得共用同一个公式（防止把全通过的概率套到全失败上）。
+n = REPEATS * 2
+v_pass = verdicts["test_stable_00"]
+v_fail = verdicts["test_stable_fail"]
+expect_pass = 1 - (1 - DEFAULT_P0) ** n   # 排除「真实失败率 >= p0」
+expect_fail = 1 - DEFAULT_P0 ** n         # 排除「真实通过率 >= 1-p0」
+check("stable_pass 置信度 = 1-(1-p0)^n（按失败率推导）",
+      abs(v_pass.confidence - expect_pass) < 1e-12,
+      f"confidence={v_pass.confidence:.4f} expect={expect_pass:.4f}")
+check("stable_fail 置信度 = 1-p0^n（按通过率推导）",
+      abs(v_fail.confidence - expect_fail) < 1e-12,
+      f"confidence={v_fail.confidence:.4f} expect={expect_fail:.4f}")
+check("两类结论不共用同一置信度公式",
+      stable_pass_confidence(n, DEFAULT_P0) != stable_fail_confidence(n, DEFAULT_P0)
+      and v_pass.confidence != v_fail.confidence,
+      f"stable_pass={v_pass.confidence:.6f} != stable_fail={v_fail.confidence:.6f}")
 
 print("== 3. 顺序相关性：固定 vs 打乱对比 ==")
 order_tests = load_tests(os.path.join(HERE, "order_tests.py"))
