@@ -178,6 +178,39 @@ class TestNoFalseSuccess(unittest.TestCase):
         self.assertEqual(result.uncertain_regions(), [])
 
 
+class TestSeparatorSingleReport(unittest.TestCase):
+    """分隔符（逗号）在词法表中有独立规则：同一位置只能报一条、分类明确。"""
+
+    def test_comma_reported_once_at_same_position(self):
+        src = "let x = 1, 2;\nlet y = 3;\n"
+        result = parse(src)
+        # 同一处毛病只有一条记录，而不是 lex 非法字符 + parse 各报一条
+        self.assertEqual(len(result.errors), 1)
+        err = result.errors[0]
+        self.assertEqual((err.pos.line, err.pos.col), (1, 10))
+        self.assertEqual(err.phase, "parse")
+        self.assertEqual(err.expected, "';'")
+        self.assertEqual(err.actual, "','")
+        # 该位置不存在第二条重复记录
+        self.assertEqual(
+            [e for e in result.errors if e.pos.offset == err.pos.offset], [err]
+        )
+        # 恢复后下一条语句完好保留
+        body = result.tree.props["body"]
+        self.assertEqual(body[1].props["name"], "y")
+        self.assertFalse(body[1].recovered)
+
+    def test_comma_tokenized_as_separator_not_illegal(self):
+        src = "print(a, b);\n"
+        result = parse(src)
+        # 逗号不再被当成非法字符产生 lex 错误
+        self.assertTrue(all(e.phase != "lex" for e in result.errors))
+        self.assertEqual(len(result.errors), 1)
+        err = result.errors[0]
+        self.assertEqual((err.pos.line, err.pos.col), (1, 8))
+        self.assertEqual(err.actual, "','")
+
+
 class TestDeterminism(unittest.TestCase):
     def test_repeated_parse_identical(self):
         src = "let a = ;\nif (x) { let b = 2 }\nlet c = ;\n"

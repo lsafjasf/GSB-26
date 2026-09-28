@@ -25,6 +25,7 @@ TOKEN_RULES = [
     ("LBRACE", r"\{"),
     ("RBRACE", r"\}"),
     ("SEMI", r";"),
+    ("COMMA", r","),
 ]
 
 _MASTER = re.compile("|".join(f"(?P<{name}>{pat})" for name, pat in TOKEN_RULES))

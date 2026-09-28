@@ -78,7 +78,7 @@ program @1:1
 ## 运行命令
 
 ```bash
-python3 -m unittest discover -s tests -v   # 全部自测（20 个用例）
+python3 -m unittest discover -s tests -v   # 全部自测（22 个用例）
 python3 examples/demo.py                   # 部分结果 + 错误列表样例
 ```
 
@@ -89,6 +89,8 @@ python3 examples/demo.py                   # 部分结果 + 错误列表样例
 - **错误嵌套**：`if`/`while` 的块内出错，内层恢复不吞 `}`，外层结构与后续语句完整。
 - **失败后立即恢复**：缺 `;` 时补虚拟分号，不跳 token，语句完整保留。
 - **不假成功**：未闭合块、孤立 `}`、非法字符均使 `incomplete=True`。
+- **分隔符不重复报错**：逗号在词法表中有独立 `COMMA` 规则，同一位置只产出
+  一条分类明确的 `parse` 错误，不再先报 lex 非法字符、再报 parse 第二条。
 - **确定性**：同一输入重复解析 5 次结果逐字段相等。
 - **对拍测试**：10 个手写 + 200 个固定种子随机生成的合法程序，
   容错模式语法树与严格模式 `parse_strict` 完全一致，且无误报错误。
