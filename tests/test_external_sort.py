@@ -59,57 +59,81 @@ class Base(unittest.TestCase):
 # ---------------------------------------------------------------- 缺陷复现
 
 class TestBuggyRepro(Base):
-    """每个用例都断言旧实现*确实*表现出对应缺陷（修复前红、修复后绿的对照）。"""
+    """每个用例都断言旧实现*确实*表现出对应缺陷（修复前红、修复后绿的对照）。
+
+    缺陷会互相掩盖，必须隔离开启：缺陷1 的 dict 归并会把缺陷3 在块边界
+    制造出的重复键"去重"（10 条输入、chunk_size=3 时分块落盘 13 条，
+    最终输出却只剩 8 条——重复被掩盖成丢失）；缺陷1/3 的记录丢失也会让
+    缺陷4 的重排无法从输出确认。因此每个用例只开启待复现的缺陷、关闭
+    其余开关，并对最终输出做严格断言。
+    """
 
     def test_bug1_duplicate_keys_lost_in_merge(self):
-        # 两个块都含键 "a"：dict 按 key 覆盖，同键记录丢失。
+        # 只开缺陷1：分块/归并其余环节均正确，唯归并 dict 按 key 覆盖。
+        # 键 "a" 跨块出现：("a",0) 被 ("a",3) 覆盖，读取器0 的槽位被窃，
+        # 其后续 ("b",1) 也一并丢失。
         lines = make_records([("a", 0), ("b", 1), ("c", 2), ("a", 3), ("d", 4)])
         self.write_input(lines)
         buggy_external_sort(self.input_path, self.output_path, chunk_size=2,
-                            temp_dir=self.dir)
+                            temp_dir=self.dir,
+                            leave_temp_files_on_error=False,
+                            duplicate_boundary=False,
+                            unstable_within_chunk=False)
         out = parse_output(self.output_path)
-        self.assertLess(len(out), len(lines), "缺陷1应导致记录丢失")
+        # 严格断言：输出恰为 [("a",3), ("c",2), ("d",4)]，丢失 ("a",0) 与 ("b",1)。
+        self.assertEqual([("a", 3), ("c", 2), ("d", 4)], out)
+        self.assertLess(len(out), len(lines))
         self.assertNotEqual(Counter(k for k, _ in out),
                             Counter(k for k, _ in parse_output(self.input_path)))
 
     def test_bug2_temp_files_left_after_exception(self):
+        # 只开缺陷2：归并阶段输出打开失败，临时 chunk 文件无人清理。
         lines = make_records([("a", i) for i in range(10)])
         self.write_input(lines)
         bad_output = os.path.join(self.dir, "no-such-dir", "out.txt")
         with self.assertRaises(OSError):
             buggy_external_sort(self.input_path, bad_output, chunk_size=3,
-                                temp_dir=self.dir)
+                                temp_dir=self.dir,
+                                lose_duplicate_keys=False,
+                                duplicate_boundary=False,
+                                unstable_within_chunk=False)
         leftovers = [n for n in os.listdir(self.dir) if n.startswith("buggy-chunk-")]
         self.assertTrue(leftovers, "缺陷2应残留临时文件: %s" % leftovers)
 
     def test_bug3_boundary_records_duplicated(self):
+        # 只开缺陷3：归并正确（堆归并，不用 dict），边界重复必须直接
+        # 体现在最终输出中——不再借缺陷2 的残留文件间接观察。
         n = 10
         lines = make_records([("k%03d" % i, i) for i in range(n)])
         self.write_input(lines)
-        # 借缺陷2（异常残留）观察缺陷3：让归并阶段的输出打开失败，
-        # 残留的 chunk 文件里记录总数应大于输入条数（边界记录被写两次）。
-        bad_output = os.path.join(self.dir, "no-such-dir", "out.txt")
-        with self.assertRaises(OSError):
-            buggy_external_sort(self.input_path, bad_output, chunk_size=3,
-                                temp_dir=self.dir)
-        chunk_files = [os.path.join(self.dir, f) for f in os.listdir(self.dir)
-                       if f.startswith("buggy-chunk-")]
-        self.assertTrue(chunk_files)
-        total = 0
-        for path in chunk_files:
-            with open(path, encoding="utf-8") as f:
-                total += sum(1 for _ in f)
-        self.assertGreater(total, n,
-                           "缺陷3应导致边界记录重复写出: %d > %d" % (total, n))
+        buggy_external_sort(self.input_path, self.output_path, chunk_size=3,
+                            temp_dir=self.dir,
+                            lose_duplicate_keys=False,
+                            leave_temp_files_on_error=False,
+                            unstable_within_chunk=False)
+        out = parse_output(self.output_path)
+        # 严格断言：输出恰为输入加边界记录 k003/k006/k009 各多一条。
+        self.assertEqual(n + 3, len(out))
+        self.assertEqual(sorted(out), out, "归并本身正确，唯一异常应是重复")
+        expected = Counter(parse_output(self.input_path))
+        for dup in (("k003", 3), ("k006", 6), ("k009", 9)):
+            expected[dup] += 1
+        self.assertEqual(expected, Counter(out))
 
     def test_bug4_stability_broken_within_chunk(self):
-        # 全部同键、单块：整行字典序排序会按 seq 字符串重排（seq 故意逆字典序）。
+        # 只开缺陷4：全部同键、单块，整行字典序排序按 seq 字符串重排
+        # （seq 故意逆字典序）。隔离后输出条数守恒，重排可直接确认。
         pairs = [("k", 2), ("k", 10), ("k", 1)]  # 输入顺序 2,10,1
         self.write_input(make_records(pairs))
         buggy_external_sort(self.input_path, self.output_path, chunk_size=100,
-                            temp_dir=self.dir)
+                            temp_dir=self.dir,
+                            lose_duplicate_keys=False,
+                            leave_temp_files_on_error=False,
+                            duplicate_boundary=False)
         out_seqs = [s for _, s in parse_output(self.output_path)]
-        self.assertNotEqual(out_seqs, [2, 10, 1], "缺陷4应打乱相同键的相对顺序")
+        # 严格断言：输出恰为整行字典序重排后的错误顺序 [1,2,10]。
+        self.assertEqual([1, 2, 10], out_seqs)
+        self.assertNotEqual([2, 10, 1], out_seqs)
 
 
 # ---------------------------------------------------------------- 修复后性质

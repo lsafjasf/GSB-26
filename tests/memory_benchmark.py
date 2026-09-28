@@ -1,4 +1,10 @@
-"""内存峰值基准：验证峰值内存由 chunk_size 决定，与输入总量无关。
+"""内存峰值基准：峰值由「块驻留」与「归并路数」两项中的较大者决定。
+
+峰值内存 ≈ max(chunk_size × 单条记录驻留开销,
+               归并路数(= 输入条数 / chunk_size) × 单读取器开销)
+
+因此峰值并非单纯随 chunk_size 增长：块过小时归并路数膨胀，峰值不降反升
+（实验 A 第一行）；也只有在块驻留占主导时，峰值才与输入总量无关（实验 B）。
 
 用法: python3 tests/memory_benchmark.py
 """
@@ -42,14 +48,16 @@ def main():
 
         print("记录大小 ~%d 字节\n" % RECORD_BYTES)
 
-        print("实验 A：输入固定 200,000 条，块大小变化（峰值应随块大小增长）")
+        print("实验 A：输入固定 200,000 条，块大小变化"
+              "（块过小时归并路数膨胀，峰值不降反升）")
         print("%12s %14s" % ("chunk_size", "peak MiB"))
         generate(input_path, 200_000)
         for chunk_size in (1_000, 10_000, 50_000, 200_000):
             peak = measure(input_path, output_path, chunk_size, work)
             print("%12d %14.2f" % (chunk_size, peak / 2**20))
 
-        print("\n实验 B：块大小固定 10,000，输入总量变化（峰值应基本恒定）")
+        print("\n实验 B：块大小固定 10,000，输入总量变化"
+              "（块驻留占主导，峰值基本恒定）")
         print("%12s %14s" % ("n_records", "peak MiB"))
         for n in (50_000, 200_000, 800_000):
             generate(input_path, n)
