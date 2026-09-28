@@ -7,9 +7,13 @@ legacy/            重构前：各模块自造错误类型、自由文本消息
 refactored/        重构后：统一 AppError + 注册表
   errors.py        统一错误类型、错误码注册表、原因链工具
   compat.py        遗留异常 -> AppError 的兼容映射层
-tests/             对拍测试（错误等价）+ 原因链测试
+contracts/         错误码稳定性契约 + 重构前后故障对照表（生成物）
+  error_codes.json   错误码契约表（冻结 code/分类/可重试/关键上下文）
+  fault_matrix.json  对照表明细（机器可核对）
+  fault_matrix.md    对照表（人读，逐行 MATCH/DRIFT + 跨层稳定性）
+tests/             对拍测试 + 原因链测试 + 契约稳定性测试
 examples/          原因链追溯输出样例
-tools/             重构前后错误处理行数对比
+tools/             行数对比 / 对照表生成 / 契约检查 / 变异探针
 ```
 
 ## 统一错误类型
@@ -25,6 +29,40 @@ tools/             重构前后错误处理行数对比
 **新增一类错误的唯一改动位置**：`refactored/errors.py` 的 `_REGISTRY`
 增加一个 `ErrorSpec` 条目（分类、默认可重试性、消息模板）。各模块只引用
 错误码，消息文案、分类、可重试性全部集中在一处。
+
+## 错误码稳定性契约（防语义漂移）
+
+统一错误类型之后，注册表本身仍可能被随手删码、改分类或翻转可重试标记而
+无人察觉。为此建立两层稳定性约束：
+
+1. **契约表 `contracts/error_codes.json`** 是对外承诺的机器可读清单，
+   冻结字段为 `code` / `category` / `retryable` / `required_context`：
+   - 已发布错误码不得删除、改名或改义；新增字段只能追加；
+   - 新增错误码必须先入契约再在 `_REGISTRY` 使用；
+   - 破坏性变更必须提升契约 `version` 并走迁移评审；
+   - `message_template` 仅作文档快照，不参与兼容判定（允许改文案）。
+2. **兼容性检查 `tools/check_contract.py`**（退出码非 0 即失败，可接 CI）：
+   - A 契约表自身合法（版本、冻结字段、分类枚举、错误码命名）；
+   - B `_REGISTRY` 与契约表逐项一致——错误码集合相同（删码/改名/私增即失败），
+     分类、可重试性、必填上下文字段逐一相同（改义即失败）；
+   - C 对照表产物必须是当前代码 + 当前契约的新鲜生成结果，手改或漏刷新即失败；
+   - D 同一错误码出现在任何模块、任何层位、legacy/refactored 任一侧，
+     分类与可重试标记必须一致。
+
+## 重构前后故障对照表
+
+`tools/fault_matrix.py` 把同一组下游故障（网络超时、连接拒绝、存储连不上、
+查询死锁、缓存宕机）分别注入新旧实现，覆盖三个层位：模块级直接抛出、
+`service.load_profile` 包装后的外层、被包装的服务级内层。每行把两侧错误
+投影为 `(code, category, retryable, 关键上下文)` 并给出 MATCH/DRIFT 裁定，
+可逐条核对；汇总表另查“服务级内层 code 必须等于模块级 code”，防止包装层
+改写下游语义。产物 `contracts/fault_matrix.md` / `.json` 由脚本生成，
+当前 13 行全部 MATCH、跨层全部 STABLE。
+
+`tools/mutation_probe.sh` 在仓库的临时副本上独立施加四类真实破坏
+（删除 `STORE_CONN`、把 `CACHE_BACKEND_DOWN` 分类改成 internal、
+把 `STORE_QUERY.retryable` 翻成 True、手改对照表产物），逐一证明
+检查脚本以非零码退出并报出对应原因；工作区文件不被修改。
 
 ## 错误等价（对拍）
 
@@ -94,7 +132,11 @@ PROFILE_LOAD_FAILED [internal] retryable=False: failed to load profile for user 
 ## 运行命令
 
 ```bash
-python3 -m unittest discover -s tests -v   # 对拍 + 原因链测试（10 例）
+python3 -m unittest discover -s tests -v   # 对拍 + 原因链 + 契约测试（17 例）
 python3 examples/chain_demo.py             # 原因链追溯输出样例
 python3 tools/loc_compare.py               # 重构前后行数对比
+python3 tools/fault_matrix.py              # 重新生成故障对照表
+python3 tools/fault_matrix.py --stdout     # 只打印 Markdown 对照表
+python3 tools/check_contract.py            # 契约/对照表兼容性检查（CI 可直接用）
+python3 tools/mutation_probe.sh            # 删改错误码的失败性验证（真实输出）
 ```

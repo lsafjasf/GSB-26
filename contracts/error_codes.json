@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "description": "错误码稳定性契约。code/category/retryable/required_context 为冻结字段：任何已发布错误码不得删除或改义，新增字段只能追加；破坏性变更必须提升 version 并走迁移评审。message_template 仅为文档，不作为兼容判定依据。",
+  "frozen_fields": ["code", "category", "retryable", "required_context"],
+  "allowed_categories": ["network", "storage", "cache", "validation", "internal"],
+  "codes": {
+    "NET_TIMEOUT": {
+      "category": "network",
+      "retryable": true,
+      "required_context": ["timeout", "url"],
+      "message_template": "request to {url} timed out after {timeout}s"
+    },
+    "NET_CONN_REFUSED": {
+      "category": "network",
+      "retryable": true,
+      "required_context": ["url"],
+      "message_template": "connection to {url} refused"
+    },
+    "STORE_CONN": {
+      "category": "storage",
+      "retryable": true,
+      "required_context": ["dsn"],
+      "message_template": "cannot connect to store {dsn}"
+    },
+    "STORE_QUERY": {
+      "category": "storage",
+      "retryable": false,
+      "message_template": "store query failed: {sql}",
+      "required_context": ["sql"]
+    },
+    "CACHE_BACKEND_DOWN": {
+      "category": "cache",
+      "retryable": true,
+      "required_context": ["key"],
+      "message_template": "cache backend unavailable for key {key}"
+    },
+    "PROFILE_LOAD_FAILED": {
+      "category": "internal",
+      "retryable": false,
+      "required_context": ["user_id"],
+      "message_template": "failed to load profile for user {user_id}"
+    }
+  }
+}

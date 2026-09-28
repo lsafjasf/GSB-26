@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "generated_by": "python3 tools/fault_matrix.py",
+  "contract_version": 1,
+  "note": "生成物，请勿手改；修改故障场景后重新运行生成命令。",
+  "projection": [
+    "code",
+    "category",
+    "retryable",
+    "required_context"
+  ],
+  "rows": [
+    {
+      "scenario": "cache_backend_down",
+      "layer": "module",
+      "legacy": {
+        "code": "CACHE_BACKEND_DOWN",
+        "category": "cache",
+        "retryable": true,
+        "context": {
+          "key": "profile:7"
+        },
+        "exc_type": "CacheDown"
+      },
+      "refactored": {
+        "code": "CACHE_BACKEND_DOWN",
+        "category": "cache",
+        "retryable": true,
+        "context": {
+          "key": "profile:7"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "cache_backend_down",
+      "layer": "service_inner",
+      "legacy": {
+        "code": "CACHE_BACKEND_DOWN",
+        "category": "cache",
+        "retryable": true,
+        "context": {
+          "key": "profile:42"
+        },
+        "exc_type": "AppError"
+      },
+      "refactored": {
+        "code": "CACHE_BACKEND_DOWN",
+        "category": "cache",
+        "retryable": true,
+        "context": {
+          "key": "profile:42"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "cache_backend_down",
+      "layer": "service_outer",
+      "legacy": {
+        "code": "PROFILE_LOAD_FAILED",
+        "category": "internal",
+        "retryable": false,
+        "context": {
+          "user_id": "42"
+        },
+        "exc_type": "ServiceError"
+      },
+      "refactored": {
+        "code": "PROFILE_LOAD_FAILED",
+        "category": "internal",
+        "retryable": false,
+        "context": {
+          "user_id": "42"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "net_conn_refused",
+      "layer": "module",
+      "legacy": {
+        "code": "NET_CONN_REFUSED",
+        "category": "network",
+        "retryable": true,
+        "context": {
+          "url": "http://api.internal/users/7"
+        },
+        "exc_type": "NetConnRefused"
+      },
+      "refactored": {
+        "code": "NET_CONN_REFUSED",
+        "category": "network",
+        "retryable": true,
+        "context": {
+          "url": "http://api.internal/users/7"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "net_conn_refused",
+      "layer": "service_inner",
+      "legacy": {
+        "code": "NET_CONN_REFUSED",
+        "category": "network",
+        "retryable": true,
+        "context": {
+          "url": "http://api.internal/users/42"
+        },
+        "exc_type": "AppError"
+      },
+      "refactored": {
+        "code": "NET_CONN_REFUSED",
+        "category": "network",
+        "retryable": true,
+        "context": {
+          "url": "http://api.internal/users/42"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "net_conn_refused",
+      "layer": "service_outer",
+      "legacy": {
+        "code": "PROFILE_LOAD_FAILED",
+        "category": "internal",
+        "retryable": false,
+        "context": {
+          "user_id": "42"
+        },
+        "exc_type": "ServiceError"
+      },
+      "refactored": {
+        "code": "PROFILE_LOAD_FAILED",
+        "category": "internal",
+        "retryable": false,
+        "context": {
+          "user_id": "42"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "net_timeout",
+      "layer": "module",
+      "legacy": {
+        "code": "NET_TIMEOUT",
+        "category": "network",
+        "retryable": true,
+        "context": {
+          "timeout": 1.5,
+          "url": "http://api.internal/users/7"
+        },
+        "exc_type": "NetTimeout"
+      },
+      "refactored": {
+        "code": "NET_TIMEOUT",
+        "category": "network",
+        "retryable": true,
+        "context": {
+          "timeout": 1.5,
+          "url": "http://api.internal/users/7"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "net_timeout",
+      "layer": "service_inner",
+      "legacy": {
+        "code": "NET_TIMEOUT",
+        "category": "network",
+        "retryable": true,
+        "context": {
+          "timeout": 3.0,
+          "url": "http://api.internal/users/42"
+        },
+        "exc_type": "AppError"
+      },
+      "refactored": {
+        "code": "NET_TIMEOUT",
+        "category": "network",
+        "retryable": true,
+        "context": {
+          "timeout": 3.0,
+          "url": "http://api.internal/users/42"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "net_timeout",
+      "layer": "service_outer",
+      "legacy": {
+        "code": "PROFILE_LOAD_FAILED",
+        "category": "internal",
+        "retryable": false,
+        "context": {
+          "user_id": "42"
+        },
+        "exc_type": "ServiceError"
+      },
+      "refactored": {
+        "code": "PROFILE_LOAD_FAILED",
+        "category": "internal",
+        "retryable": false,
+        "context": {
+          "user_id": "42"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "store_conn",
+      "layer": "module",
+      "legacy": {
+        "code": "STORE_CONN",
+        "category": "storage",
+        "retryable": true,
+        "context": {
+          "dsn": "db://main"
+        },
+        "exc_type": "StoreError"
+      },
+      "refactored": {
+        "code": "STORE_CONN",
+        "category": "storage",
+        "retryable": true,
+        "context": {
+          "dsn": "db://main"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "store_conn",
+      "layer": "service_inner",
+      "legacy": {
+        "code": "STORE_CONN",
+        "category": "storage",
+        "retryable": true,
+        "context": {
+          "dsn": "db://main"
+        },
+        "exc_type": "AppError"
+      },
+      "refactored": {
+        "code": "STORE_CONN",
+        "category": "storage",
+        "retryable": true,
+        "context": {
+          "dsn": "db://main"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "store_conn",
+      "layer": "service_outer",
+      "legacy": {
+        "code": "PROFILE_LOAD_FAILED",
+        "category": "internal",
+        "retryable": false,
+        "context": {
+          "user_id": "42"
+        },
+        "exc_type": "ServiceError"
+      },
+      "refactored": {
+        "code": "PROFILE_LOAD_FAILED",
+        "category": "internal",
+        "retryable": false,
+        "context": {
+          "user_id": "42"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    },
+    {
+      "scenario": "store_query",
+      "layer": "module",
+      "legacy": {
+        "code": "STORE_QUERY",
+        "category": "storage",
+        "retryable": false,
+        "context": {
+          "sql": "UPDATE profile SET name=%s"
+        },
+        "exc_type": "StoreError"
+      },
+      "refactored": {
+        "code": "STORE_QUERY",
+        "category": "storage",
+        "retryable": false,
+        "context": {
+          "sql": "UPDATE profile SET name=%s"
+        },
+        "exc_type": "AppError"
+      },
+      "verdict": "MATCH"
+    }
+  ]
+}
