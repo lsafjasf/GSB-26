@@ -4,15 +4,17 @@ merkle.py — 哈希树（Merkle Tree）库，用于集合完整性校验。仅�
 规则约定（构建与验证严格一致）：
   1. 叶子哈希:  H_leaf(d)  = SHA256(b"\\x00" || d)        —— 域分离前缀 0x00
   2. 内部节点:  H_node(l,r) = SHA256(b"\\x01" || l || r)   —— 域分离前缀 0x01
-  3. 奇数节点:  某一层的最后一个节点若没有右兄弟，则与自身配对（复制末尾，
-     即 Bitcoin 风格 duplicate-last）。该规则同时体现在证明中：落单的节点
-     其证明元素为 ('R', 自身哈希)，验证方按同一规则重算。
+  3. 奇数节点:  某一层的最后一个节点若没有右兄弟，则**原样提升**到上一层
+     （promotion，不复制、不自配对、不另做哈希）。该规则同时体现在证明中：
+     落单的节点其证明元素为 ('P', b'')，验证方遇到 'P' 时保持当前哈希不变，
+     直接上提。这样根摘要随块数不同而不同，且证明无法跨块数集合复用。
   4. 空集合:    根摘要为常量 EMPTY_ROOT = SHA256(b"MHT/empty")，树高为 0，
      不存在任何包含证明。
   5. 单叶子树:  根即叶子哈希本身（不再自配对），树高为 0，证明为空列表。
 
 证明格式:  [(direction, sibling_hash), ...]，自叶子向根排列；
-  direction = 'L' 表示兄弟在左（当前节点为右子），'R' 表示兄弟在右。
+  direction = 'L' 表示兄弟在左（当前节点为右子），'R' 表示兄弟在右，
+  'P' 表示当前节点落单、原样提升（此时 sibling_hash 固定为 b''）。
   方向编码进证明后，验证无需额外传入叶子下标；任何对数据、顺序、
   路径长度、根摘要的篡改都会导致重算结果与根摘要不一致而被拒绝。
 """
@@ -51,9 +53,10 @@ def _build_levels(leaves: List[bytes]) -> List[List[bytes]]:
     while len(current) > 1:
         nxt = []
         for j in range(0, len(current), 2):
-            left = current[j]
-            right = current[j + 1] if j + 1 < len(current) else left  # 奇数: 复制末尾
-            nxt.append(node_hash(left, right))
+            if j + 1 < len(current):
+                nxt.append(node_hash(current[j], current[j + 1]))
+            else:
+                nxt.append(current[j])  # 奇数: 落单节点原样提升
         levels.append(nxt)
         current = nxt
     return levels
@@ -97,8 +100,8 @@ class MerkleTree:
             if sib < len(cur):
                 proof.append(("L" if sib < i else "R", cur[sib]))
             else:
-                # 奇数规则: 落单节点与自身配对
-                proof.append(("R", cur[i]))
+                # 奇数规则: 落单节点原样提升到上一层
+                proof.append(("P", b""))
             i //= 2
         return proof
 
@@ -113,9 +116,11 @@ class MerkleTree:
         for level in range(len(self._levels) - 1):
             cur = self._levels[level]
             pi = i // 2
-            left = cur[2 * pi]
-            right = cur[2 * pi + 1] if 2 * pi + 1 < len(cur) else left
-            self._levels[level + 1][pi] = node_hash(left, right)
+            if 2 * pi + 1 < len(cur):
+                self._levels[level + 1][pi] = node_hash(
+                    cur[2 * pi], cur[2 * pi + 1])
+            else:
+                self._levels[level + 1][pi] = cur[2 * pi]  # 落单节点原样提升
             i = pi
 
     def append(self, data: bytes) -> None:
@@ -131,9 +136,10 @@ class MerkleTree:
                 self._levels.append([])  # 根分裂，长出新的一层
             parent_level = self._levels[level + 1]
             pi = i // 2
-            left = cur[2 * pi]
-            right = cur[2 * pi + 1] if 2 * pi + 1 < len(cur) else left
-            ph = node_hash(left, right)
+            if 2 * pi + 1 < len(cur):
+                ph = node_hash(cur[2 * pi], cur[2 * pi + 1])
+            else:
+                ph = cur[2 * pi]  # 落单节点原样提升
             if pi < len(parent_level):
                 parent_level[pi] = ph
             else:
@@ -160,9 +166,13 @@ def _check_proof_format(proof: Sequence[ProofElement]) -> None:
         if not (isinstance(item, (list, tuple)) and len(item) == 2):
             raise ProofFormatError(f"证明第 {k} 个元素不是 (方向, 哈希) 对")
         direction, sib = item
-        if direction not in ("L", "R"):
+        if direction not in ("L", "R", "P"):
             raise ProofFormatError(f"证明第 {k} 个元素方向非法: {direction!r}")
-        if not (isinstance(sib, bytes) and len(sib) == HASH_SIZE):
+        if direction == "P":
+            if sib != b"":
+                raise ProofFormatError(
+                    f"证明第 {k} 个元素为提升标记 'P'，兄弟字段必须为 b''")
+        elif not (isinstance(sib, bytes) and len(sib) == HASH_SIZE):
             raise ProofFormatError(f"证明第 {k} 个元素哈希不是 {HASH_SIZE} 字节")
 
 
@@ -171,7 +181,11 @@ def compute_root_from_proof(data: bytes, proof: Sequence[ProofElement]) -> bytes
     _check_proof_format(proof)
     h = leaf_hash(data)
     for direction, sib in proof:
-        h = node_hash(sib, h) if direction == "L" else node_hash(h, sib)
+        if direction == "L":
+            h = node_hash(sib, h)
+        elif direction == "R":
+            h = node_hash(h, sib)
+        # direction == "P": 落单节点原样提升，当前哈希保持不变
     return h
 
 

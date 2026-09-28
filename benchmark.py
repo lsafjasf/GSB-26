@@ -53,7 +53,7 @@ def bench_appends():
 
 
 def proof_length_table():
-    print("\n证明长度与树高关系（奇数节点采用复制末尾规则）：")
+    print("\n证明长度与树高关系（奇数节点原样提升，证明用 'P' 标记）：")
     print(f"{'块数 n':>10} {'树高 h':>8} {'证明长度':>8} {'ceil(log2 n)':>12} {'证明字节数':>10}")
     for n in (1, 2, 3, 4, 5, 8, 9, 16, 1000, 10_000, 100_000):
         t = MerkleTree([os.urandom(8) for _ in range(n)])

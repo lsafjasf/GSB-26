@@ -41,13 +41,15 @@ class TestBuildAndRoot(unittest.TestCase):
         expected = node_hash(leaf_hash(blocks[0]), leaf_hash(blocks[1]))
         self.assertEqual(t.root, expected)
 
-    def test_odd_count_duplicates_last(self):
+    def test_odd_count_promotes_last(self):
         blocks = make_blocks(3)
         t = MerkleTree(blocks)
         h0, h1, h2 = (leaf_hash(b) for b in blocks)
-        expected = node_hash(node_hash(h0, h1), node_hash(h2, h2))  # 复制末尾
+        expected = node_hash(node_hash(h0, h1), h2)  # 落单的 h2 原样提升
         self.assertEqual(t.root, expected)
         self.assertEqual(t.height, 2)
+        # 落单叶子的证明承载提升标记，而不是 ('R', 自身哈希)
+        self.assertEqual(t.prove(2), [("P", b""), ("L", node_hash(h0, h1))])
 
     def test_empty_data_block(self):
         blocks = [b"", b"", os.urandom(8), b""]
@@ -175,6 +177,77 @@ class TestIncrementalUpdate(unittest.TestCase):
             t.update(4, b"x")
         with self.assertRaises(IndexError):
             t.prove(-1)
+
+
+class TestRootBindsBlockCount(unittest.TestCase):
+    """安全属性：根摘要与块数一一对应（旧版复制末尾规则的歧义已消除）。"""
+
+    def test_three_vs_three_plus_duplicate_last(self):
+        # 旧规则下这两棵树根逐字节相同：[a,b,c] vs [a,b,c,c]
+        a, b, c = b"a", b"b", b"c"
+        t3 = MerkleTree([a, b, c])
+        t4 = MerkleTree([a, b, c, c])
+        self.assertNotEqual(t3.root, t4.root)
+
+    def test_n_vs_n_plus_one_distinct_roots(self):
+        blocks = make_blocks(129)
+        roots = set()
+        for n in range(1, 130):
+            roots.add(MerkleTree(blocks[:n]).root)
+        self.assertEqual(len(roots), 129)  # 1..129 每个块数对应不同的根
+
+    def test_direct_fix_equality(self):
+        # 旧版本曾成立的等式现在必须不成立
+        a, b, c = b"alpha", b"beta", b"gamma"
+        h0, h1, h2 = (leaf_hash(x) for x in (a, b, c))
+        old_style_root = node_hash(node_hash(h0, h1), node_hash(h2, h2))
+        self.assertNotEqual(MerkleTree([a, b, c]).root, old_style_root)
+
+
+class TestProofCannotCrossSets(unittest.TestCase):
+    """安全属性：证明承载树结构，不能在不同块数的集合间复用。"""
+
+    def test_proof_for_three_rejected_by_four(self):
+        a, b, c = b"a", b"b", b"c"
+        t3 = MerkleTree([a, b, c])
+        t4 = MerkleTree([a, b, c, c])
+        self.assertFalse(verify(t4.root, c, t3.prove(2)))
+
+    def test_proof_for_four_rejected_by_three(self):
+        a, b, c = b"a", b"b", b"c"
+        t3 = MerkleTree([a, b, c])
+        t4 = MerkleTree([a, b, c, c])
+        self.assertFalse(verify(t3.root, c, t4.prove(2)))
+
+    def test_promotion_marker_cannot_be_forged_as_pairing(self):
+        a, b, c = b"a", b"b", b"c"
+        t3 = MerkleTree([a, b, c])
+        proof = t3.prove(2)
+        self.assertEqual(proof[0][0], "P")
+        # 旧版 ('R', 自身哈希) 自配对证明必须被新根拒绝
+        old_style = [("R", leaf_hash(c))] + proof[1:]
+        self.assertFalse(verify(t3.root, c, old_style))
+        # 'P' 标记携带非空字段视为格式非法
+        with self.assertRaises(ProofFormatError):
+            verify(t3.root, c, [("P", leaf_hash(c))] + proof[1:])
+
+    def test_proof_rejected_across_all_prefix_sizes(self):
+        blocks = make_blocks(33)
+        trees = [MerkleTree(blocks[:n]) for n in range(1, 34)]
+        for n in range(1, 34):
+            tree = trees[n - 1]
+            data = blocks[n - 1]
+            proof = tree.prove(n - 1)
+            self.assertTrue(verify(tree.root, data, proof))
+            for m in range(1, 34):
+                if m == n:
+                    continue
+                other = trees[m - 1]
+                # 仅当另一集合也包含该数据块时尝试复用，否则没有比较意义
+                if n - 1 < m:
+                    self.assertFalse(
+                        verify(other.root, data, proof),
+                        f"{n} 块集合的证明不应通过 {m} 块集合的校验")
 
 
 class TestProofLengthVsHeight(unittest.TestCase):
