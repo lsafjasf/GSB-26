@@ -223,6 +223,25 @@ class TestUninferred(unittest.TestCase):
         self.assertIn("'x'", diag.message)
         self.assertEqual((diag.pos.line, diag.pos.col), (5, 2))
 
+    def test_eq_compared_parameter_is_legitimate_polymorphism(self):
+        # \x. eq x x : 'a -> bool -- the free variable only appears in the
+        # parameter position; that is legal polymorphism, not uninferred.
+        prog = Program(main=lam("x", app(v("eq"), v("x"), v("x"))))
+        result = check_program(prog)
+        self.assertEqual(result.format_main(), "'a -> bool")
+        kinds = [d.kind for d in result.diagnostics]
+        self.assertNotIn("uninferred", kinds)
+        hints = [d for d in result.diagnostics if d.severity == "hint"]
+        self.assertEqual(len(hints), 1)
+        self.assertIn("'x'", hints[0].message)
+
+    def test_shadowed_unused_parameter_still_reported(self):
+        # \x. (\x. x) 1 -- the outer x is shadowed and genuinely unused.
+        inner = lam("x", v("x"))
+        result = check_program(Program(main=lam("x", app(inner, i(1)))))
+        kinds = [d.kind for d in result.diagnostics]
+        self.assertIn("uninferred", kinds)
+
     def test_used_unannotated_parameter_not_reported(self):
         result = check_program(Program(main=lam("x", v("x"))))
         self.assertEqual(result.diagnostics, [])

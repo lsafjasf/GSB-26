@@ -75,6 +75,8 @@ error[conflict] at 3:9: type mismatch (function application)
 error[occurs] at 5:8: recursive value would have an infinite type
   expected: 'a
   actual:   'a -> 'b
+  constraint chain:
+    #0 at 5:8: function application: 'a ~ 'a -> 'b
 
 === mutual recursion with bad branch ===
 error[conflict] at 9:12: type mismatch (if branches must agree)
@@ -86,11 +88,14 @@ error[conflict] at 9:12: type mismatch (if branches must agree)
 
 === \x. 1  (uninferred parameter) ===
 error[uninferred] at 7:1: cannot infer the type of parameter 'x'; add an annotation
+
+=== \x. eq x x  (polymorphic parameter, hint only) ===
+hint[polymorphic] at 9:1: parameter 'x' is polymorphic ('a -> bool); add an annotation to pin it down
 ```
 
 约束链中的类型以求解完成后的最终形态渲染。错误分四类：
 `conflict`（类型冲突）、`occurs`（无限类型）、`unbound`（未绑定变量）、
-`uninferred`（无法推断，见下）。
+`uninferred`（无法推断，见下）；另有 `hint` 级别的 `polymorphic` 提示（见下）。
 
 ## 未标注与无法推断的类型
 
@@ -99,6 +104,8 @@ error[uninferred] at 7:1: cannot infer the type of parameter 'x'; add an annotat
 - 未绑定变量立即报 `unbound` 错误；
 - lambda 参数在全部求解结束后仍是自由变量、且未流入结果类型（如 `\x. 1` 的 `x`），
   作为 `uninferred` 诊断显式报告（`CheckResult.diagnostics`），并提示加标注；
+- 参数虽被引用、但类型仍是只出现在参数位置的自由变量（如 `\x. eq x x` 得
+  `'a -> bool`），属于合法多态：只给 `hint` 级 `polymorphic` 提示，不算错误；
 - 真正的多态（如 `\x. x` 得 `'a -> 'a`）不算无法推断，正常放行；
 - 结果类型中未解出的变量渲染为 `'a` 等占位符，绝不显示为 `any`。
 
@@ -132,4 +139,5 @@ python3 examples/type_errors.py             # 类型错误样例集
 - 类型冲突：参数不匹配（含位置断言）、if 分支不一致、标注不符、
   冲突穿过多态函数时的约束链（链长 ≥ 2）
 - 终止性：`\x. x x` 与 `letrec f = \x. f f` 的 occurs 拒绝；1.5 万+ 节点程序限时完成
-- 无法推断：`\x. 1` 报告参数、顶层未标注定义报告；`\x. x` 不误报
+- 无法推断：`\x. 1` 报告参数、顶层未标注定义报告；`\x. x` 不误报；
+  `\x. eq x x` 只给多态提示；`\x. (\x. x) 1` 外层被遮蔽参数仍报错

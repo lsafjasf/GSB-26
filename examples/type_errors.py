@@ -75,3 +75,7 @@ show("mutual recursion with bad branch",
 # 5. Uninferable parameter: \x. 1
 show("\\x. 1  (uninferred parameter)",
      Program(main=lam("x", i(1), line=7, col=1)))
+
+# 6. Legitimate polymorphism, demoted to a hint: \x. eq x x
+show("\\x. eq x x  (polymorphic parameter, hint only)",
+     Program(main=lam("x", app(v("eq"), v("x"), v("x")), line=9, col=1)))

@@ -101,6 +101,30 @@ def _fun(*ts):
     return t
 
 
+def _occurs_free(name, node):
+    """Whether ``name`` is referenced free in ``node``, respecting the
+    binders that can shadow it (lambda, let, letrec)."""
+    if isinstance(node, Var):
+        return node.name == name
+    if isinstance(node, Lam):
+        return node.param != name and _occurs_free(name, node.body)
+    if isinstance(node, Call):
+        return _occurs_free(name, node.fn) or _occurs_free(name, node.arg)
+    if isinstance(node, If):
+        return (_occurs_free(name, node.cond)
+                or _occurs_free(name, node.then)
+                or _occurs_free(name, node.otherwise))
+    if isinstance(node, Let):
+        return (_occurs_free(name, node.value)
+                or (node.name != name and _occurs_free(name, node.body)))
+    if isinstance(node, LetRec):
+        if any(b.name == name for b in node.bindings):
+            return False
+        return (any(_occurs_free(name, b.value) for b in node.bindings)
+                or _occurs_free(name, node.body))
+    return False
+
+
 def builtins():
     a = QVar(-1, "a")
     return {
@@ -264,9 +288,23 @@ class Checker:
     def check_uninferred(self):
         """Report lambda parameters whose type stayed a free variable that
         does not even flow into the result: those are genuinely
-        uninferable and must not pass silently as 'any'."""
+        uninferable and must not pass silently as 'any'.
+
+        A parameter that *is* referenced in the body but whose type still
+        stayed a free variable (e.g. ``\\x. eq x x : 'a -> bool``) is
+        legitimate polymorphism -- the variable only appears in the
+        parameter position of the function type.  That is demoted to a
+        hint instead of an error."""
         for node, tv, body_t in self.lambda_params:
-            if prune(tv) is tv and not occurs(tv, body_t):
+            if prune(tv) is not tv or occurs(tv, body_t):
+                continue
+            if _occurs_free(node.param, node.body):
+                self.diagnostics.append(Diagnostic(
+                    kind="polymorphic", pos=node.pos, severity="hint",
+                    message=f"parameter {node.param!r} is polymorphic "
+                            f"({format_type(TFun(tv, body_t))}); "
+                            f"add an annotation to pin it down"))
+            else:
                 self.diagnostics.append(Diagnostic(
                     kind="uninferred", pos=node.pos,
                     message=f"cannot infer the type of parameter "

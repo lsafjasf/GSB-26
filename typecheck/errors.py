@@ -13,9 +13,10 @@ class Diagnostic:
     expected: str = ""
     actual: str = ""
     chain: list = field(default_factory=list)  # list[solver.Constraint]
+    severity: str = "error"  # 'error' | 'hint'
 
     def render(self):
-        lines = [f"error[{self.kind}] at {self.pos}: {self.message}"]
+        lines = [f"{self.severity}[{self.kind}] at {self.pos}: {self.message}"]
         if self.expected:
             lines.append(f"  expected: {self.expected}")
         if self.actual:
