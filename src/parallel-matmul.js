@@ -27,15 +27,33 @@ class MatMulPool {
     this.idleWorkers = [];
     this.busy = false;
     this.destroyed = false;
+    this.nextJobId = 0;
+  }
+
+  _pruneWorker(worker) {
+    const index = this.workers.indexOf(worker);
+    if (index !== -1) {
+      this.workers.splice(index, 1);
+    }
+    const idleIndex = this.idleWorkers.indexOf(worker);
+    if (idleIndex !== -1) {
+      this.idleWorkers.splice(idleIndex, 1);
+    }
   }
 
   _createWorker() {
     const worker = new Worker(WORKER_PATH);
-    this.workers.push(worker);
     worker.on('error', () => {});
+    worker.once('exit', () => {
+      if (this.destroyed) {
+        return;
+      }
+      this._pruneWorker(worker);
+    });
     return new Promise((resolve, reject) => {
       const onOnline = () => {
         worker.removeListener('error', onError);
+        this.workers.push(worker);
         resolve(worker);
       };
       const onError = (error) => {
@@ -87,6 +105,8 @@ class MatMulPool {
     }
 
     this.busy = true;
+    const jobId = this.nextJobId;
+    this.nextJobId += 1;
     try {
       await this._ensureWorkers(workerCount);
     } catch (error) {
@@ -114,6 +134,9 @@ class MatMulPool {
       };
 
       const onMessage = (message, worker) => {
+        if (message.jobId !== jobId) {
+          return;
+        }
         if (message.type !== 'done') {
           const error = new Error(message.message || 'worker matrix multiplication failed');
           error.name = message.name || 'WorkerError';
@@ -129,7 +152,7 @@ class MatMulPool {
 
       const onError = (error) => finish(error);
       const onExit = (code) => {
-        if (code !== 0 && !settled) {
+        if (!settled) {
           finish(new Error(`worker stopped unexpectedly with exit code ${code}`));
         }
       };
@@ -139,7 +162,7 @@ class MatMulPool {
           worker.off('message', wrappedHandlers.get(worker));
           worker.off('error', onError);
           worker.off('exit', onExit);
-          if (!this.destroyed) {
+          if (!this.destroyed && this.workers.includes(worker)) {
             this.idleWorkers.push(worker);
           }
         }
@@ -158,7 +181,7 @@ class MatMulPool {
         worker.on('exit', onExit);
         worker.postMessage({
           type: 'run',
-          jobId: 0,
+          jobId,
           a: describeMatrix(a),
           b: describeMatrix(b),
           c: describeMatrix(c),

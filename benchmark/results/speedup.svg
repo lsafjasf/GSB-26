@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="780" height="440" viewBox="0 0 780 440">
 <rect width="100%" height="100%" fill="white"/>
-<text x="390" y="26" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="bold">Workers vs. speedup (640x640, block 64)</text>
+<text x="390" y="26" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="bold">Workers vs. speedup (128x128, block 32)</text>
 <line x1="72" y1="368" x2="756" y2="368" stroke="#e5e7eb"/>
 <text x="62" y="372" text-anchor="end" font-family="sans-serif" font-size="12">0.00</text>
 <line x1="72" y1="288" x2="756" y2="288" stroke="#e5e7eb"/>
@@ -30,11 +30,11 @@
 <circle cx="756" cy="48" r="4" fill="#9ca3af"/>
 <line x1="576" y1="66" x2="602" y2="66" stroke="#9ca3af" stroke-width="3" stroke-dasharray="6 5"/>
 <text x="610" y="70" font-family="sans-serif" font-size="13">Ideal linear</text>
-<polyline fill="none" stroke="#dc2626" stroke-width="3" points="72,327.7112982115332 300,289.2964790995412 528,223.16645975109128 756,209.0524282021833"/>
-<circle cx="72" cy="327.7112982115332" r="4" fill="#dc2626"/>
-<circle cx="300" cy="289.2964790995412" r="4" fill="#dc2626"/>
-<circle cx="528" cy="223.16645975109128" r="4" fill="#dc2626"/>
-<circle cx="756" cy="209.0524282021833" r="4" fill="#dc2626"/>
+<polyline fill="none" stroke="#dc2626" stroke-width="3" points="72,323.6540667125101 300,299.7311077473429 528,263.463670685711 756,288.7635654037762"/>
+<circle cx="72" cy="323.6540667125101" r="4" fill="#dc2626"/>
+<circle cx="300" cy="299.7311077473429" r="4" fill="#dc2626"/>
+<circle cx="528" cy="263.463670685711" r="4" fill="#dc2626"/>
+<circle cx="756" cy="288.7635654037762" r="4" fill="#dc2626"/>
 <line x1="576" y1="88" x2="602" y2="88" stroke="#dc2626" stroke-width="3"/>
 <text x="610" y="92" font-family="sans-serif" font-size="13">Measured speedup</text>
 </svg>

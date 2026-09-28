@@ -7,6 +7,7 @@
 - **数据布局**：行主序 `Float64Array`，底层为 `SharedArrayBuffer`（`src/matrix.js`）。`postMessage` 对 SAB 按引用共享，worker 拿到的不是输入副本。
 - **分块内核**：`src/kernel.js` 的 `multiplyTile` 按 `i-k-j` 顺序计算一个输出瓦片，`blockSize` 同时约束 i/j/k 三个维度；行主序下内层 `j` 循环对 B、C 都是连续访问，对缓存友好。
 - **并行调度**：`src/parallel-matmul.js` 的 `MatMulPool` 维护可复用 worker 池。输出被划分为 `ceil(M/B) * ceil(N/B)` 个瓦片，worker `w` 处理编号 `tile % workerCount === w` 的瓦片；只向每个 worker 发送常量大小（约 256 字节）的分片描述符，不发送瓦片数组，更不复制矩阵。
+- **存活检测与自愈**：池为每个 worker 监听 `exit`；worker 意外终止后立即从 `workers`/`idleWorkers` 中剔除，下次提交任务时按需要补齐，即使全部 worker 死亡也能从零重建，无需重启进程。执行中途有 worker 死亡时当前这一次乘法会被拒绝（输出缓冲可能只写了一半），但池仍可继续使用；任务带单调递增的 `jobId`，迟到的过期 `done`/`error` 消息会被丢弃，不会污染下一次乘法。
 - **确定性**：每个输出元素 `C[i][j]` 只被一个瓦片写入，且该元素内部严格按 `k` 升序累加，与线程数、瓦片完成顺序无关，因此并行结果与分块串行结果**逐位相同**。
 - **退化路径**：`workers = 1` 或可用瓦片数不足时直接在主线程跑同一串行内核，不付线程/消息开销；`M=0`、`K=0`、`N=0` 返回正确形状的空结果或零矩阵。
 

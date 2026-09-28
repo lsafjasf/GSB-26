@@ -149,6 +149,52 @@ async function main() {
     await assert.rejects(() => pool.multiply(regular, regularB, { workers: 2, blockSize: 16 }));
     await first;
 
+    // Worker death recovery: an unexpectedly terminated worker must be detected
+    // and pruned, and the pool must replenish itself on the next submission.
+    const recoveryA = randomMatrix(600, 600, 8001, 3);
+    const recoveryB = randomMatrix(600, 500, 8002, 3);
+    const recoveryExpected = blockedSerialMultiply(recoveryA, recoveryB, 64);
+
+    // Warm the pool up so it actually holds live workers.
+    await pool.multiply(recoveryA, recoveryB, { workers: 4, blockSize: 64 });
+    assert.strictEqual(pool.workers.length, 4);
+
+    // Terminate a worker while the pool is idle, then keep submitting work.
+    await pool.workers[0].terminate();
+    assert.strictEqual(pool.workers.length, 3);
+    const recoveredIdle = await pool.multiply(recoveryA, recoveryB, {
+      workers: 4,
+      blockSize: 64
+    });
+    assert.strictEqual(pool.workers.length, 4);
+    assertBitwiseEqual(recoveredIdle, recoveryExpected);
+
+    // Terminate a worker mid-job: the in-flight job rejects, the pool stays usable.
+    const inflight = pool.multiply(recoveryA, recoveryB, { workers: 4, blockSize: 64 });
+    await new Promise((resolve) => setImmediate(() => setImmediate(resolve)));
+    await pool.workers[0].terminate();
+    await assert.rejects(inflight, /worker stopped unexpectedly/);
+    assert.strictEqual(pool.busy, false);
+
+    const recoveredMidJob = await pool.multiply(recoveryA, recoveryB, {
+      workers: 4,
+      blockSize: 64
+    });
+    assertBitwiseEqual(recoveredMidJob, recoveryExpected);
+
+    // Terminate every worker at once: the pool must rebuild from an empty state.
+    const victims = pool.workers.slice();
+    await Promise.all(victims.map((worker) => worker.terminate()));
+    assert.strictEqual(pool.workers.length, 0);
+    const recoveredAll = await pool.multiply(recoveryA, recoveryB, {
+      workers: 4,
+      blockSize: 64
+    });
+    assert.strictEqual(pool.workers.length, 4);
+    assertBitwiseEqual(recoveredAll, recoveryExpected);
+
+    console.log('worker death recovery checks passed (idle kill, mid-job kill, full kill)');
+
     console.log(`all correctness checks passed: ${checked} serial/parallel shape-block-worker combinations`);
   } finally {
     await pool.destroy();

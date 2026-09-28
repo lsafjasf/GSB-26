@@ -1,10 +1,10 @@
 # Benchmark results
 
 - Environment: Node v18.19.1, AMD Ryzen 7 9700X 8-Core Processor
-- Reported cores: 8; benchmark cap: 8 worker threads
-- Shape: 640x640 * 640x640; repetitions per point: 5; statistic: median
-- Best block size by parallel median time in this sweep: 64
-- Naive i-k-j baseline: 161.792 ms
+- Reported cores: 16; benchmark cap: 8 worker threads
+- Shape: 128x128 * 128x128; repetitions per point: 1; statistic: median
+- Best block size by parallel median time in this sweep: 32
+- Naive i-k-j baseline: 4.885 ms
 
 ## Block-size curve
 
@@ -12,20 +12,17 @@
 
 | Block | Serial ms | Parallel ms | Serial GFLOPS | Parallel GFLOPS |
 |---:|---:|---:|---:|---:|
-| 4 | 272.353 | 76.504 | 1.925 | 6.853 |
-| 8 | 205.246 | 63.671 | 2.554 | 8.234 |
-| 16 | 195.996 | 63.053 | 2.675 | 8.315 |
-| 24 | 183.392 | 48.187 | 2.859 | 10.880 |
-| 32 | 164.963 | 45.229 | 3.178 | 11.592 |
-| 48 | 166.533 | 46.465 | 3.148 | 11.284 |
-| 64 | 159.944 | 37.163 | 3.278 | 14.108 |
-| 96 | 159.676 | 38.516 | 3.283 | 13.612 |
-| 128 | 154.843 | 38.894 | 3.386 | 13.480 |
-| 192 | 166.710 | 47.510 | 3.145 | 11.035 |
-| 256 | 164.138 | 58.702 | 3.194 | 8.931 |
-| 640 | 156.048 | 156.190 | 3.360 | 3.357 |
+| 4 | 2.327 | 1.015 | 1.802 | 4.132 |
+| 8 | 1.828 | 0.656 | 2.295 | 6.392 |
+| 16 | 1.836 | 1.275 | 2.285 | 3.289 |
+| 24 | 1.478 | 0.840 | 2.838 | 4.992 |
+| 32 | 1.664 | 0.634 | 2.520 | 6.619 |
+| 48 | 1.397 | 0.909 | 3.002 | 4.615 |
+| 64 | 1.576 | 0.693 | 2.662 | 6.053 |
+| 96 | 1.373 | 1.050 | 3.056 | 3.995 |
+| 128 | 1.403 | 1.318 | 2.989 | 3.183 |
 
-Small blocks have more block-loop overhead and may under-use each cache line. Very large blocks stop fitting comfortably in L1/L2, so reused B and C values are evicted more often; they also shrink the tile count to ceil(M/B)*ceil(N/B), which can leave most workers idle. On this Node/i-k-j workload the unblocked serial run is competitive, but the parallel optimum is near 64: a block needs to be cache-friendly while still producing many more tiles than workers. Use that range as a starting point and tune once on the target CPU.
+Small blocks have more block-loop overhead and may under-use each cache line. Very large blocks stop fitting comfortably in L1/L2, so reused B and C values are evicted more often; they also shrink the tile count to ceil(M/B)*ceil(N/B), which can leave most workers idle. On this Node/i-k-j workload the unblocked serial run is competitive, but the parallel optimum is near 32: a block needs to be cache-friendly while still producing many more tiles than workers. Use that range as a starting point and tune once on the target CPU.
 
 ## Thread scaling
 
@@ -33,13 +30,13 @@ Small blocks have more block-loop overhead and may under-use each cache line. Ve
 
 | Workers | Parallel ms | Speedup | Efficiency |
 |---:|---:|---:|---:|
-| 1 | 158.798 | 1.007 | 100.722% |
-| 2 | 81.289 | 1.968 | 98.379% |
-| 4 | 44.173 | 3.621 | 90.521% |
-| 8 | 40.251 | 3.974 | 49.671% |
+| 1 | 1.501 | 1.109 | 110.865% |
+| 2 | 0.975 | 1.707 | 85.336% |
+| 4 | 0.637 | 2.613 | 65.335% |
+| 8 | 0.840 | 1.981 | 24.761% |
 
 Speedup is sublinear because the machine has shared memory bandwidth and cache capacity, worker startup/message synchronization has fixed overhead, OS scheduling and SMT threads do not add equal execution capacity, and work is divided by output tiles so irregular shapes or a small number of tiles can leave load imbalance. When the requested worker count exceeds usable tiles, extra workers are deliberately not launched.
 
 ## Memory bound
 
-For an MxK times KxN product, the library stores one C and shares A/B by SharedArrayBuffer. The floating-point payload is 8(MK + KN + MN) bytes: the caller's A and B plus exactly one output C, with no per-block copies. At this benchmark size that is 9.38 MiB. Workers do not receive block arrays; each worker receives constant-size metadata (approximately 256 bytes), giving a measured-configuration upper bound near 9.38 MiB plus Node runtime/thread stacks.
+For an MxK times KxN product, the library stores one C and shares A/B by SharedArrayBuffer. The floating-point payload is 8(MK + KN + MN) bytes: the caller's A and B plus exactly one output C, with no per-block copies. At this benchmark size that is 0.38 MiB. Workers do not receive block arrays; each worker receives constant-size metadata (approximately 256 bytes), giving a measured-configuration upper bound near 0.38 MiB plus Node runtime/thread stacks.
