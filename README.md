@@ -8,7 +8,8 @@
 - `collator.py` — 排序库（`Collator` 类：`sort_key` / `compare` / `sort` / `uncovered_chars`）
 - `rules.json` — 排序规则配置（由 `gen_rules.py` 生成，200 个字符映射）
 - `gen_rules.py` — 规则配置生成脚本
-- `test_collator.py` — 自测（18 个用例，含全序断言与规则表对拍）
+- `test_collator.py` — 自测（19 个用例，含全序断言与规则表对拍）
+- `repro_superscript.py` — 上标数字复现（数字比较遇 ²/³ 不再中断排序）
 - `benchmark.py` — 十万条记录性能基准
 - `report_uncovered.py` — 未覆盖字符报告工具
 - `sample_corpus.txt` — 报告工具用示例语料
@@ -60,7 +61,9 @@ collator.sort(records, key=lambda r: r["name"])  # 稳定排序：同键保持�
 - **规则表对拍**：`expected_order_groups` 中每个分组打乱后排序，结果必须
   与配置声明的顺序完全一致；另对全部 200 个映射字符做两两一致性检查。
 - **边界情形**：空集合、单元素、空串、混合语言、数字与符号、超大数字、
-  未知字符回退（end/start 两种策略）。
+  上标/下标数字（如 ²³，`isdigit()` 为真但非 `\d` 十进制数字，统一按
+  `str.isdecimal()` 判定，转换失败降级为字符比较）、未知字符回退
+  （end/start 两种策略）。
 
 ## 未覆盖字符
 

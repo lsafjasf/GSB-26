@@ -73,6 +73,16 @@ class TestBasicCases(unittest.TestCase):
         items = ["x1000000000000", "x9", "x100"]
         self.assertEqual(self.collator.sort(items), ["x9", "x100", "x1000000000000"])
 
+    def test_superscript_digit_does_not_abort_sort(self):
+        # ²(U+00B2)/³(U+00B3) 是数字字符（isdigit 为真）但不是 \d 能匹配的
+        # 十进制数字，int() 会抛 ValueError：必须降级为字符比较，整批排序照常完成。
+        items = ["a10", "a²", "x1²", "a1", "a2", "²", "³"]
+        result = self.collator.sort(items)
+        self.assertEqual(result, ["a1", "a2", "a10", "a²", "x1²", "²", "³"])
+        # 覆盖判定与切分口径一致：上标数字不算数值数字，且不在映射表中
+        self.assertFalse(self.collator.is_covered("²"))
+        self.assertEqual(self.collator.uncovered_chars(["x²"]), {"²": 1})
+
     def test_stability(self):
         # 相同排序键的记录保持原始相对顺序
         records = [("a", 0), ("A", 1), ("a", 2), ("A", 3), ("á", 4), ("a", 5)]

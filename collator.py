@@ -23,6 +23,16 @@ _KIND_UNKNOWN_END = 2
 _KIND_UNKNOWN_START = -1
 
 
+def _is_decimal_digit(ch):
+    """是否参与数值比较的数字字符。
+
+    必须与切分用的 _DIGIT_RUN（正则 \\d）保持同一口径：正则 \\d 只匹配
+    Unicode 十进制数字（Nd 类，str.isdecimal），不含上标 ²³、下标 ₁ 等
+    Nl/No 类“数字字符”（str.isdigit 会把后者也算进去）。
+    """
+    return ch.isdecimal()
+
+
 class Collator:
     """由配置驱动的区域化比较器。"""
 
@@ -58,8 +68,15 @@ class Collator:
         for part in _DIGIT_RUN.split(s):
             if not part:
                 continue
-            if part.isdigit():
-                elements.append(("num", int(part)))
+            # 口径与 _is_decimal_digit 一致；防御性兜底：若某串看似数字
+            # 却无法转成整数，则按普通字符逐字比较，而不是让整批排序中断。
+            if part and all(_is_decimal_digit(ch) for ch in part):
+                try:
+                    value = int(part)
+                except ValueError:
+                    elements.extend(("char", ch) for ch in part)
+                else:
+                    elements.append(("num", value))
             else:
                 elements.extend(("char", c) for c in part)
         return elements
@@ -108,7 +125,7 @@ class Collator:
         return sorted(items, key=lambda item: self.sort_key(key(item)))
 
     def is_covered(self, ch):
-        if self.numeric and ch.isdigit():
+        if self.numeric and _is_decimal_digit(ch):
             return True
         return ch in self.mappings
 
