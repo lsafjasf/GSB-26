@@ -170,7 +170,10 @@ class TaskNode:
             self._finish_locked(State.FAILED)
 
     def cancel(self) -> bool:
-        """取消本任务并传播到整棵子树。幂等，返回本次是否发生了状态迁移。"""
+        """取消本任务并传播到整棵子树（显式栈迭代，深度不受递归上限约束）。
+
+        幂等，返回本次是否发生了状态迁移。
+        """
         with self._lock:
             return self._cancel_locked()
 
@@ -183,10 +186,23 @@ class TaskNode:
             return False
         self._error = Cancelled(f"task {self.name!r} cancelled")
         self._finish_locked(State.CANCELLED)
-        # 传播到所有后代
-        for child in list(self._children):
+        # 显式栈迭代传播到所有后代（深链不依赖递归上限）。
+        # 锁顺序恒为「父 → 子」，栈顶处理最深的未访问节点，因此每个节点
+        # 加锁时其父节点必已持锁，与原递归版本的加锁顺序完全一致。
+        stack: List[TaskNode] = list(self._children)
+        while stack:
+            child = stack.pop()
             with child._lock:
-                child._cancel_locked()
+                if child._state is State.CANCELLED:
+                    continue
+                if child._state.done:
+                    # 已完成/已失败节点不可取消，且取消不跨终态节点继续下传，
+                    # 仅保证资源已释放（幂等）。
+                    child._release_resources_locked()
+                    continue
+                child._error = Cancelled(f"task {child.name!r} cancelled")
+                child._finish_locked(State.CANCELLED)
+                stack.extend(child._children)
         return True
 
     def _finish_locked(self, final: State) -> None:
@@ -260,7 +276,11 @@ class TaskNode:
         counts = {s.value: 0 for s in State}
         failures: List[Dict[str, str]] = []
 
-        def visit(node: "TaskNode") -> None:
+        # 显式栈迭代的深度优先遍历（先序），十万层深链也不会打穿递归上限。
+        # reverse 后压栈以保持与原递归相同的子节点访问顺序。
+        stack: List[TaskNode] = [self]
+        while stack:
+            node = stack.pop()
             with node._lock:
                 counts[node._state.value] += 1
                 if node._state is State.FAILED and node._error is not None:
@@ -270,10 +290,7 @@ class TaskNode:
                         "error": str(node._error),
                     })
                 children = list(node._children)
-            for c in children:
-                visit(c)
-
-        visit(self)
+            stack.extend(reversed(children))
         return {
             "total": sum(counts.values()),
             "counts": counts,

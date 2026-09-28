@@ -4,6 +4,7 @@
 """
 
 import threading
+import sys
 import time
 import unittest
 
@@ -32,9 +33,12 @@ def make_tree(depth: int, breadth: int, name: str = "root") -> TaskNode:
 
 
 def all_nodes(root: TaskNode):
-    yield root
-    for c in root.children:
-        yield from all_nodes(c)
+    """显式栈先序遍历（迭代版），断言深链时自身也不依赖递归。"""
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        yield node
+        stack.extend(reversed(node.children))
 
 
 class TestStates(unittest.TestCase):
@@ -121,6 +125,34 @@ class TestPropagation(unittest.TestCase):
         root.cancel()
         for n in all_nodes(root):
             self.assertEqual(n.state, State.CANCELLED)
+
+    def test_deep_chain_beyond_recursion_limit_uses_no_python_recursion(self):
+        # 默认递归上限通常为 1000；旧的递归实现在 1500 层链上必抛
+        # RecursionError。此处构造 2 倍上限以上的链并保持上限为默认值，
+        # 验证取消传播与汇总遍历均为迭代实现、不受递归层数限制。
+        limit = sys.getrecursionlimit()
+        depth = limit * 2 + 100
+        root = TaskNode("root")
+        root.start()
+        node = root
+        for _ in range(depth):
+            node = node.create_child("n")
+            node.start()
+
+        before = root.summary()
+        self.assertEqual(before["total"], depth + 1)
+        self.assertEqual(before["counts"][State.RUNNING.value], depth + 1)
+        self.assertEqual(before["cancelled"], 0)
+
+        self.assertTrue(root.cancel())
+
+        after = root.summary()
+        self.assertEqual(after["total"], depth + 1)
+        self.assertEqual(after["cancelled"], depth + 1)
+        self.assertTrue(all(n.state is State.CANCELLED
+                            for n in all_nodes(root)))
+        # 深链上重复取消同样安全（走同一套迭代传播）
+        self.assertFalse(root.cancel())
 
     def test_cancel_root_cancels_everything(self):
         root = make_tree(depth=3, breadth=3)  # 40 个节点
