@@ -115,3 +115,19 @@ def run(prog, inputs=(), step_limit=100_000) -> dict:
 def signature(result: dict):
     """用于对拍比较的规范化结果（忽略步数，因优化会改变步数）。"""
     return (result["status"], tuple(result["outputs"]), result.get("error"))
+
+
+def equivalent(before: dict, after: dict) -> bool:
+    """对拍等价判据。
+
+    - 一般情形：状态、全部输出、陷阱信息必须完全相等（见 :func:`signature`）。
+    - 双方均为 ``step_limit``（都超时）：按**输出前缀**比较——较短的一方
+      必须是较长一方的前缀。优化会改变每次循环迭代执行的指令条数，
+      因此在相同步数上限内两侧输出的条数可以不同，但已产生的输出
+      序列必须一致（短者是长者的前缀）。
+    """
+    if before["status"] == after["status"] == "step_limit":
+        a, b = before["outputs"], after["outputs"]
+        shorter, longer = (a, b) if len(a) <= len(b) else (b, a)
+        return longer[: len(shorter)] == shorter
+    return signature(before) == signature(after)

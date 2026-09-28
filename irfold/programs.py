@@ -120,6 +120,16 @@ E:
 halt
 """
 
+LOOP_PRINT = """
+# 死循环每轮打印循环内常量：折叠后每轮指令更少，同步数上限内输出更多条。
+# 两侧均为 step_limit，按「输出前缀」判等价（短者是长者前缀）。
+const c, 7
+LOOP:
+binop d, mul, c, 3
+print d
+jmp LOOP
+"""
+
 # (名字, 源码, 输入集合)
 CASES = [
     ("loop_const", LOOP_CONST, [[]]),
@@ -130,4 +140,5 @@ CASES = [
     ("div_zero_pruned", DIV_ZERO_PRUNED, [[]]),
     ("overflow", OVERFLOW, [[]]),
     ("input_prop", INPUT_PROP, [[0], [5], [-3], [2**63], [-2**63]]),
+    ("loop_print", LOOP_PRINT, [[]]),
 ]

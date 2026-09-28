@@ -444,5 +444,31 @@
       "instruction": "const k2 42",
       "reason": "assigned variable 'k2' is not live afterwards"
     }
+  ],
+  "loop_print": [
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "LOOP (index 1)",
+      "instruction": "LOOP: binop d mul c 3",
+      "reason": "binop mul on constants 7, 3 -> 21"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 0",
+      "instruction": "const c 7",
+      "reason": "assigned variable 'c' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "LOOP (index 1)",
+      "instruction": "LOOP: const d 21",
+      "reason": "assigned variable 'd' is not live afterwards"
+    }
   ]
 }
