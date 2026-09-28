@@ -58,6 +58,10 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(sl.node_levels(), sl.node_levels())  # single node
         self.assertEqual(len(sl.node_levels()), 1)
 
+    def test_empty_dict_value_counts_as_present(self):
+        self.sl.insert(1, {})
+        self.assertIn(1, self.sl)
+
     def test_scan_ranges(self):
         for k in range(100):
             self.sl.insert(k, str(k))
@@ -95,6 +99,11 @@ class TestExtremeLevelDistributions(unittest.TestCase):
         for k in range(500):
             self.assertTrue(sl.delete(k))
         self.assertEqual(len(sl), 0)
+
+    def test_search_steps_count_level_descents(self):
+        sl = SkipList(max_level=3, rand=lambda: 0.0)
+        sl.insert(1, 1)
+        self.assertEqual(sl.search_steps(1), 3)
 
 
 class TestReproducibility(unittest.TestCase):

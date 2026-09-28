@@ -26,6 +26,7 @@ from typing import Any, Callable, Iterator, Optional, Tuple
 
 DEFAULT_MAX_LEVEL = 32
 DEFAULT_P = 0.5
+_MISSING = object()
 
 
 class _Node:
@@ -74,11 +75,15 @@ class SkipList:
         """Locate `key`; fill `update` with predecessors per level.
 
         Returns (node_with_key_or_None, number_of_pointer_hops).
+
+        A hop is either a forward-pointer traversal or descending to the
+        next level and reading that level's forward pointer.
         """
         steps = 0
         node = self._head
         for lvl in range(self._level - 1, -1, -1):
             nxt = node.next[lvl]
+            steps += 1
             while nxt is not None and nxt.key < key:
                 steps += 1
                 node = nxt
@@ -86,8 +91,8 @@ class SkipList:
             update[lvl] = node
         candidate = node.next[0]
         if candidate is not None and candidate.key == key:
-            return candidate, steps + 1
-        return None, steps + 1
+            return candidate, steps
+        return None, steps
 
     # ------------------------------------------------------------------ #
     # public API
@@ -96,7 +101,7 @@ class SkipList:
         return self._size
 
     def __contains__(self, key: Any) -> bool:
-        return self.get(key) is not None
+        return self.get(key, _MISSING) is not _MISSING
 
     def get(self, key: Any, default: Any = None) -> Any:
         """Lock-free point lookup."""

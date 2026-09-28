@@ -1,7 +1,8 @@
 """Benchmark: expected vs measured search steps, and memory vs level prob p.
 
 Theory (skip list analysis):
-  * expected search cost  ~ (1/p) * log_{1/p}(n)  pointer hops
+  * expected search cost  ~ (1/p) * log_{1/p}(n) pointer reads, counting
+    both forward traversals and reads after descending one level
   * expected forward pointers per node = 1/(1-p)  -> memory grows as p grows
 
 Run: python3 bench_steps.py
@@ -29,7 +30,7 @@ def measure(p: float):
         total_steps += sl.search_steps(rng.randrange(N))
     avg_steps = total_steps / QUERIES
 
-    # expected hops: (1/p) * log_{1/p}(n)
+    # Expected pointer reads: (1/p) * log_{1/p}(n).
     expected = math.log(N, 1 / p) / p
 
     slots = sl.total_pointer_slots()
@@ -61,8 +62,8 @@ def main():
         "\nReading: smaller p -> fewer pointer slots (less memory) but more "
         "levels to descend per hop;\nlarger p -> more pointers per node "
         "(more memory) with fewer, longer hops.\n"
-        "Measured steps track the (1/p)*log_{1/p}(n) expectation within a "
-        "small constant factor."
+        "Measured steps count forward traversals plus one pointer read per "
+        "level descent and closely track the asymptotic estimate."
     )
 
 
