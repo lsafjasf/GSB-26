@@ -5,8 +5,9 @@
 import time
 
 from ir import Instr as I, run, stmt_count
-from optimizer import optimize
+from optimizer import optimize, optimize_traced
 from differential_test import results_equal
+from trace import verify_trace
 
 
 def case_loop_const():
@@ -126,8 +127,10 @@ CASES = [
 def check_case(name, make):
     prog, input_sets = make()
     t0 = time.perf_counter()
-    opt, log = optimize(prog)
+    opt, log, trace = optimize_traced(prog)
     elapsed_ms = (time.perf_counter() - t0) * 1000
+    # 可追溯性核对：逐轮记录 / 来源映射 / 统计与实际改动一一对应
+    verify_trace(prog, opt, trace)
     for inputs in input_sets:
         before = run(prog, inputs)
         after = run(opt, inputs)
@@ -159,7 +162,7 @@ def main():
     print(f"删除记录样例（{sample['name']}）:")
     for d in sample['log']:
         print(f"  round={d.round} pos={d.position:<3} "
-              f"reason={d.reason:<22} instr={d.instr}")
+              f"orig={d.origin:<3} reason={d.reason:<22} instr={d.instr}")
     print()
     print(f"优化后程序（{sample['name']}）:")
     for ins in sample['opt']:

@@ -1,21 +1,24 @@
 # IR 常量折叠与死代码检测库
 
 纯 Python 3 标准库实现：中间表示（IR）+ 解释器 + 常量传播/折叠 +
-条件分支裁剪 + 不可达/死代码删除（迭代到不动点）+ 解释器对拍测试。
+条件分支裁剪 + 不可达/死代码删除（迭代到不动点）+ 解释器对拍测试 +
+全程可追溯（逐轮记录 / 来源映射 / 前后统计 + 重放式核对）。
 
 ## 文件
 
 | 文件 | 说明 |
 |---|---|
 | `ir.py` | IR 指令集定义、64 位回绕机器语义、解释器 |
-| `optimizer.py` | 优化器：`optimize(prog) -> (新程序, 删除记录)` |
-| `cases.py` | 手工边界用例（循环内常量/嵌套分支/全部不可达/自跳转/除零/溢出）+ 统计 |
-| `differential_test.py` | 随机程序生成器 + 优化前后解释器对拍 |
+| `optimizer.py` | 优化器：`optimize(prog) -> (新程序, 删除记录)`；`optimize_traced(prog) -> (新程序, 删除记录, Trace)` |
+| `trace.py` | 可追溯性：逐轮报告格式化 + `verify_trace` 重放式核对 |
+| `cases.py` | 手工边界用例（循环内常量/嵌套分支/全部不可达/自跳转/除零/溢出）+ 统计 + trace 核对 |
+| `differential_test.py` | 随机程序生成器 + 优化前后解释器对拍 + 每个程序的 trace 核对 |
 
 ## 运行命令
 
 ```bash
 python3 cases.py                  # 边界用例 + 语句数/耗时统计 + 删除记录样例
+python3 trace.py                  # 全部用例的逐轮优化记录 + 来源映射 + 前后统计 + 核对
 python3 differential_test.py      # 对拍：默认 500 个随机程序 x 4 组输入
 python3 differential_test.py 2000 42   # 指定程序数与随机种子
 ```
@@ -31,6 +34,30 @@ python3 differential_test.py 2000 42   # 指定程序数与随机种子
 每处删除记录 `Deletion(round, position, instr, reason)`，reason ∈
 `unreachable` / `unreferenced-label` / `const-branch->jmp` /
 `const-branch->removed` / `dead-assignment`，完整可追溯。
+
+## 可追溯性（Trace）
+
+`optimize_traced(prog)` 返回的 `Trace` 包含：
+
+- **逐轮记录**（`trace.rounds`，仅含发生改动的轮次）：
+  - `folded`：本轮折叠的常量 `FoldRecord`，含两个操作数的常量值，
+    可独立重算 `eval_binop(op, lhs, rhs) == value`；
+  - `branches`：本轮裁剪的条件分支 `BranchRecord`（`to-jmp` / `removed`，
+    含条件寄存器的常量值与判定方向）；
+  - `unreachable`：本轮判定为不可达的指令（报告中按位置连续段分组为块）；
+  - `dead_labels` / `dead_assigns`：本轮删除的无引用标号与死赋值；
+- **来源映射**（`trace.source_map`）：优化后位置 -> 原始位置，
+  可还原任意保留指令的出处；被删除指令的出处见各删除记录的 `origin` 字段；
+- **前后统计**（`trace.stats_before` / `trace.stats_after`）：
+  指令数（不含 label）、标号数、分支数（jz/jnz）、跳转数（jmp）、
+  循环数（回边数：跳转到不晚于自身位置的标号）。
+
+`trace.verify_trace(original, optimized, trace)` 把 Trace 当重放脚本逐条核对：
+每条原始指令要么被恰好一条删除记录覆盖、要么在来源映射中恰好出现一次；
+删除记录中的指令形态与应用了此前重写记录后的实际形态一致；折叠值可重算；
+保留指令与原始指令的任何差异都能被一条折叠/分支记录精确解释；
+前后统计与重新计算一致。`cases.py` 与 `differential_test.py`
+对每个用例 / 每个随机程序都会执行该核对。
 
 ## 除零与溢出的保守策略
 
@@ -72,18 +99,57 @@ overflow              7      5        2     0.039
 （对优化结果再优化一次无任何改动）。
 ```
 
-## 删除记录样例（nested_branch）
+## 删除记录样例（nested_branch，`python3 cases.py`）
 
 ```
-round=0 pos=3   reason=const-branch->jmp      instr=jnz c1 L1
-round=0 pos=7   reason=const-branch->removed  instr=jz c2 L2
-round=0 pos=11  reason=unreferenced-label     instr=label L2
-round=0 pos=1   reason=dead-assignment        instr=const c1 1
-round=0 pos=2   reason=dead-assignment        instr=const c2 1
-round=0 pos=5   reason=dead-assignment        instr=binop a + a c1
-round=0 pos=7   reason=dead-assignment        instr=const b 40
-round=1 pos=2   reason=unreachable            instr=print a
-round=1 pos=7   reason=unreachable            instr=print a
+round=0 pos=3   orig=3   reason=const-branch->jmp      instr=jnz c1 L1
+round=0 pos=7   orig=7   reason=const-branch->removed  instr=jz c2 L2
+round=0 pos=11  orig=12  reason=unreferenced-label     instr=label L2
+round=0 pos=1   orig=1   reason=dead-assignment        instr=const c1 1
+round=0 pos=2   orig=2   reason=dead-assignment        instr=const c2 1
+round=0 pos=5   orig=5   reason=dead-assignment        instr=binop a + a c1
+round=0 pos=7   orig=8   reason=dead-assignment        instr=const b 40
+round=1 pos=2   orig=4   reason=unreachable            instr=print a
+round=1 pos=7   orig=13  reason=unreachable            instr=print a
+```
+
+## 逐轮记录 / 来源映射 / 统计样例（nested_branch，`python3 trace.py`）
+
+```
+逐轮优化记录:
+  round 0:
+    折叠常量 1 条:
+      [orig  9] binop b + b c1  =>  const b 41    (40 + 1 = 41)
+    裁剪条件分支 2 条:
+      [orig  3] jnz c1 L1  c1=1  => jmp L1（条件恒成立）
+      [orig  7] jz c2 L2  c2=1  => 删除（条件恒不成立）
+    删除无引用标号 1 条:
+      [orig 12] label L2
+    删除死赋值 4 条:
+      [orig  1] const c1 1
+      [orig  2] const c2 1
+      [orig  5] binop a + a c1
+      [orig  8] const b 40
+  round 1:
+    不可达块 2 个（共 2 条）:
+      块 pos 2:
+        [orig  4] print a
+      块 pos 7:
+        [orig 13] print a
+来源映射:
+  优化后位置 -> 原始位置（保留指令的出处）:
+    [ 0] <- orig  0   input a 0
+    [ 1] <- orig  3   jmp L1
+    [ 2] <- orig  6   label L1
+    [ 3] <- orig  9   const b 41
+    [ 4] <- orig 10   print b
+    [ 5] <- orig 11   jmp L3
+    [ 6] <- orig 14   label L3
+    [ 7] <- orig 15   ret b
+统计:
+  优化前: 指令 13 条 / 标号 3 个 / 分支 2 条 / 跳转 1 条 / 循环 0 个
+  优化后: 指令 6 条 / 标号 2 个 / 分支 0 条 / 跳转 2 条 / 循环 0 个
+  核对: verify_trace 通过，记录与实际改动一一对应
 ```
 
 对应优化后程序：

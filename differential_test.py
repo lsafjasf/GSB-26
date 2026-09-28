@@ -9,7 +9,8 @@ import random
 import sys
 
 from ir import Instr as I, run, stmt_count, BINOPS
-from optimizer import optimize
+from optimizer import optimize, optimize_traced
+from trace import verify_trace
 
 INPUT_SETS = [(0, 0), (1, 2), (-3, 7), (2**62, -5)]
 
@@ -108,7 +109,10 @@ def main():
     mismatches = 0
     for idx in range(n_programs):
         prog = random_program(rng)
-        opt, log = optimize(prog)
+        opt, log, trace = optimize_traced(prog)
+        # 可追溯性核对：每个随机程序的逐轮记录 / 来源映射 / 统计
+        # 都必须与实际改动一一对应
+        verify_trace(prog, opt, trace)
         check_labels(opt)
         # 不动点：二次优化不得再变化
         opt2, log2 = optimize(opt)
