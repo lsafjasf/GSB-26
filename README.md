@@ -47,8 +47,13 @@ python3 bench.py                                        # 吞吐 + 边界情形
 ## 对拍结果
 
 ```
-OK: 12 edge cases + 3000 random sources, token streams and errors identical.
+OK: 13 edge cases + 3000 random sources, token streams and errors identical.
 ```
+
+两侧对字符分类的口径一致以配置为准：`digit` 仅指 ASCII `0-9`，
+非 ASCII 数字（如 `٣`、`４`、`²`）既不构成 NUMBER 的一部分，
+也不是标识符的 continue 字符（`²` 这类非十进制数字仍属 `alpha`，
+可出现在标识符中），未覆盖的字符按非法字符报错后继续。
 
 ## 吞吐数据（bench.py，CPython 3.12，本机实测）
 

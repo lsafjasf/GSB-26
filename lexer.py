@@ -65,15 +65,32 @@ _CLASS_FRAGMENTS = {
 }
 
 # Common fragment unions fused into a single character class (faster).
+# NOTE: "digit" means ASCII 0-9 per config semantics, so never use bare
+# \d or \w here -- they also match non-ASCII decimal digits (e.g. '٣').
 _FUSED_CLASSES = {
     frozenset(["alpha"]): r"[^\W\d_]",
     frozenset(["alpha", "underscore"]): r"[^\W\d]",
-    frozenset(["alpha", "digit"]): r"[^\W_]",
-    frozenset(["alpha", "digit", "underscore"]): r"\w",
+    frozenset(["alpha", "digit"]): r"(?:[^\W\d_]|[0-9])",
+    frozenset(["alpha", "digit", "underscore"]): r"(?:[^\W\d_]|[0-9_])",
     frozenset(["digit"]): r"[0-9]",
     frozenset(["underscore"]): r"_",
-    frozenset(["digit", "underscore"]): r"[\d_]",
+    frozenset(["digit", "underscore"]): r"[0-9_]",
 }
+
+# Superset patterns for identifier classes mixing "alpha" and "digit":
+# identical to the exact fused class except they also accept non-ASCII
+# decimal digits. Matching with these stays a single character class
+# (fast); the surplus chars are trimmed afterwards via _NON_ASCII_DECIMAL.
+_SUPERSET_CLASSES = {
+    frozenset(["alpha", "digit"]): r"[^\W_]",
+    frozenset(["alpha", "digit", "underscore"]): r"\w",
+}
+
+# Matches a Unicode decimal digit that is not ASCII 0-9.
+_NON_ASCII_DECIMAL = re.compile(r"(?![0-9])\d")
+
+# Any non-ASCII character; cheap pre-filter before _NON_ASCII_DECIMAL.
+_NON_ASCII_CHAR = re.compile(r"[^\x00-\x7F]")
 
 
 class Rule:
@@ -184,7 +201,8 @@ class Rule:
     # ---- number ------------------------------------------------------------
     def _build_number(self):
         us = bool(self.spec.get("allow_underscore", False))
-        dec_digits = r"\d(?:_?\d)*" if us else r"\d+"
+        # ASCII digits only: \d would also match non-ASCII decimals.
+        dec_digits = r"[0-9](?:_?[0-9])*" if us else r"[0-9]+"
         parts = []
         if self.spec.get("allow_hex", False):
             hex_digits = (r"[0-9A-Fa-f](?:_?[0-9A-Fa-f])*" if us
@@ -202,12 +220,32 @@ class Rule:
 
     # ---- identifier --------------------------------------------------------
     def _build_identifier(self):
-        start_pat = self._class_pattern(self.spec["start"])
-        self._regex = re.compile(
-            start_pat + self._class_pattern(self.spec["continue"]) + "*")
-        self._matcher = self._match_regex
+        start_sup = _SUPERSET_CLASSES.get(frozenset(self.spec["start"]))
+        cont_sup = _SUPERSET_CLASSES.get(frozenset(self.spec["continue"]))
+        start_pat = start_sup or self._class_pattern(self.spec["start"])
+        cont_pat = cont_sup or self._class_pattern(self.spec["continue"])
+        self._regex = re.compile(start_pat + cont_pat + "*")
+        if start_sup is not None or cont_sup is not None:
+            self._matcher = self._match_identifier_trim
+        else:
+            self._matcher = self._match_regex
         start_re = re.compile(start_pat)
         self._first = lambda ch: start_re.match(ch) is not None
+
+    def _match_identifier_trim(self, text, pos):
+        # The regex may over-accept non-ASCII decimal digits (see
+        # _SUPERSET_CLASSES); cut the match at the first one.
+        m = self._regex.match(text, pos)
+        if not m:
+            return None
+        end = m.end()
+        if _NON_ASCII_CHAR.search(text, pos, end) is not None:
+            bad = _NON_ASCII_DECIMAL.search(text, pos, end)
+            if bad is not None:
+                end = bad.start()
+                if end == pos:
+                    return None
+        return (end - pos, None)
 
     @staticmethod
     def _class_pattern(names):

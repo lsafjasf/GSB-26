@@ -18,13 +18,20 @@ OPERATORS = ["<<=", ">>=", "==", "!=", "<=", ">=", "&&", "||", "++", "--",
              "[", "]", ";", ",", ".", "?", ":"]
 IDENT_CHARS = "abcXYZ_09" + "é中日λж文"
 ILLEGAL_CHARS = ["@", "#", "$", "`", "\x07", "\\"]
+# Non-ASCII digits/numbers: must NOT be treated as digits or identifier
+# continue chars (config semantics: "digit" is ASCII 0-9 only).
+NON_ASCII_DIGITS = "٣۵４²"
 
 
 def gen_identifier(rng):
     if rng.random() < 0.02:
         return "".join(rng.choice(IDENT_CHARS) for _ in range(rng.randint(50, 300)))
-    return (rng.choice("abcXYZ_é中λ") +
-            "".join(rng.choice(IDENT_CHARS) for _ in range(rng.randint(0, 10))))
+    ident = (rng.choice("abcXYZ_é中λ") +
+             "".join(rng.choice(IDENT_CHARS) for _ in range(rng.randint(0, 10))))
+    if rng.random() < 0.1:  # splice a non-ASCII digit at a random boundary
+        at = rng.randint(0, len(ident))
+        ident = ident[:at] + rng.choice(NON_ASCII_DIGITS) + ident[at:]
+    return ident
 
 
 def gen_number(rng):
@@ -44,6 +51,10 @@ def gen_number(rng):
         return rng.choice(["1e", "0x", "1.", "1__2", "1e+", "0xG", "12_"])
     if kind == 6:
         return f"{rng.randint(0, 9)}.{rng.randint(0, 9)}e{rng.randint(0, 9)}"
+    if kind == 7:
+        # non-ASCII digit inside/after an ASCII number
+        return (str(rng.randint(0, 999)) + rng.choice(NON_ASCII_DIGITS)
+                + str(rng.randint(0, 9)))
     return str(rng.randint(0, 9))
 
 
@@ -154,6 +165,8 @@ def main():
         "a" * 10000,
         '"unterminated', "'dangling\\", "/* never closed",
         "@#$`", "1e 0x 1__2 12_", "if iffy if_",
+        # non-ASCII digits at number/identifier boundaries
+        "1٣ a٣ é٣x ٣ 1４ x² 0x1٣ 1.４e٣ _٣ ٣_",
     ]
     for i, src in enumerate(edge_cases):
         if not compare(lexer, ref, src, f"edge#{i}"):
