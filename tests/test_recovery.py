@@ -153,6 +153,20 @@ class TestImmediateRecovery(unittest.TestCase):
 
 
 class TestNoFalseSuccess(unittest.TestCase):
+    def test_comma_reports_single_error(self):
+        # 逗号是合法分隔符 token：同一处毛病只报一条错误，分类明确为 parse
+        result = parse("let x = 1, 2;\n")
+        at_comma = [e for e in result.errors
+                    if (e.pos.line, e.pos.col) == (1, 10)]
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(len(at_comma), 1)
+        err = at_comma[0]
+        self.assertEqual(err.phase, "parse")
+        self.assertEqual(err.expected, "';'")
+        self.assertEqual(err.actual, "','")
+        self.assertTrue(result.incomplete)
+        self.assertFalse(result.ok)
+
     def test_unclosed_block_is_incomplete(self):
         result = parse("if (x) {\n  let a = 1;\n")
         self.assertTrue(result.incomplete)
