@@ -1,5 +1,6 @@
 """Self-tests for skiplist.py: correctness, edge cases, reproducibility,
-concurrency, and node recycling. Run: python3 test_skiplist.py -v
+rank queries, snapshot iterators, concurrency, and node recycling.
+Run: python3 test_skiplist.py -v
 """
 
 import gc
@@ -23,9 +24,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(sl.find(42, "dflt"), "dflt")
         self.assertNotIn(42, sl)
         self.assertFalse(sl.delete(42))
-        self.assertEqual(sl.range_scan(0, 100), [])
+        self.assertEqual(sl.range_scan(0, 100).to_list(), [])
+        self.assertEqual(list(sl.range_scan(0, 100)), [])
         self.assertEqual(sl.items(), [])
         self.assertEqual(sl.node_count(), 0)
+        self.assertIsNone(sl.rank(42))
+        self.assertIsNone(sl.select(1))
 
     def test_single_element(self):
         sl = SkipList(rng=random.Random(1))
@@ -34,12 +38,16 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(sl.find(7), "seven")
         self.assertIsNone(sl.find(6))
         self.assertIsNone(sl.find(8))
-        self.assertEqual(sl.range_scan(0, 100), [(7, "seven")])
-        self.assertEqual(sl.range_scan(7, 7), [(7, "seven")])
-        self.assertEqual(sl.range_scan(8, 100), [])
+        self.assertEqual(sl.range_scan(0, 100).to_list(), [(7, "seven")])
+        self.assertEqual(sl.range_scan(7, 7).to_list(), [(7, "seven")])
+        self.assertEqual(sl.range_scan(8, 100).to_list(), [])
+        self.assertEqual(sl.rank(7), 1)
+        self.assertEqual(sl.select(1), (7, "seven"))
+        self.assertIsNone(sl.select(2))
         self.assertTrue(sl.delete(7))
         self.assertEqual(len(sl), 0)
         self.assertIsNone(sl.find(7))
+        self.assertIsNone(sl.rank(7))
         self.assertFalse(sl.delete(7))
 
     def test_insert_find_delete_many(self):
@@ -90,7 +98,245 @@ class TestBasicOps(unittest.TestCase):
             lo = rng.randrange(500)
             hi = lo + rng.randrange(100)
             expect = [(k, v) for k, v in sorted(model.items()) if lo <= k <= hi]
-            self.assertEqual(sl.range_scan(lo, hi), expect)
+            self.assertEqual(sl.range_scan(lo, hi).to_list(), expect)
+
+
+class TestRankQueries(unittest.TestCase):
+    """select / rank must agree with positional indexing into an
+    ordered scan, under random operation mixes and extreme layouts."""
+
+    def _check_against_model(self, sl, model):
+        items = sorted(model.items())
+        n = len(items)
+        self.assertEqual(len(sl), n)
+        # every rank position
+        for k in range(1, n + 1):
+            self.assertEqual(sl.select(k), items[k - 1])
+        # out-of-range selects
+        self.assertIsNone(sl.select(0))
+        self.assertIsNone(sl.select(-3))
+        self.assertIsNone(sl.select(n + 1))
+        self.assertIsNone(sl.select(n + 1000))
+        # rank of every live key, and of absent keys
+        for pos, (key, _) in enumerate(items, start=1):
+            self.assertEqual(sl.rank(key), pos)
+        self.assertIsNone(sl.rank(-1))
+        self.assertIsNone(sl.rank(10 ** 9))
+        # rank/select consistent with a full ordered snapshot
+        snap = sl.range_scan(-10 ** 9, 10 ** 9).to_list()
+        self.assertEqual(snap, items)
+        for pos, (key, _) in enumerate(snap, start=1):
+            self.assertEqual(sl.select(pos), (key, sl.find(key)))
+            self.assertEqual(sl.rank(key), pos)
+
+    def test_rank_select_vs_sorted_model(self):
+        for seed in range(5):
+            sl = SkipList(p=0.25, rng=random.Random(seed))
+            model = {}
+            rng = random.Random(1000 + seed)
+            for _ in range(4000):
+                k = rng.randrange(600)
+                if rng.random() < 0.55:
+                    sl.insert(k, k * 11)
+                    model[k] = k * 11
+                else:
+                    sl.delete(k)
+                    model.pop(k, None)
+            self._check_against_model(sl, model)
+
+    def test_rank_select_extreme_layouts(self):
+        for source in (lambda: 1, lambda: 16):
+            sl = SkipList(max_level=16, level_source=source)
+            model = {}
+            for k in range(1500):
+                sl.insert(k, k)
+                model[k] = k
+            self._check_against_model(sl, model)
+            for k in range(0, 1500, 2):
+                sl.delete(k)
+                del model[k]
+            self._check_against_model(sl, model)
+
+    def test_rank_select_after_mass_delete_reinsert(self):
+        sl = SkipList(rng=random.Random(31))
+        for k in range(3000):
+            sl.insert(k, k)
+        for k in range(3000):
+            sl.delete(k)
+        self.assertIsNone(sl.select(1))
+        self.assertIsNone(sl.rank(0))
+        for k in range(3000, 6000):
+            sl.insert(k, k * 2)
+        model = {k: k * 2 for k in range(3000, 6000)}
+        self._check_against_model(sl, model)
+
+
+class TestSnapshotIterator(unittest.TestCase):
+    def test_snapshot_isolated_from_later_writes(self):
+        sl = SkipList(rng=random.Random(41))
+        for k in range(1000):
+            sl.insert(k, k * 7)
+        snap = sl.range_scan(100, 899)
+        expect = [(k, k * 7) for k in range(100, 900)]
+        self.assertEqual(len(snap), 800)
+        # heavy mutation after the snapshot point
+        for k in range(0, 500):
+            sl.delete(k)              # delete snapshot-live keys
+        for k in range(1000, 1200):
+            sl.insert(k, k * 7)       # insert new keys
+        for k in range(600, 900):
+            sl.insert(k, -1)          # overwrite snapshot-live values
+        # the snapshot is frozen at creation time
+        self.assertEqual(snap.to_list(), expect)
+        self.assertEqual(list(snap), expect)
+        self.assertEqual(snap.remaining(), 0)
+        self.assertRaises(StopIteration, next, snap)
+        # while the live structure reflects the mutations
+        self.assertEqual(sl.find(600), -1)
+        self.assertIsNone(sl.find(100))
+        self.assertEqual(sl.find(1100), 1100 * 7)
+
+    def test_snapshot_is_reiterable_via_to_list_but_single_pass(self):
+        sl = SkipList(rng=random.Random(43))
+        for k in range(100):
+            sl.insert(k, k)
+        snap = sl.range_scan(10, 19)
+        first = list(snap)
+        self.assertEqual(first, [(k, k) for k in range(10, 20)])
+        self.assertEqual(list(snap), [])          # already consumed
+        self.assertEqual(snap.to_list(), first)   # buffer still inspectable
+
+    def test_snapshot_does_not_pin_nodes(self):
+        sl = SkipList(rng=random.Random(47))
+        baseline = live_node_objects()
+        for k in range(20000):
+            sl.insert(k, k)
+        snaps = [sl.range_scan(0, 19999) for _ in range(5)]
+        for k in range(20000):
+            sl.delete(k)
+        self.assertEqual(sl.node_count(), 0)
+        gc.collect()
+        # snapshots hold (key, value) pairs, not nodes: deleted nodes
+        # are reclaimed even while snapshots are still alive.
+        self.assertLessEqual(live_node_objects() - baseline, 10)
+        self.assertEqual(snaps[0].to_list(), [(k, k) for k in range(20000)])
+
+    def test_snapshot_under_write_pressure(self):
+        """Concurrent writer hammering the structure while snapshots are
+        taken and consumed: every snapshot must be sorted, deduplicated,
+        in-range, value-consistent, and fully consumable."""
+        sl = SkipList(rng=random.Random(53))
+        for k in range(3000):
+            sl.insert(k, k * 7)
+        errors = []
+        stop = threading.Event()
+
+        def writer(seed):
+            rng = random.Random(seed)
+            while not stop.is_set():
+                k = rng.randrange(6000)
+                op = rng.random()
+                if op < 0.4:
+                    sl.insert(k, k * 7)
+                elif op < 0.8:
+                    sl.delete(k)
+                else:
+                    sl.insert(k, k * 7)  # overwrite
+
+        def reader():
+            rng = random.Random()
+            try:
+                while not stop.is_set():
+                    lo = rng.randrange(6000)
+                    hi = lo + rng.randrange(300)
+                    snap = sl.range_scan(lo, hi)
+                    # interleave consumption with more writer activity
+                    rows = []
+                    for pair in snap:
+                        rows.append(pair)
+                        if rng.random() < 0.1:
+                            pass  # yield the GIL to the writers
+                    keys = [k for k, _ in rows]
+                    if keys != sorted(keys):
+                        errors.append(("snapshot not sorted", rows[:5]))
+                    if len(set(keys)) != len(keys):
+                        errors.append(("snapshot duplicate", rows[:10]))
+                    if any(k < lo or k > hi for k in keys):
+                        errors.append(("snapshot out of range", lo, hi))
+                    if any(v != k * 7 for k, v in rows):
+                        errors.append(("snapshot half-updated", rows[:5]))
+                    if len(rows) != len(snap):
+                        errors.append(("snapshot length mismatch",
+                                       len(rows), len(snap)))
+            except Exception as exc:  # noqa: BLE001
+                errors.append(("reader exception", repr(exc)))
+
+        writers = [threading.Thread(target=writer, args=(s,)) for s in range(2)]
+        readers = [threading.Thread(target=reader) for _ in range(4)]
+        for t in writers + readers:
+            t.start()
+        deadline = threading.Event()
+        deadline.wait(2.0)
+        stop.set()
+        for t in writers + readers:
+            t.join()
+        self.assertEqual(errors, [])
+
+    def test_rank_select_under_write_pressure(self):
+        """rank/select each take a consistent view under the writer lock.
+        Keys 0..2999 form a stable region the writer never touches, so
+        rank/select must be exact there; over the dynamic region, any
+        returned record must satisfy the value invariant v == k * 7.
+        (Positional claims across two separate calls are not asserted:
+        each call sees its own consistent snapshot, not a transaction.)"""
+        sl = SkipList(rng=random.Random(59))
+        for k in range(3000):
+            sl.insert(k, k * 7)
+        errors = []
+        stop = threading.Event()
+
+        def writer():
+            k = 3000
+            while not stop.is_set():
+                sl.insert(k, k * 7)
+                if k >= 4000:
+                    sl.delete(k - 1000)  # only ever touches keys >= 3000
+                k += 1
+
+        def reader():
+            rng = random.Random()
+            try:
+                while not stop.is_set():
+                    # stable region: exact, deterministic expectations
+                    key = rng.randrange(3000)
+                    r = sl.rank(key)
+                    if r != key + 1:
+                        errors.append(("rank wrong", key, r))
+                    got = sl.select(key + 1)
+                    if got != (key, key * 7):
+                        errors.append(("select wrong", key, got))
+                    # dynamic region: results must be value-consistent
+                    kth = rng.randrange(1, 6000)
+                    got = sl.select(kth)
+                    if got is not None and got[1] != got[0] * 7:
+                        errors.append(("select half-updated", got))
+                    r = sl.rank(rng.randrange(6000))
+                    if r is not None and r < 1:
+                        errors.append(("rank out of bounds", r))
+            except Exception as exc:  # noqa: BLE001
+                errors.append(("reader exception", repr(exc)))
+
+        w = threading.Thread(target=writer)
+        readers = [threading.Thread(target=reader) for _ in range(3)]
+        w.start()
+        for t in readers:
+            t.start()
+        threading.Event().wait(2.0)
+        stop.set()
+        w.join()
+        for t in readers:
+            t.join()
+        self.assertEqual(errors, [])
 
 
 class TestReproducibility(unittest.TestCase):
@@ -126,7 +372,8 @@ class TestExtremeLevelDistributions(unittest.TestCase):
         for k in range(1000):
             self.assertEqual(sl.find(k), k * 2)
         self.assertEqual(len(sl), 1000)
-        self.assertEqual(sl.range_scan(100, 199), [(k, k * 2) for k in range(100, 200)])
+        self.assertEqual(sl.range_scan(100, 199).to_list(),
+                         [(k, k * 2) for k in range(100, 200)])
         for k in range(0, 1000, 3):
             self.assertTrue(sl.delete(k))
         self.assertEqual(len(sl), 1000 - 334)
@@ -177,7 +424,7 @@ class TestConcurrency(unittest.TestCase):
                         errors.append(("find mismatch", k, v))
                     lo = rng.randrange(self.WRITER_KEYS)
                     hi = lo + rng.randrange(200)
-                    rows = sl.range_scan(lo, hi)
+                    rows = sl.range_scan(lo, hi).to_list()
                     keys = [k for k, _ in rows]
                     if keys != sorted(keys):
                         errors.append(("scan not sorted", rows[:5]))
