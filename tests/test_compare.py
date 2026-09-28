@@ -84,6 +84,43 @@ class TestCompare(unittest.TestCase):
         )
         self.assertTrue(report.ok, report.format())
 
+    def test_same_list_different_fields_detected(self):
+        # Fields are attached to their loop path: swapping fields between
+        # the same two lists must be caught even with order checks off.
+        report = compare(
+            {
+                "en": (
+                    "{#each users as u}{name:str}{/each}"
+                    "{#each orders as o}{total:int}{/each}"
+                ),
+                "zh": (
+                    "{#each users as u}{total:int}{/each}"
+                    "{#each orders as o}{name:str}{/each}"
+                ),
+            },
+            check_order=False,
+        )
+        self.assertFalse(report.ok)
+        ks = kinds(report, "zh")
+        self.assertIn("MISSING_PLACEHOLDER", ks)
+        self.assertIn("EXTRA_PLACEHOLDER", ks)
+        text = report.format()
+        self.assertIn("users[].name", text)
+        self.assertIn("users[].total", text)
+
+    def test_same_field_different_types_detected(self):
+        # The loop variable is section-local, but its merged type is the
+        # item type of the list and must be compared across languages.
+        report = compare(
+            {
+                "en": "{#each users as u}{u:str}{/each}",
+                "zh": "{#each users as u}{u:int}{/each}",
+            }
+        )
+        self.assertFalse(report.ok)
+        self.assertIn("TYPE_CONFLICT", kinds(report, "zh"))
+        self.assertIn("item type of list 'users'", report.format())
+
     def test_empty_templates_equal(self):
         report = compare({"en": "", "zh": ""})
         self.assertTrue(report.ok, report.format())

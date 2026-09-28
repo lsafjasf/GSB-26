@@ -40,6 +40,13 @@ def compare(
     ``templates`` maps a language tag (e.g. ``"en"``) to its template text.
     The first entry (or ``reference``) is the reference language.
 
+    Comparison is based on the path-qualified field signature: names used
+    inside an ``{#each}`` body are qualified by the loop path
+    (``users[].name``) and every loop contributes an item-type entry
+    (``users[]``), so fields attached to different lists - or the same
+    field with different types - are detected instead of comparing only
+    the flattened top-level parameters.
+
     Reports, per language, with positions where available:
 
     * per-template validation errors (re-raised validation diagnostics)
@@ -69,24 +76,31 @@ def compare(
     if not results:
         return CompareReport(ok=False, diagnostics=diagnostics, results=results)
 
+    def describe(key: str) -> str:
+        if key.endswith("[]"):
+            return f"item type of list '{key[:-2]}'"
+        if "[" in key:
+            return f"field '{key}'"
+        return f"placeholder '{key}'"
+
     ref_lang = reference or next(iter(results))
     if ref_lang not in results:
         # Fall back to the first valid template as reference.
         ref_lang = next(iter(results))
     ref = results[ref_lang]
-    ref_names = set(ref.signature)
+    ref_names = set(ref.fields)
 
     for lang, res in results.items():
         if lang == ref_lang:
             continue
-        names = set(res.signature)
+        names = set(res.fields)
 
         for name in sorted(ref_names - names):
             diagnostics.append(
                 Diagnostic(
                     "MISSING_PLACEHOLDER",
-                    f"placeholder '{name}' exists in '{ref_lang}' "
-                    f"({ref.signature[name].first_pos}) but is missing here",
+                    f"{describe(name)} exists in '{ref_lang}' "
+                    f"({ref.fields[name].first_pos}) but is missing here",
                     lang=lang,
                 )
             )
@@ -94,19 +108,19 @@ def compare(
             diagnostics.append(
                 Diagnostic(
                     "EXTRA_PLACEHOLDER",
-                    f"placeholder '{name}' does not exist in '{ref_lang}'",
-                    pos=res.signature[name].first_pos,
+                    f"{describe(name)} does not exist in '{ref_lang}'",
+                    pos=res.fields[name].first_pos,
                     lang=lang,
                 )
             )
 
         for name in sorted(ref_names & names):
-            rp, lp = ref.signature[name], res.signature[name]
+            rp, lp = ref.fields[name], res.fields[name]
             if rp.type != lp.type:
                 diagnostics.append(
                     Diagnostic(
                         "TYPE_CONFLICT",
-                        f"placeholder '{name}' is '{rp.type}' in "
+                        f"{describe(name)} is '{rp.type}' in "
                         f"'{ref_lang}' but '{lp.type}' here",
                         pos=lp.first_pos,
                         lang=lang,
@@ -116,7 +130,7 @@ def compare(
                 diagnostics.append(
                     Diagnostic(
                         "OPTIONAL_CONFLICT",
-                        f"placeholder '{name}' is "
+                        f"{describe(name)} is "
                         f"{'optional' if rp.optional else 'required'} in "
                         f"'{ref_lang}' but "
                         f"{'optional' if lp.optional else 'required'} here",
@@ -126,8 +140,10 @@ def compare(
                 )
 
         if check_order:
-            common = [n for n in ref.order if n in names]
-            actual = [n for n in res.order if n in ref_names]
+            ref_order = [k for k in ref.field_order if not k.endswith("[]")]
+            res_order = [k for k in res.field_order if not k.endswith("[]")]
+            common = [n for n in ref_order if n in names]
+            actual = [n for n in res_order if n in ref_names]
             if common != actual:
                 diagnostics.append(
                     Diagnostic(

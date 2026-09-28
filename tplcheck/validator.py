@@ -31,6 +31,11 @@ class ValidationResult:
     errors: List[Diagnostic] = field(default_factory=list)
     warnings: List[Diagnostic] = field(default_factory=list)
     signature: Dict[str, ParamInfo] = field(default_factory=dict)  # insertion-ordered
+    # Path-qualified view of every name a template touches.  Top-level
+    # parameters keep their plain name; names inside an {#each} body are
+    # qualified by the loop path ("users[].name") and each loop contributes
+    # an item-type entry ("users[]").  Used by cross-language comparison.
+    fields: Dict[str, ParamInfo] = field(default_factory=dict)  # insertion-ordered
     loop_var_types: Dict[str, str] = field(default_factory=dict)
     ast: List[Node] = field(default_factory=list)
 
@@ -38,6 +43,11 @@ class ValidationResult:
     def order(self) -> List[str]:
         """Parameter names in first-occurrence order."""
         return [n for n, _ in sorted(self.signature.items(), key=lambda kv: kv[1].order)]
+
+    @property
+    def field_order(self) -> List[str]:
+        """Field keys (loop-path qualified) in first-occurrence order."""
+        return [n for n, _ in sorted(self.fields.items(), key=lambda kv: kv[1].order)]
 
 
 def merge_type(a: str, b: str) -> Optional[str]:
@@ -73,6 +83,7 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
     errors: List[Diagnostic] = []
     warnings: List[Diagnostic] = []
     signature: Dict[str, ParamInfo] = {}
+    fields: Dict[str, ParamInfo] = {}
     loop_var_types: Dict[str, str] = {}
     loop_var_names = _collect_loop_vars(ast)
     counter = [0]
@@ -83,6 +94,14 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
             info = ParamInfo(name=name, first_pos=pos, order=counter[0])
             counter[0] += 1
             signature[name] = info
+        return info
+
+    def get_field(key: str, pos: Position) -> ParamInfo:
+        info = fields.get(key)
+        if info is None:
+            info = ParamInfo(name=key, first_pos=pos, order=counter[0])
+            counter[0] += 1
+            fields[key] = info
         return info
 
     def merge_into(holder, new_type, pos, owner_desc):
@@ -100,7 +119,15 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
         else:
             holder.type = merged
 
-    def resolve(name, pos, scopes, implied_type, why):
+    def merge_field(key: str, new_type: str, pos: Position) -> None:
+        # Field types merge silently: conflicts within a single template are
+        # already reported through the flat signature / loop-variable checks.
+        info = get_field(key, pos)
+        merged = merge_type(info.type, new_type)
+        if merged is not None:
+            info.type = merged
+
+    def resolve(name, pos, scopes, implied_type, why, path):
         """Resolve `name`; merge the implied type into param or loop var."""
         for scope in reversed(scopes):
             if scope.var == name:
@@ -118,6 +145,8 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
             )
             return
         merge_into(get_param(name, pos), implied_type, pos, f"parameter '{name}'")
+        key = f"{path}.{name}" if path else name
+        merge_field(key, implied_type, pos)
 
     def merge_optional(info: ParamInfo, node: Placeholder) -> None:
         if info._seen_optional is None:
@@ -135,24 +164,43 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
             info.optional = False
             info._seen_optional = False
 
-    def walk(nodes: List[Node], scopes: List[_Scope]) -> None:
+    def merge_field_optional(info: ParamInfo, node: Placeholder) -> None:
+        # Mirror of merge_optional for field entries, without re-emitting
+        # the warning (the flat-signature merge already reports it).
+        if info._seen_optional is None:
+            info._seen_optional = node.optional
+            info.optional = node.optional
+        elif info._seen_optional != node.optional:
+            info.optional = False
+            info._seen_optional = False
+
+    def walk(nodes: List[Node], scopes: List[_Scope], path: str = "") -> None:
         for node in nodes:
             if isinstance(node, Text):
                 continue
             if isinstance(node, Placeholder):
                 in_scope = any(s.var == node.name for s in scopes)
-                resolve(node.name, node.pos, scopes, node.type, "placeholder")
+                resolve(node.name, node.pos, scopes, node.type, "placeholder", path)
                 if not in_scope and node.name not in loop_var_names:
                     info = signature.get(node.name)
                     if info is not None:
                         merge_optional(info, node)
+                    key = f"{path}.{node.name}" if path else node.name
+                    finfo = fields.get(key)
+                    if finfo is not None:
+                        merge_field_optional(finfo, node)
             elif isinstance(node, If):
-                resolve(node.cond, node.pos, scopes, "bool", "{#if} condition")
-                walk(node.body, scopes)
+                resolve(node.cond, node.pos, scopes, "bool", "{#if} condition", path)
+                walk(node.body, scopes, path)
             elif isinstance(node, Each):
-                resolve(node.source, node.pos, scopes, "list", "{#each} source")
+                resolve(node.source, node.pos, scopes, "list", "{#each} source", path)
+                item_key = (
+                    f"{path}.{node.source}[]" if path else f"{node.source}[]"
+                )
+                get_field(item_key, node.pos)
                 scope = _Scope(node.var, node.pos)
-                walk(node.body, scopes + [scope])
+                walk(node.body, scopes + [scope], item_key)
+                merge_field(item_key, scope.type, node.pos)
                 prev = loop_var_types.get(node.var)
                 if prev is None:
                     loop_var_types[node.var] = scope.type
@@ -168,6 +216,7 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
         errors=errors,
         warnings=warnings,
         signature=signature,
+        fields=fields,
         loop_var_types=loop_var_types,
         ast=ast,
     )
