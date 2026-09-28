@@ -14,12 +14,14 @@ Python 3 标准库实现，无第三方依赖；时间通过 `clock` 参数或 `
 
 | 条件 | 结果 |
 | --- | --- |
-| `timestamp > now + clock_skew_seconds` | 拒绝 `too_far_future` |
+| `timestamp > max(now, max_seen_ts) + clock_skew_seconds` | 拒绝 `too_far_future` |
 | `timestamp < max_seen_ts - window_seconds` | 拒绝 `too_old` |
 | `request_id` 已记录且记录时间戳在窗口内 | 拒绝 `replay`（与内容无关） |
 | 其余 | 放行并记录 |
 
-即：`timestamp == now + skew` 与 `timestamp == max_seen_ts - window` 都恰好放行。
+即：`timestamp == max(now, max_seen_ts) + skew` 与 `timestamp == max_seen_ts - window`
+都恰好放行。未来窗口锚定在高水位 `max_seen_ts` 上：接收方本地时钟回拨不会超过
+已见最大时间戳压缩未来窗口，正常请求不会被误判为 `too_far_future`。
 
 ## 清理不变式与内存
 

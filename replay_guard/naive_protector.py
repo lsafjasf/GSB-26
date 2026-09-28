@@ -27,7 +27,10 @@ class NaiveProtector:
     def check(
         self, request_id: Hashable, timestamp: float, now: float
     ) -> Decision:
-        if timestamp > now + self._skew:
+        anchor = now
+        if self._max_ts is not None and self._max_ts > anchor:
+            anchor = self._max_ts
+        if timestamp > anchor + self._skew:
             return Decision(False, REASON_TOO_FAR_FUTURE)
         if self._max_ts is not None and timestamp < self._max_ts - self._window:
             return Decision(False, REASON_TOO_OLD)

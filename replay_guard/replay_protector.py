@@ -1,8 +1,12 @@
 """滑动窗口重放攻击防护库（仅标准库，时间可注入）。
 
 判定语义（边界均为闭区间，恰好等于允许范围时放行）：
-  - 未来：timestamp > now + clock_skew_seconds        -> 拒绝 "too_far_future"
-        即 timestamp == now + clock_skew_seconds 恰好放行。
+  - 未来：timestamp > max(now, max_seen_ts) + clock_skew_seconds
+        -> 拒绝 "too_far_future"
+        即 timestamp == max(now, max_seen_ts) + clock_skew_seconds 恰好放行。
+        未来窗口锚定在高水位 max_seen_ts 上：接收方本地时钟回拨
+        （now 小于已见的最大时间戳）不会压缩未来窗口，正常请求不会
+        被误判为 "too_far_future"。
   - 过旧：timestamp < max_seen_ts - window_seconds   -> 拒绝 "too_old"
         即 timestamp == max_seen_ts - window_seconds 恰好放行。
   - 重放：request_id 已在窗口内被记录                -> 拒绝 "replay"
@@ -92,7 +96,12 @@ class ReplayProtector:
         if now is None:
             now = self._clock()
 
-        if timestamp > now + self._skew:
+        # 未来窗口锚定在高水位上：本地时钟回拨不超过已见最大时间戳时，
+        # 用 max_seen_ts 作为锚点，避免正常请求被误拒。
+        anchor = now
+        if self._max_ts is not None and self._max_ts > anchor:
+            anchor = self._max_ts
+        if timestamp > anchor + self._skew:
             return self._reject(request_id, timestamp, REASON_TOO_FAR_FUTURE)
 
         if self._max_ts is not None and timestamp < self._too_old_threshold():

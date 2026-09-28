@@ -79,11 +79,17 @@ class TestBoundarySemantics(unittest.TestCase):
         self.assertEqual(d.reason, REASON_TOO_OLD)
 
     def test_replay_at_past_boundary_still_rejected(self):
-        # 恰好压在窗口下界的 id，清理不得将其提前驱逐
+        # 恰好压在窗口下界的 id，清理不得将其提前驱逐。
+        # 构造真正触发摊还清理的场景：存量达到 1024 触发全量驱逐。
         p, _ = make(window=60.0)
-        p.check("a", 1000.0)
-        p.check("b", 940.0)  # 边界放行
-        p.check("c", 1000.0)  # 推进状态但不推进 max_ts
+        p.check("stale", 939.0)   # max_ts=939 时放行，随后变为可驱逐条目
+        p.check("a", 1000.0)      # max_ts=1000，清理下界 = 940
+        p.check("b", 940.0)       # 恰好压在窗口下界，放行
+        for i in range(1021):
+            # 第 1021 条使存量达到 1024，触发全量驱逐
+            p.check(f"filler-{i}", 1000.0)
+        # 清理确实执行过：stale(939 < 940) 被驱逐，b(940 == 下界) 必须保留
+        self.assertEqual(p.stored_ids, 1023)
         d = p.check("b", 940.0)
         self.assertFalse(d.accepted)
         self.assertEqual(d.reason, REASON_REPLAY)
@@ -145,14 +151,31 @@ class TestOutOfOrderAndJumps(unittest.TestCase):
 
 
 class TestClockInjection(unittest.TestCase):
+    def test_local_clock_rollback_does_not_false_reject(self):
+        # 接收方本地时钟回拨超过 skew：窗口锚定高水位，正常请求不被误拒
+        p, clock = make(window=60.0, skew=5.0, now=1000.0)
+        p.check("a", 1000.0)
+        clock.t = 900.0  # 回拨 100s，远超 skew=5s
+        d = p.check("b", 1000.0)  # 发送方时钟正常的请求
+        self.assertTrue(d.accepted)
+        self.assertEqual(d.reason, REASON_OK)
+        # 高水位锚点之上的未来限制仍然生效
+        self.assertEqual(p.check("c", 1006.0).reason, REASON_TOO_FAR_FUTURE)
+
     def test_injected_clock_controls_future_check(self):
         p, clock = make(skew=5.0, now=1000.0)
         self.assertEqual(p.check("a", 1004.0).reason, REASON_OK)
         clock.t = 2000.0
         # 时钟前进后，同一时间戳不再接近未来
-        self.assertTrue(p.check("b", 1004.0).accepted or True)  # 不抛异常即可
+        d = p.check("b", 1004.0)
+        self.assertTrue(d.accepted)
+        self.assertEqual(d.reason, REASON_OK)
         clock.t = 1000.0
-        self.assertEqual(p.check("c", 1006.0).reason, REASON_TOO_FAR_FUTURE)
+        # 时钟回拨后，未来窗口锚定在 max_seen_ts=1004 上：
+        # 超出 锚点+skew 才拒绝
+        self.assertEqual(p.check("c", 1009.000001).reason, REASON_TOO_FAR_FUTURE)
+        # 锚点+skew 范围内的正常请求不因回拨被误拒
+        self.assertEqual(p.check("d", 1006.0).reason, REASON_OK)
 
     def test_now_parameter_overrides_clock(self):
         p, _ = make(skew=5.0, now=0.0)
