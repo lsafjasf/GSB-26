@@ -7,7 +7,10 @@
  *  2) 分块 vs 朴素参照：允许浮点容差，因为分块改变了求和顺序，
  *     误差上界约为 O(k * eps * max|a||b|)，eps = 2^-53 ≈ 1.1e-16。
  */
-const { createMatrix, matmulNaive, matmulSerialBlocked, ParallelMultiplier } = require('./matmul');
+const {
+  createMatrix, matmulNaive, matmulSerialBlocked, ParallelMultiplier,
+  machineInfo, recommendConfig, matmulAuto, closeAutoPools,
+} = require('./matmul');
 
 const EPS = 2 ** -52; // double 机器精度
 
@@ -105,6 +108,73 @@ async function runCase(pool, { name, m, k, n, blockSize, fillA, fillB }) {
   try { matmulSerialBlocked(createMatrix(2, 3), createMatrix(4, 5), createMatrix(2, 5)); }
   catch (e) { threw = e instanceof RangeError; }
   check('维度不匹配抛 RangeError', threw);
+
+  // ---- 自动配置 ----
+  const hw = machineInfo();
+  check('机器探测: 物理核 ∈ [1, 逻辑核]',
+    hw.physicalCores >= 1 && hw.physicalCores <= hw.logicalCores,
+    `physical=${hw.physicalCores}, logical=${hw.logicalCores}`);
+  check('机器探测: 缓存容量为正',
+    hw.cache.L1d > 0 && hw.cache.L2 > 0 && hw.cache.L3 > 0,
+    `L1d=${hw.cache.L1d}, L2=${hw.cache.L2}, L3=${hw.cache.L3}`);
+
+  // 推荐值本身合法：块大小为正、线程数 ∈ [1, 物理核]、可复算（同输入同输出）
+  for (const s of [{ m: 3, k: 3, n: 3 }, { m: 2, k: 400, n: 3 }, { m: 1024, k: 1024, n: 1024 }]) {
+    const c1 = recommendConfig(s.m, s.k, s.n);
+    const c2 = recommendConfig(s.m, s.k, s.n);
+    check(`推荐合法且可复算 ${s.m}x${s.k}x${s.n}`,
+      c1.blockSize >= 1 && c1.numThreads >= 1 && c1.numThreads <= hw.physicalCores
+        && c1.blockSize === c2.blockSize && c1.numThreads === c2.numThreads,
+      `bs=${c1.blockSize}, nt=${c1.numThreads}`);
+  }
+
+  // 手工覆盖优先于自动推导
+  const ov = recommendConfig(500, 500, 500, { blockSize: 24, numThreads: 3 });
+  check('手工覆盖生效', ov.blockSize === 24 && ov.numThreads === 3,
+    `bs=${ov.blockSize}, nt=${ov.numThreads}`);
+
+  // 自动配置（含极小/极扁/非方阵）结果与串行分块逐位一致、与朴素在容差内
+  const autoShapes = [
+    { name: '自动 极小 3x3x3', m: 3, k: 3, n: 3 },
+    { name: '自动 极小 17x19x13', m: 17, k: 19, n: 13 },
+    { name: '自动 极扁 2x400x3', m: 2, k: 400, n: 3 },
+    { name: '自动 极扁 400x2x400', m: 400, k: 2, n: 400 },
+    { name: '自动 非方阵 127x131x113', m: 127, k: 131, n: 113 },
+    { name: '自动 非方阵 300x257x299', m: 300, k: 257, n: 299 },
+    { name: '自动 方阵 512^3', m: 512, k: 512, n: 512 },
+  ];
+  for (const s of autoShapes) {
+    const rng2 = makeRng(s.m * 1e6 + s.k * 1e3 + s.n + 7);
+    const A2 = createMatrix(s.m, s.k, () => rng2());
+    const B2 = createMatrix(s.k, s.n, () => rng2());
+    const Cauto = createMatrix(s.m, s.n);
+    const Cser2 = createMatrix(s.m, s.n);
+    const Cref2 = createMatrix(s.m, s.n);
+    const cfg = recommendConfig(s.m, s.k, s.n);
+    await matmulAuto(A2, B2, Cauto);
+    matmulSerialBlocked(A2, B2, Cser2, cfg.blockSize);
+    matmulNaive(A2, B2, Cref2);
+    const dAuto = maxAbsDiff(Cauto, Cser2);
+    check(`${s.name}: 自动==串行(逐位)`, dAuto === 0,
+      `bs=${cfg.blockSize}, nt=${cfg.numThreads}, max|diff|=${dAuto}`);
+    const tol2 = Math.max(8 * s.k * EPS * maxAbs(A2) * maxAbs(B2), 1e-300);
+    const dRef = maxAbsDiff(Cauto, Cref2);
+    check(`${s.name}: 自动≈朴素(容差)`, dRef <= tol2,
+      `max|diff|=${dRef.toExponential(2)}, tol=${tol2.toExponential(2)}`);
+  }
+
+  // 自动入口 + 手工覆盖：结果仍与串行分块（同 bs）逐位一致
+  {
+    const rng3 = makeRng(99);
+    const A3 = createMatrix(200, 180, () => rng3());
+    const B3 = createMatrix(180, 220, () => rng3());
+    const Cman = createMatrix(200, 220);
+    const Cser3 = createMatrix(200, 220);
+    await matmulAuto(A3, B3, Cman, { blockSize: 24, numThreads: 4 });
+    matmulSerialBlocked(A3, B3, Cser3, 24);
+    check('自动+手工覆盖: 并行==串行(逐位)', maxAbsDiff(Cman, Cser3) === 0);
+  }
+  await closeAutoPools();
 
   await pool.close();
   console.log(`\n${passed} passed, ${failed} failed`);

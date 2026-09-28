@@ -11,6 +11,8 @@
  */
 
 const { Worker } = require('worker_threads');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 /** 创建共享内存矩阵。fill 为 (i, j) => number 或省略（零矩阵）。 */
@@ -160,6 +162,148 @@ async function matmulParallel(A, B, C, blockSize = 64, numThreads) {
   }
 }
 
+/** 解析 /sys 的缓存容量字符串（"32K" / "1M" / 纯数字字节）。 */
+function parseCacheSize(s) {
+  const m = /^(\d+)\s*([KMG])?$/i.exec(s.trim());
+  if (!m) return 0;
+  const unit = { K: 1 << 10, M: 1 << 20, G: 1 << 30 }[(m[2] || '').toUpperCase()] || 1;
+  return Number(m[1]) * unit;
+}
+
+let machineCache = null;
+/**
+ * 探测机器并行相关参数：逻辑核数、物理核数、L1d/L2/L3 容量（字节）。
+ * Linux 下读 /sys/devices/system/cpu（cpu0 代表每核私有缓存）；
+ * 其他平台回退到保守默认值。结果缓存，重复调用零开销。
+ */
+function machineInfo() {
+  if (machineCache) return machineCache;
+  const logicalCores = os.cpus().length;
+  let physicalCores = 0;
+  const cache = { L1d: 32 << 10, L2: 1 << 20, L3: 32 << 20 }; // 回退默认：典型桌面级
+  try {
+    const cpuDir = '/sys/devices/system/cpu';
+    const cores = new Set();
+    for (const name of fs.readdirSync(cpuDir)) {
+      if (!/^cpu\d+$/.test(name)) continue;
+      const topo = path.join(cpuDir, name, 'topology');
+      const pkg = fs.readFileSync(path.join(topo, 'physical_package_id'), 'utf8').trim();
+      const core = fs.readFileSync(path.join(topo, 'core_id'), 'utf8').trim();
+      cores.add(`${pkg}:${core}`);
+    }
+    physicalCores = cores.size;
+  } catch { /* 非 Linux 或权限不足：保持回退值 */ }
+  if (!physicalCores) physicalCores = logicalCores;
+  try {
+    const cacheDir = '/sys/devices/system/cpu/cpu0/cache';
+    for (const idx of fs.readdirSync(cacheDir)) {
+      const dir = path.join(cacheDir, idx);
+      const level = Number(fs.readFileSync(path.join(dir, 'level'), 'utf8'));
+      const type = fs.readFileSync(path.join(dir, 'type'), 'utf8').trim();
+      const size = parseCacheSize(fs.readFileSync(path.join(dir, 'size'), 'utf8'));
+      if (!size) continue;
+      if (level === 1 && type === 'Data') cache.L1d = size;
+      else if (level === 2 && type === 'Unified') cache.L2 = size;
+      else if (level === 3 && type === 'Unified') cache.L3 = size;
+    }
+  } catch { /* 保持回退值 */ }
+  machineCache = { logicalCores, physicalCores, cache };
+  return machineCache;
+}
+
+const MIN_BLOCK = 16;   // 更小的块循环开销占比过高（见 bench_block 实测）
+const MAX_BLOCK = 256;  // 更大的块工作集超出 L2，命中率下降
+const MIN_PARALLEL_FLOPS = 1e7;   // 低于此工作量，worker 调度开销大于并行收益
+const FLOPS_PER_THREAD = 1e7;     // 每线程至少分摊这么多 flop 才值得多开一线程
+
+function prevPow2(x) { return 2 ** Math.floor(Math.log2(Math.max(x, 1))); }
+
+/**
+ * 按矩阵形状 (m,k,n)、机器核数与缓存容量推荐 { blockSize, numThreads }。
+ * 规则全部显式写在 reasons 里，给定相同机器与形状结果可复算：
+ *  1) 块大小：A/B/C 三块 bs² 工作集(3·bs²·8B) 不超过 L2 的 1/4，
+ *     取不超过该上界的最大 2 的幂，并夹在 [16, 256]；
+ *  2) 线程数：物理核数（SMT 逻辑核实测收益甚微）为上限，
+ *     再按工作量 flops=2mkn 收缩（<1e7 单线程；每 1e7 flop 增配一线程）；
+ *  3) 负载均衡：C 瓦片数不足 2·numThreads 时减半块（下限 16），
+ *     最后线程数再以瓦片数为上限（瓦片是调度最小单位）。
+ * overrides 可传 { blockSize, numThreads } 手工覆盖，覆盖项跳过对应推导。
+ */
+function recommendConfig(m, k, n, overrides = {}) {
+  const hw = machineInfo();
+  const reasons = [];
+  const fmtMB = b => (b >= (1 << 20) ? `${b >> 20}MB` : `${b >> 10}KB`);
+
+  let bs;
+  if (overrides.blockSize !== undefined) {
+    bs = overrides.blockSize;
+    reasons.push(`blockSize=${bs}：手工覆盖`);
+  } else {
+    const cap = Math.floor(Math.sqrt(hw.cache.L2 / (3 * 8 * 4)));
+    bs = Math.min(MAX_BLOCK, Math.max(MIN_BLOCK, prevPow2(cap)));
+    reasons.push(`L2=${fmtMB(hw.cache.L2)}，3·bs²·8B ≤ L2/4 → bs≤${cap}，取 2 的幂 bs=${bs}`);
+  }
+
+  const flops = 2 * m * k * n;
+  let nt;
+  if (overrides.numThreads !== undefined) {
+    nt = overrides.numThreads;
+    reasons.push(`numThreads=${nt}：手工覆盖`);
+  } else {
+    nt = hw.physicalCores;
+    reasons.push(`物理核=${hw.physicalCores}（逻辑核=${hw.logicalCores}，SMT 边际收益低，不超额订阅）`);
+    if (flops < MIN_PARALLEL_FLOPS) {
+      nt = 1;
+      reasons.push(`flops=${flops.toExponential(1)} < ${MIN_PARALLEL_FLOPS.toExponential(0)}，并行开销大于收益 → 单线程`);
+    } else {
+      const byWork = Math.max(1, Math.ceil(flops / FLOPS_PER_THREAD));
+      if (byWork < nt) reasons.push(`flops=${flops.toExponential(1)}，每线程 ≥${FLOPS_PER_THREAD.toExponential(0)} flop → ${byWork} 线程`);
+      nt = Math.min(nt, byWork);
+    }
+  }
+
+  let tiles = Math.ceil(m / bs) * Math.ceil(n / bs);
+  while (nt > 1 && bs > MIN_BLOCK && tiles < 2 * nt) {
+    bs /= 2;
+    tiles = Math.ceil(m / bs) * Math.ceil(n / bs);
+    reasons.push(`瓦片数不足 ${2 * nt}（负载均衡需要 ≥2×线程数），块减半 → bs=${bs}（瓦片 ${tiles}）`);
+  }
+  if (nt > tiles) {
+    reasons.push(`瓦片仅 ${tiles} 个（C 划分是并行最小单位），线程数 ${nt}→${tiles}`);
+    nt = tiles;
+  }
+  if (nt < 1) nt = 1;
+
+  return { blockSize: bs, numThreads: nt, tiles, machine: hw, reasons };
+}
+
+// 自动模式线程池缓存：worker 常驻，避免每次调用重复付线程创建开销
+const autoPools = new Map();
+
+/**
+ * 自动配置乘法：按 recommendConfig 推导块大小与线程数后计算 C = A·B。
+ * overrides = { blockSize, numThreads } 可单独或同时手工覆盖。
+ * 与 matmulSerialBlocked 使用同一 kernel 与瓦片划分，结果逐位一致。
+ */
+async function matmulAuto(A, B, C, overrides = {}) {
+  checkShape(A, B, C);
+  const cfg = recommendConfig(A.rows, A.cols, B.cols, overrides);
+  if (cfg.numThreads <= 1) return matmulSerialBlocked(A, B, C, cfg.blockSize);
+  let pool = autoPools.get(cfg.numThreads);
+  if (!pool) {
+    pool = new ParallelMultiplier(cfg.numThreads);
+    autoPools.set(cfg.numThreads, pool);
+  }
+  return pool.multiply(A, B, C, cfg.blockSize);
+}
+
+/** 关闭 matmulAuto 缓存的所有线程池（进程退出前调用，或进程直接 exit）。 */
+async function closeAutoPools() {
+  const pools = [...autoPools.values()];
+  autoPools.clear();
+  await Promise.all(pools.map(p => p.close()));
+}
+
 module.exports = {
   createMatrix,
   blockMulAdd,
@@ -167,4 +311,8 @@ module.exports = {
   matmulSerialBlocked,
   matmulParallel,
   ParallelMultiplier,
+  machineInfo,
+  recommendConfig,
+  matmulAuto,
+  closeAutoPools,
 };

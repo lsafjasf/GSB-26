@@ -6,9 +6,10 @@
 ## 运行命令
 
 ```bash
-node test.js           # 串并行一致性 + 特殊形状自测（28 项断言）
+node test.js           # 串并行一致性 + 特殊形状 + 自动配置自测（49 项断言）
 node bench_block.js    # 块大小 vs 耗时曲线（默认 1024^3，8 线程）
 node bench_threads.js  # 线程数 vs 加速比（默认 1024^3, bs=64）
+node bench_auto.js     # 自动配置 vs 手工配置在多形状下的耗时对比
 taskset -c 0-3 node bench_threads.js   # 受限 4 核下的加速比
 ```
 
@@ -23,7 +24,63 @@ matmulSerialBlocked(A, B, C, 64);            // 串行分块
 const pool = new ParallelMultiplier(8);      // 线程池可复用
 await pool.multiply(A, B, C, 64);            // 并行分块，结果与串行逐位相同
 await pool.close();
+
+// 自动配置（推荐）：按形状 + 机器核数 + 缓存自动推导块大小与线程数
+const { matmulAuto, recommendConfig, closeAutoPools } = require('./matmul');
+await matmulAuto(A, B, C);                                    // 全自动
+await matmulAuto(A, B, C, { blockSize: 32, numThreads: 4 });  // 手工覆盖（可单独给一项）
+console.log(recommendConfig(1000, 777, 999));                 // 查看推荐值与逐条推导依据
+await closeAutoPools();                                       // 退出前关闭缓存的线程池
 ```
+
+## 自动配置（recommendConfig / matmulAuto）
+
+`recommendConfig(m, k, n)` 按矩阵形状、机器核数与缓存容量推导
+`{ blockSize, numThreads }`，并返回 `reasons`：每条推导都带具体数字，
+同一台机器、同一形状结果**可复算**。机器参数通过
+`/sys/devices/system/cpu` 探测（物理核按 topology 的 core_id 去重，
+缓存读 cpu0 的 L1d/L2/L3），非 Linux 平台回退到保守默认值。
+
+推导规则（常量见 `matmul.js` 顶部）：
+
+1. **块大小看 L2**：A/B/C 三块 `bs²` 工作集（`3·bs²·8B`）不超过 L2 的 1/4，
+   取不超过该上界的最大 2 的幂，夹在 `[16, 256]`。
+   本机 L2=1MB → `bs≤√(1MB/96B)=104` → **bs=64**，与 `bench_block.js`
+   实测甜点（64~128）一致；留 3/4 余量给 B 行流式加载与系统其它数据。
+2. **线程数看物理核与工作量**：上限为物理核数（SMT 逻辑核实测边际收益低，
+   且受限核数下超额订阅会回落）；`flops=2mkn < 1e7` 时 worker 调度开销
+   大于收益，直接单线程；否则每 `1e7` flop 增配一个线程。
+3. **负载均衡看瓦片数**：C 瓦片数不足 `2×线程数` 时块减半（下限 16），
+   线程数再以瓦片数为上限（瓦片是调度最小单位，多出的线程只会空转）。
+
+手工覆盖入口：`matmulAuto(A, B, C, { blockSize, numThreads })` 或
+`recommendConfig(m, k, n, { ... })`，覆盖项跳过对应推导，其余仍自动。
+
+### 自动 vs 手工实测（`bench_auto.js`，Ryzen 7 9700X，取多次最小值）
+
+| 形状 | 自动推荐 | 自动 ms | 手工 bs=64,t=8 | 手工 bs=128,t=16 |
+|------|---------|--------:|---------------:|-----------------:|
+| 极小 3x3x3 | bs=64, t=1 | 0.001 | 0.205 | 0.307 |
+| 极小 32³ | bs=64, t=1 | 0.020 | 0.213 | 0.300 |
+| 极扁 4x8192x4 | bs=64, t=1 | 0.146 | 0.217 | 0.301 |
+| 极扁 2048x4x2048 | bs=64, t=4 | 5.71 | 4.78 | 3.64 |
+| 极扁 4096x2x4096 | bs=64, t=7 | 23.3 | 22.6 | 23.1 |
+| 非方阵 1000x777x999 | bs=64, t=8 | 87.1 | 88.2 | 73.3 |
+| 非方阵 1536x256x768 | bs=64, t=8 | 33.1 | 35.1 | 31.2 |
+| 方阵 512³ | bs=64, t=8 | 15.2 | 14.8 | 14.9 |
+| 方阵 1024³ | bs=64, t=8 | 135.0 | 138.1 | 107.3 |
+
+结论：
+
+- **极小/极扁（flops < 1e7）**：自动判为单线程，比手工开 8~16 线程快
+  2~200 倍——worker 调度固定开销约 0.2~0.4ms，小矩阵上完全盖过计算本身。
+- **中等工作量**：按 `1e7 flop/线程` 增配，与手工最优差 20% 以内。
+- **大矩阵**：自动（物理核 8 线程）与手工默认持平；手工开到 16 逻辑核
+  可再快约 10~20%（SMT 榨取剩余吞吐），但在受限核数（taskset）或共享
+  机器上超额订阅会回落，故自动策略保守取物理核，需要时可用
+  `{ numThreads: os.cpus().length }` 手工覆盖。
+- 所有形状下自动结果与串行分块**逐位相等**（`max|diff|=0`，见
+  `test.js` 自动配置断言组）。
 
 ## 设计要点
 
@@ -108,7 +165,8 @@ await pool.close();
 ## 文件
 
 - `matmul.js` — 库：`createMatrix` / `matmulNaive` / `matmulSerialBlocked` /
-  `matmulParallel` / `ParallelMultiplier`
+  `matmulParallel` / `ParallelMultiplier` / `machineInfo` / `recommendConfig` /
+  `matmulAuto` / `closeAutoPools`
 - `worker.js` — 瓦片消费者（复用 `matmul.js` 的 `blockMulAdd`，避免实现漂移）
-- `test.js` — 28 项一致性与形状健壮性断言
-- `bench_block.js` / `bench_threads.js` — 基准脚本
+- `test.js` — 49 项一致性、形状健壮性与自动配置断言
+- `bench_block.js` / `bench_threads.js` / `bench_auto.js` — 基准脚本
