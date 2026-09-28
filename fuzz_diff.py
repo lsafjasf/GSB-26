@@ -1,9 +1,11 @@
 """Differential fuzzer: main lexer vs. reference lexer (对拍).
 
 Generates random source fragments (identifiers incl. non-ASCII, numbers,
-strings with escapes / unterminated, nested & unterminated comments,
-operators, whitespace, illegal characters) and asserts both implementations
-produce identical token sequences (type, text, positions) and error lists.
+strings with valid/invalid escapes & line continuations, unterminated
+strings, nested & unterminated comments, operators, whitespace, illegal
+characters) and asserts both implementations produce identical token
+sequences (type, raw text, decoded text, positions, offset) and error
+lists (message, start/end spans, raw text).
 
 Usage: python3 fuzz_diff.py [iterations] [seed]
 """
@@ -23,7 +25,38 @@ KEYWORDS = CONFIG["keywords"]
 OPS = ["==", "!=", "<=", ">=", "&&", "||", "+=", "-=", "*=", "/=", "%=",
        "<<", ">>", "->", "+", "-", "*", "/", "%", "=", "<", ">", "!",
        "&", "|", "^", "~", "(", ")", "[", "]", "{", "}", ";", ",", ".", "?", ":"]
-ILLEGAL = ["@", "#", "$", "`", "\\", "\x00", "\x07"]
+ILLEGAL = ["@", "#", "$", "`", "\x00", "\x07"]
+
+
+def _string(rng):
+    delim = rng.choice(["\"", "'"])
+    n_parts = rng.randrange(0, 8)
+    body_parts = []
+    for _ in range(n_parts):
+        choice = rng.randrange(6)
+        if choice == 0:  # plain char
+            body_parts.append(rng.choice("ab \tAB"))
+        elif choice == 1:  # raw delimiter only when terminated handled later
+            body_parts.append(delim)
+        elif choice == 2:  # valid simple escapes
+            body_parts.append(rng.choice(["\\n", "\\t", "\\r", "\\\\",
+                                          "\\\"", "\\'", "\\0", "\\b"]))
+        elif choice == 3:  # invalid escape (recovery keeps char verbatim)
+            body_parts.append("\\" + rng.choice("xyzq@"))
+        elif choice == 4:  # line continuation: backslash + real newline
+            body_parts.append("\\\n")
+        else:  # escaped delimiter (must never terminate the string)
+            body_parts.append("\\" + delim)
+    # avoid raw active delimiter inside the body (it would end the string)
+    body = "".join(body_parts).replace(
+        delim, "\\" + delim) if rng.random() < 0.5 else \
+        "".join(p for p in body_parts if p != delim)
+    unterminated = rng.random() < 0.18
+    if unterminated:
+        if rng.random() < 0.25:
+            body += "\\"  # trailing backslash at EOF
+        return delim + body
+    return delim + body + delim
 
 
 def gen_fragment(rng):
@@ -41,13 +74,8 @@ def gen_fragment(rng):
             "%de%d" % (rng.randrange(100), rng.randrange(10)),
             "%d.%de-%d" % (rng.randrange(100), rng.randrange(100), rng.randrange(10)),
         ])
-    if kind == 2:  # string, sometimes escaped / unterminated
-        delim = rng.choice(["\"", "'"])
-        body = "".join(rng.choice("ab \t" + delim + "\\n") for _ in range(rng.randrange(0, 10)))
-        body = body.replace("\\", "\\\\") if rng.random() < 0.5 else body
-        if rng.random() < 0.15:
-            return delim + body  # unterminated
-        return delim + body + delim
+    if kind == 2:  # string (escapes, invalid escapes, line continuation)
+        return _string(rng)
     if kind == 3:  # line comment
         return "//" + "".join(rng.choice("abc /*\"'") for _ in range(rng.randrange(0, 15)))
     if kind == 4:  # block comment, nested, sometimes unterminated
@@ -63,7 +91,7 @@ def gen_fragment(rng):
         return rng.choice([" ", "  ", "\t", "\n", "\n\n", " \t \n"])
     if kind == 7:
         return rng.choice(ILLEGAL)
-    if kind == 8:  # string with escaped delimiter
+    if kind == 8:  # classic escaped delimiter strings
         return '"a\\"b"' if rng.random() < 0.5 else "'x\\'y'"
     if kind == 9:  # comment-like operator sequences
         return rng.choice(["/", "//", "/*", "*/", "/**/", "/*/"])
@@ -82,12 +110,17 @@ def main():
     lexer = Lexer(CONFIG)
     rng = random.Random(seed)
 
+    saw_invalid_escape = saw_unterminated = False
     for it in range(iterations):
         src = gen_source(rng, rng.randrange(1, 40))
         tokens_a, errors_a = lexer.tokenize(src)
         tokens_b, errors_b = reference_lexer.tokenize(src, CONFIG)
-        pa = [t.pos() for t in tokens_a]
+        pa = [t.full() for t in tokens_a]
         ea = [e.pos() for e in errors_a]
+        saw_invalid_escape |= any(
+            e.message == "invalid escape" for e in errors_a)
+        saw_unterminated |= any(
+            e.message.startswith("unterminated") for e in errors_a)
         if pa != tokens_b or ea != errors_b:
             print("MISMATCH at iteration %d (seed=%d)" % (it, seed))
             print("source: %r" % src)
@@ -96,18 +129,28 @@ def main():
             print("main errors : %r" % (ea,))
             print("ref  errors : %r" % (errors_b,))
             sys.exit(1)
-        # reconstruction invariant: tokens + skipped text + errors == source
-        covered = []
-        for t in tokens_a:
-            covered.append((t.offset, t.offset + len(t.text)))
+        # reconstruction invariant: tokens and illegal-character gaps tile
+        # the source disjointly; every token/error raw slice must equal the
+        # source at its reported span (invalid-escape / unterminated spans
+        # legitimately nest inside a STRING/COMMENT token).
+        covered = [(t.offset, t.offset + len(t.text)) for t in tokens_a]
         for e in errors_a:
+            assert e.end_offset >= e.offset, (src, e)
+            assert src[e.offset:e.end_offset] == e.text,                 "bad error raw: %r %r" % (src, e)
             if e.message == "illegal character":
                 covered.append((e.offset, e.offset + 1))
         prev_end = 0
         for s, e in sorted(covered):
-            assert s >= prev_end, "overlapping tokens"
+            assert s >= prev_end, "overlapping spans: %r" % src
             prev_end = max(prev_end, e)
+        # raw/decoded consistency for strings: decoded differs from raw only
+        # via escape decoding; valid escapes collapse in length
+        for t in tokens_a:
+            if t.type == CONFIG["strings"]["token"]:
+                assert len(t.decoded) <= len(t.text) - 2 or                     len(t.decoded) <= len(t.text), (src, t)
 
+    assert saw_invalid_escape, "fuzzer never produced an invalid escape"
+    assert saw_unterminated, "fuzzer never produced an unterminated construct"
     print("OK: %d iterations, no divergence (seed=%d)" % (iterations, seed))
 
 

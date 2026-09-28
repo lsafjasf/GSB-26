@@ -13,6 +13,13 @@
   "strings": {
     "delimiters": ["\"", "'"],
     "escape": "\\",
+    "escapes": {
+      "\\": "\\", "\"": "\"", "'": "'",
+      "n": "\n", "r": "\r", "t": "\t", "0": "\u0000",
+      "b": "\u0008", "f": "\u000c", "v": "\u000b", "a": "\u0007",
+      "\n": "\n"
+    },
+    "unknown_escape": "error",
     "multiline": false,
     "token": "STRING",
     "priority": 0
@@ -23,5 +30,6 @@
     "token": "COMMENT",
     "skip": false,
     "priority": 0
-  }
+  },
+  "mode": "recover"
 }

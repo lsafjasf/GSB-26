@@ -5,10 +5,16 @@ Deliberately written in a different style from lexer.py:
   (bisect) instead of incrementally tracked line/col counters;
 * the scan loop picks the winning candidate by sorting instead of running
   a running-best comparison;
-* string/comment scanning is implemented as explicit index walks.
+* string/comment scanning is implemented as explicit index walks;
+* escape decoding and error spans are implemented independently.
 
-It must implement the SAME documented semantics (longest match, priority
-tie-break, escape/unterminated handling, illegal-character recovery).
+It implements the SAME documented semantics (longest match, priority
+tie-break, escape decode / invalid-escape recovery, unterminated spans,
+illegal-character recovery) and returns positional tuples rather than the
+dataclasses used by lexer.py:
+
+    token : (type, raw, decoded, sline, scol, eline, ecol, offset)
+    error : (message, sline, scol, raw, eline, ecol, end_offset)
 """
 
 from __future__ import annotations
@@ -16,6 +22,11 @@ from __future__ import annotations
 import bisect
 import re
 from typing import Any
+
+_DEFAULT_ESCAPES = {
+    "\\": "\\", "\"": "\"", "'": "'", "n": "\n", "r": "\r", "t": "\t",
+    "0": "\0", "b": "\b", "f": "\f", "v": "\v", "a": "\a", "\n": "\n",
+}
 
 
 def _line_table(src: str) -> list[int]:
@@ -42,6 +53,12 @@ def tokenize(src: str, config: dict[str, Any]):
     s = config.get("strings") or {}
     delims = sorted(s.get("delimiters", []), key=len, reverse=True)
     escape = s.get("escape", "\\")
+    if "escapes" in s:
+        escapes = dict(s["escapes"])
+    elif escape:
+        escapes = dict(_DEFAULT_ESCAPES)
+    else:
+        escapes = None
     multiline = bool(s.get("multiline", False))
     str_token = s.get("token", "STRING")
     str_pri = int(s.get("priority", 0))
@@ -56,23 +73,40 @@ def tokenize(src: str, config: dict[str, Any]):
     starts = _line_table(src)
     n = len(src)
     pos = 0
-    tokens = []   # (type, text, sline, scol, eline, ecol)
-    errors = []   # (message, line, col, text)
+    tokens = []
+    errors = []
 
     def scan_string(delim):
-        nonlocal pos
         i = pos + len(delim)
+        out = []
+        esc_errors = []
+        fatal = None
         while i < n:
             ch = src[i]
             if escape and src.startswith(escape, i):
-                i += len(escape) + (1 if i + len(escape) < n else 0)
+                j = i + len(escape)
+                if j >= n:
+                    esc_errors.append((i, n, "invalid escape", src[i:n]))
+                    out.append(src[i:n])
+                    i = n
+                    fatal = "unterminated string"
+                    break
+                c2 = src[j]
+                if escapes is not None and c2 not in escapes:
+                    esc_errors.append((i, j + 1, "invalid escape", src[i:j + 1]))
+                    out.append(c2)
+                else:
+                    out.append(escapes[c2] if escapes is not None
+                               else src[i:j + 1])
+                i = j + 1
                 continue
             if src.startswith(delim, i):
-                return i + len(delim), None
+                return i + len(delim), None, "".join(out), esc_errors
             if ch == "\n" and not multiline:
-                return i, "unterminated string"
+                return i, "unterminated string", "".join(out), esc_errors
+            out.append(ch)
             i += 1
-        return n, "unterminated string"
+        return n, fatal or "unterminated string", "".join(out), esc_errors
 
     def scan_block(start, end, nested):
         i = pos + len(start)
@@ -91,49 +125,73 @@ def tokenize(src: str, config: dict[str, Any]):
         return n, "unterminated comment"
 
     while pos < n:
-        candidates = []  # (length, -priority, -order, ttype, skip, error)
+        candidates = []  # (len, -pri, -order, ttype, skip, kind, data)
         for marker in line_markers:
             if src.startswith(marker, pos):
                 nl = src.find("\n", pos)
                 endpos = n if nl == -1 else nl
                 candidates.append((endpos - pos, -comment_pri, 0,
-                                   comment_token, comment_skip, None))
+                                   comment_token, comment_skip, "comment",
+                                   endpos))
                 break
         for blk in blocks:
             if src.startswith(blk["start"], pos):
                 endpos, err = scan_block(blk["start"], blk["end"],
                                          bool(blk.get("nested", False)))
                 candidates.append((endpos - pos, -comment_pri, -1,
-                                   comment_token, comment_skip, err))
+                                   comment_token, comment_skip, "comment",
+                                   (endpos, err)))
                 break
         for delim in delims:
             if src.startswith(delim, pos):
-                endpos, err = scan_string(delim)
+                endpos, err, decoded, esc_errors = scan_string(delim)
                 candidates.append((endpos - pos, -str_pri, -2,
-                                   str_token, False, err))
+                                   str_token, False, "string",
+                                   (endpos, err, decoded, esc_errors)))
                 break
         for name, rx, skip, pri, order in rules:
             m = rx.match(src, pos)
             if m and m.end() > pos:
                 candidates.append((m.end() - pos, -pri, -(3 + order),
-                                   name, skip, None))
+                                   name, skip, "rule", None))
 
         if not candidates:
             line, col = _line_col(starts, pos)
-            errors.append(("illegal character", line, col, src[pos]))
+            eline, ecol = _line_col(starts, pos + 1)
+            errors.append(("illegal character", line, col, src[pos],
+                           eline, ecol, pos + 1))
             pos += 1
             continue
 
-        length, _p, _o, ttype, skip, err = max(candidates, key=lambda t: t[:3])
+        length, _p, _o, ttype, skip, kind, data = max(
+            candidates, key=lambda t: t[:3])
+        start_off = pos
         text = src[pos:pos + length]
+        sline, scol = _line_col(starts, pos)
+        decoded = text
+        fatal_err = None
+        esc_errors = []
+        if kind == "string":
+            endpos, fatal_err, decoded, esc_errors = data
+        elif kind == "comment":
+            if isinstance(data, tuple):
+                endpos, fatal_err = data
+            else:
+                endpos = data
         if ttype == ident_type and text in keywords:
             ttype = keyword_token
-        sline, scol = _line_col(starts, pos)
         pos += length
         eline, ecol = _line_col(starts, pos)
-        if err:
-            errors.append((err, sline, scol, text))
+        for eoff, eend, emsg, eraw in esc_errors:
+            l1, c1 = _line_col(starts, eoff)
+            l2, c2 = _line_col(starts, eend)
+            errors.append((emsg, l1, c1, eraw, l2, c2, eend))
+        if fatal_err:
+            l2, c2 = _line_col(starts, endpos)
+            raw = src[start_off:endpos]
+            errors.append((fatal_err, sline, scol, raw, l2, c2, endpos))
         if not skip:
-            tokens.append((ttype, text, sline, scol, eline, ecol))
+            tokens.append((ttype, text, decoded, sline, scol,
+                           eline, ecol, start_off))
 
     return tokens, errors
