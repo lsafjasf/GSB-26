@@ -181,12 +181,19 @@ class TaskNode:
             # 取消已完成/已失败任务：无状态迁移，但保证资源已释放（幂等）
             self._release_resources_locked()
             return False
-        self._error = Cancelled(f"task {self.name!r} cancelled")
-        self._finish_locked(State.CANCELLED)
-        # 传播到所有后代
-        for child in list(self._children):
-            with child._lock:
-                child._cancel_locked()
+        # 显式栈迭代传播：深度不受递归上限限制
+        stack = [self]
+        while stack:
+            node = stack.pop()
+            with node._lock:
+                if node._state is State.CANCELLED:
+                    continue
+                if node._state.done:
+                    node._release_resources_locked()
+                    continue
+                node._error = Cancelled(f"task {node.name!r} cancelled")
+                node._finish_locked(State.CANCELLED)
+                stack.extend(node._children)
         return True
 
     def _finish_locked(self, final: State) -> None:
@@ -260,7 +267,10 @@ class TaskNode:
         counts = {s.value: 0 for s in State}
         failures: List[Dict[str, str]] = []
 
-        def visit(node: "TaskNode") -> None:
+        # 显式栈迭代遍历（先序）：深度不受递归上限限制
+        stack = [self]
+        while stack:
+            node = stack.pop()
             with node._lock:
                 counts[node._state.value] += 1
                 if node._state is State.FAILED and node._error is not None:
@@ -270,10 +280,8 @@ class TaskNode:
                         "error": str(node._error),
                     })
                 children = list(node._children)
-            for c in children:
-                visit(c)
+            stack.extend(reversed(children))
 
-        visit(self)
         return {
             "total": sum(counts.values()),
             "counts": counts,

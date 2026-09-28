@@ -122,6 +122,35 @@ class TestPropagation(unittest.TestCase):
         for n in all_nodes(root):
             self.assertEqual(n.state, State.CANCELLED)
 
+    def test_deep_chain_100k_under_default_recursion_limit(self):
+        import sys
+        # 前提：默认递归上限（未做任何调高）
+        self.assertLessEqual(sys.getrecursionlimit(), 1000)
+        depth = 100_000
+        t0 = time.perf_counter()
+        root = TaskNode("root")
+        root.start()
+        node = root
+        for i in range(depth):  # 100,001 个节点的深链（定长名字，避免 O(n^2) 内存）
+            node = node.create_child(f"level-{i}")
+            node.start()
+        t_create = time.perf_counter() - t0
+        t0 = time.perf_counter()
+        root.cancel()
+        t_cancel = time.perf_counter() - t0
+        t0 = time.perf_counter()
+        s = root.summary()
+        t_summary = time.perf_counter() - t0
+        print(f"\n[100k 深链 @ recursionlimit={sys.getrecursionlimit()}] "
+              f"创建 {t_create*1000:.1f} ms, 取消传播 {t_cancel*1000:.1f} ms, "
+              f"summary {t_summary*1000:.1f} ms")
+        self.assertEqual(s["total"], depth + 1)
+        self.assertEqual(s["cancelled"], depth + 1)
+        self.assertEqual(s["completed"], 0)
+        self.assertEqual(s["failed"], 0)
+        # 耗时断言：留出充足余量，仅防止病态退化
+        self.assertLess(t_cancel, 30.0)
+
     def test_cancel_root_cancels_everything(self):
         root = make_tree(depth=3, breadth=3)  # 40 个节点
         root.cancel()

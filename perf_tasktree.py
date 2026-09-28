@@ -53,8 +53,6 @@ def main():
 
     print()
     print(f"== 深层链：{N:,} 层嵌套 ==")
-    import sys
-    sys.setrecursionlimit(max(sys.getrecursionlimit(), N * 4))
     deep, t_create_d = bench(f"创建 {N:,} 层深链", lambda: build_deep(N))
     _, t_cancel_d = bench("取消根节点（沿链传播）", deep.cancel)
     assert count_cancelled(deep) == N + 1
