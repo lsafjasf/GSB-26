@@ -4,6 +4,8 @@
 - ``div``/``mod`` 为 C 风格截断除法；除零抛出 :class:`Trap`。
 - 读取未定义变量得到 0；输入流耗尽后 ``input`` 读到 0。
 - 步数上限用于把死循环识别为 ``step_limit`` 状态（如自跳转）。
+
+对拍判据见 :func:`equivalent`：双方均为 ``step_limit`` 时按输出前缀比较。
 """
 from __future__ import annotations
 
@@ -115,3 +117,19 @@ def run(prog, inputs=(), step_limit=100_000) -> dict:
 def signature(result: dict):
     """用于对拍比较的规范化结果（忽略步数，因优化会改变步数）。"""
     return (result["status"], tuple(result["outputs"]), result.get("error"))
+
+
+def equivalent(before: dict, after: dict) -> bool:
+    """对拍等价判据（忽略步数，因优化会改变步数）。
+
+    - 任意一方正常停机/陷阱：状态、陷阱信息必须一致，且完整输出逐字相等；
+    - **双方均命中步数上限（都超时）**：两侧都是无限执行，优化会改变每轮循环
+      的指令条数，从而在同一 ``step_limit`` 下产出数量不同的输出。此时不要求
+      输出等长，改为要求较短输出是较长输出的前缀（输出前缀比较）。
+      两侧都没有任何输出时（空前缀）也判为等价。
+    """
+    if before["status"] == "step_limit" and after["status"] == "step_limit":
+        ob, oa = before["outputs"], after["outputs"]
+        short, long_ = (ob, oa) if len(ob) <= len(oa) else (oa, ob)
+        return long_[: len(short)] == short
+    return signature(before) == signature(after)

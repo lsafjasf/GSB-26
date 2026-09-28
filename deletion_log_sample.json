@@ -49,6 +49,82 @@
       "reason": "assigned variable 'e' is not live afterwards"
     }
   ],
+  "nested_loop_const": [
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "INNER (index 5)",
+      "instruction": "INNER: binop prod mul lo 21",
+      "reason": "binop mul on constants 20, 21 -> 420"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 1",
+      "instruction": "const outer 2",
+      "reason": "assigned variable 'outer' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 3",
+      "instruction": "const inner 3",
+      "reason": "assigned variable 'inner' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 4",
+      "instruction": "const lo 20",
+      "reason": "assigned variable 'lo' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "INNER (index 5)",
+      "instruction": "INNER: const prod 420",
+      "reason": "assigned variable 'prod' is not live afterwards"
+    }
+  ],
+  "both_timeout_prefix": [
+    {
+      "iteration": 1,
+      "pass": "const_fold",
+      "action": "fold",
+      "location": "index 2",
+      "instruction": "binop d mul c 2",
+      "reason": "binop mul on constants 10, 2 -> 20"
+    },
+    {
+      "iteration": 1,
+      "pass": "unreachable",
+      "action": "remove",
+      "location": "index 6",
+      "instruction": "halt",
+      "reason": "not reachable from program entry"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "LOOP (index 1)",
+      "instruction": "LOOP: const c 10",
+      "reason": "assigned variable 'c' is not live afterwards"
+    },
+    {
+      "iteration": 1,
+      "pass": "dead_code",
+      "action": "remove",
+      "location": "index 2",
+      "instruction": "const d 20",
+      "reason": "assigned variable 'd' is not live afterwards"
+    }
+  ],
   "nested_branch": [
     {
       "iteration": 1,

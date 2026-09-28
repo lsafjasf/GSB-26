@@ -1,5 +1,5 @@
-"""对拍用测试程序集：覆盖循环内常量、嵌套分支、全部不可达、跳转到自身、
-除零、溢出等边界结构。"""
+"""对拍用测试程序集：覆盖循环内常量、嵌套循环内常量、嵌套分支、全部不可达、
+跳转到自身、除零、溢出、双方超时按输出前缀比较等边界结构。"""
 
 LOOP_CONST = """
 # 循环体内的常量应被折叠；循环变量 i 不是常量，不得折叠
@@ -14,6 +14,43 @@ binop i, add, i, 1
 binop cond, lt, i, n
 cjmp cond, LOOP, END
 END:
+halt
+"""
+
+NESTED_LOOP_CONST = """
+# 回边覆盖：两层嵌套循环，循环体内的常量乘法（20*21）应折叠为 420；
+# 外层循环变量 i 与内层循环变量 j 都不是常量，循环回边必须保留。
+const i, 0
+const outer, 2
+OUTER:
+const j, 0
+const inner, 3
+const lo, 20
+INNER:
+binop prod, mul, lo, 21
+print prod
+binop j, add, j, 1
+binop jcond, lt, j, inner
+cjmp jcond, INNER, OUT_DONE
+OUT_DONE:
+binop i, add, i, 1
+binop icond, lt, i, outer
+cjmp icond, OUTER, END
+END:
+halt
+"""
+
+BOTH_TIMEOUT_PREFIX = """
+# 双方均超时约定：无限循环体里打印循环不变常量 20。
+# 优化前每轮循环 5 条指令、优化后折叠为 3 条，同一步数上限下两侧都超时、
+# 但输出条数不同（前缀长度不同），应按“输出前缀比较”判为等价。
+const k, 0
+LOOP:
+const c, 10
+binop d, mul, c, 2
+print d
+binop k, add, k, 1
+jmp LOOP
 halt
 """
 
@@ -123,6 +160,8 @@ halt
 # (名字, 源码, 输入集合)
 CASES = [
     ("loop_const", LOOP_CONST, [[]]),
+    ("nested_loop_const", NESTED_LOOP_CONST, [[], [5], [-9]]),
+    ("both_timeout_prefix", BOTH_TIMEOUT_PREFIX, [[]]),
     ("nested_branch", NESTED_BRANCH, [[0], [7], [-3]]),
     ("all_unreachable", ALL_UNREACHABLE, [[]]),
     ("self_jump", SELF_JUMP, [[]]),
