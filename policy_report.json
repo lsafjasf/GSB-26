@@ -1,0 +1,103 @@
+{
+  "min_entropy_bits_floor": 128.0,
+  "policies": [
+    {
+      "policy": "legacy_session",
+      "generation": 1,
+      "alphabet_size": 10,
+      "prefix": "",
+      "random_chars": 6,
+      "segment_size": 0,
+      "separator_count": 0,
+      "total_length": 16,
+      "bits_per_char": 3.3219,
+      "entropy_bits": 19.93,
+      "collision_probability_1m": "~1 (counter resets per process per second)",
+      "description": "10-digit epoch second + 6-digit counter; timestamp is public, only the counter varies."
+    },
+    {
+      "policy": "legacy_salt",
+      "generation": 1,
+      "alphabet_size": 10,
+      "prefix": "",
+      "random_chars": 0,
+      "segment_size": 0,
+      "separator_count": 0,
+      "total_length": 8,
+      "bits_per_char": 3.3219,
+      "entropy_bits": 0.0,
+      "collision_probability_1m": "~1 (fully determined by the clock)",
+      "description": "First 8 digits of the epoch second; no random component at all."
+    },
+    {
+      "policy": "secure_ids_default",
+      "generation": 2,
+      "alphabet_size": 64,
+      "prefix": "",
+      "random_chars": 32,
+      "segment_size": 0,
+      "separator_count": 0,
+      "total_length": 32,
+      "bits_per_char": 6.0,
+      "entropy_bits": 192.0,
+      "collision_probability_1m": "10^-46.1",
+      "description": "Fixed-shape 32-char URL-safe Base64 token from secure_ids.py."
+    },
+    {
+      "policy": "v3_standard",
+      "generation": 3,
+      "alphabet_size": 64,
+      "prefix": "s3_",
+      "random_chars": 32,
+      "segment_size": 0,
+      "separator_count": 0,
+      "total_length": 35,
+      "bits_per_char": 6.0,
+      "entropy_bits": 192.0,
+      "collision_probability_1m": "10^-46.1",
+      "description": "Prefixed URL-safe Base64, drop-in replacement for generation 2."
+    },
+    {
+      "policy": "v3_segmented",
+      "generation": 3,
+      "alphabet_size": 32,
+      "prefix": "",
+      "random_chars": 32,
+      "segment_size": 4,
+      "separator_count": 7,
+      "total_length": 39,
+      "bits_per_char": 5.0,
+      "entropy_bits": 160.0,
+      "collision_probability_1m": "10^-36.5",
+      "description": "Uppercase Base32 in 4-character groups, human-readable."
+    },
+    {
+      "policy": "v3_hex",
+      "generation": 3,
+      "alphabet_size": 16,
+      "prefix": "hx_",
+      "random_chars": 40,
+      "segment_size": 0,
+      "separator_count": 0,
+      "total_length": 43,
+      "bits_per_char": 4.0,
+      "entropy_bits": 160.0,
+      "collision_probability_1m": "10^-36.5",
+      "description": "Lowercase hex with type tag, easy to embed in logs."
+    },
+    {
+      "policy": "v3_compact",
+      "generation": 3,
+      "alphabet_size": 62,
+      "prefix": "",
+      "random_chars": 22,
+      "segment_size": 0,
+      "separator_count": 0,
+      "total_length": 22,
+      "bits_per_char": 5.9542,
+      "entropy_bits": 130.99,
+      "collision_probability_1m": "10^-27.7",
+      "description": "Short unprefixed Base62 for space-constrained storage."
+    }
+  ]
+}
