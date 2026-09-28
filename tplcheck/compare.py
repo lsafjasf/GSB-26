@@ -48,6 +48,11 @@ def compare(
     * ``ORDER_MISMATCH``      - relative order of shared placeholders differs
     * ``TYPE_CONFLICT``       - same placeholder, different merged types
     * ``OPTIONAL_CONFLICT``   - optional in one language, required in another
+
+    Loop-variable usages are compared as loop-path-qualified fields
+    (e.g. ``users[].u``): a field present in one language but not the
+    reference is reported as ``MISSING_PLACEHOLDER`` / ``EXTRA_PLACEHOLDER``,
+    and a type mismatch on the same field as ``TYPE_CONFLICT``.
     """
     diagnostics: List[Diagnostic] = []
     results: Dict[str, ValidationResult] = {}
@@ -75,11 +80,13 @@ def compare(
         ref_lang = next(iter(results))
     ref = results[ref_lang]
     ref_names = set(ref.signature)
+    ref_fields = ref.loop_fields
 
     for lang, res in results.items():
         if lang == ref_lang:
             continue
         names = set(res.signature)
+        fields = res.loop_fields
 
         for name in sorted(ref_names - names):
             diagnostics.append(
@@ -121,6 +128,37 @@ def compare(
                         f"'{ref_lang}' but "
                         f"{'optional' if lp.optional else 'required'} here",
                         pos=lp.first_pos,
+                        lang=lang,
+                    )
+                )
+
+        for name in sorted(ref_fields.keys() - fields.keys()):
+            diagnostics.append(
+                Diagnostic(
+                    "MISSING_PLACEHOLDER",
+                    f"loop field '{name}' exists in '{ref_lang}' "
+                    f"({ref_fields[name].first_pos}) but is missing here",
+                    lang=lang,
+                )
+            )
+        for name in sorted(fields.keys() - ref_fields.keys()):
+            diagnostics.append(
+                Diagnostic(
+                    "EXTRA_PLACEHOLDER",
+                    f"loop field '{name}' does not exist in '{ref_lang}'",
+                    pos=fields[name].first_pos,
+                    lang=lang,
+                )
+            )
+        for name in sorted(ref_fields.keys() & fields.keys()):
+            rf, lf = ref_fields[name], fields[name]
+            if rf.type != lf.type:
+                diagnostics.append(
+                    Diagnostic(
+                        "TYPE_CONFLICT",
+                        f"loop field '{name}' is '{rf.type}' in "
+                        f"'{ref_lang}' but '{lf.type}' here",
+                        pos=lf.first_pos,
                         lang=lang,
                     )
                 )

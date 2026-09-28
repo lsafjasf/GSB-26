@@ -31,6 +31,9 @@ class ValidationResult:
     errors: List[Diagnostic] = field(default_factory=list)
     warnings: List[Diagnostic] = field(default_factory=list)
     signature: Dict[str, ParamInfo] = field(default_factory=dict)  # insertion-ordered
+    # Loop-variable usages, keyed by loop path + variable, e.g. "users[].u"
+    # or "users[].orders[].o" for nested loops.  Compared across languages.
+    loop_fields: Dict[str, ParamInfo] = field(default_factory=dict)
     loop_var_types: Dict[str, str] = field(default_factory=dict)
     ast: List[Node] = field(default_factory=list)
 
@@ -58,6 +61,8 @@ class _Scope:
         self.var = var
         self.pos = pos
         self.type = "any"  # inferred from usages inside the body
+        self.used = False  # whether the loop variable is referenced at all
+        self.first_used_pos: Optional[Position] = None
 
 
 def validate(source: Union[str, List[Node]]) -> ValidationResult:
@@ -73,6 +78,7 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
     errors: List[Diagnostic] = []
     warnings: List[Diagnostic] = []
     signature: Dict[str, ParamInfo] = {}
+    loop_fields: Dict[str, ParamInfo] = {}
     loop_var_types: Dict[str, str] = {}
     loop_var_names = _collect_loop_vars(ast)
     counter = [0]
@@ -104,6 +110,9 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
         """Resolve `name`; merge the implied type into param or loop var."""
         for scope in reversed(scopes):
             if scope.var == name:
+                scope.used = True
+                if scope.first_used_pos is None:
+                    scope.first_used_pos = pos
                 merge_into(scope, implied_type, pos, f"loop variable '{name}'")
                 return
         if name in loop_var_names:
@@ -135,7 +144,7 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
             info.optional = False
             info._seen_optional = False
 
-    def walk(nodes: List[Node], scopes: List[_Scope]) -> None:
+    def walk(nodes: List[Node], scopes: List[_Scope], path=()) -> None:
         for node in nodes:
             if isinstance(node, Text):
                 continue
@@ -148,26 +157,43 @@ def validate(source: Union[str, List[Node]]) -> ValidationResult:
                         merge_optional(info, node)
             elif isinstance(node, If):
                 resolve(node.cond, node.pos, scopes, "bool", "{#if} condition")
-                walk(node.body, scopes)
+                walk(node.body, scopes, path)
             elif isinstance(node, Each):
                 resolve(node.source, node.pos, scopes, "list", "{#each} source")
                 scope = _Scope(node.var, node.pos)
-                walk(node.body, scopes + [scope])
+                child_path = path + (node.source,)
+                walk(node.body, scopes + [scope], child_path)
                 prev = loop_var_types.get(node.var)
                 if prev is None:
                     loop_var_types[node.var] = scope.type
                 else:
                     merged = merge_type(prev, scope.type)
                     loop_var_types[node.var] = merged if merged else prev
+                if scope.used:
+                    key = "".join(f"{s}[]" for s in child_path) + f".{node.var}"
+                    info = loop_fields.get(key)
+                    if info is None:
+                        loop_fields[key] = ParamInfo(
+                            name=key,
+                            type=scope.type,
+                            first_pos=scope.first_used_pos or node.pos,
+                            order=counter[0],
+                        )
+                        counter[0] += 1
+                    else:
+                        merged = merge_type(info.type, scope.type)
+                        if merged is not None:
+                            info.type = merged
             else:  # pragma: no cover - defensive
                 raise TypeError(f"unknown node {node!r}")
 
-    walk(ast, [])
+    walk(ast, [], ())
     return ValidationResult(
         ok=not errors,
         errors=errors,
         warnings=warnings,
         signature=signature,
+        loop_fields=loop_fields,
         loop_var_types=loop_var_types,
         ast=ast,
     )

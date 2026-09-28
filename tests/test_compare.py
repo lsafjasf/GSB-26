@@ -84,6 +84,39 @@ class TestCompare(unittest.TestCase):
         )
         self.assertTrue(report.ok, report.format())
 
+    def test_same_list_different_fields_detected(self):
+        # Both languages loop over 'users' but use different fields of it.
+        report = compare(
+            {
+                "en": "{#each users as u}{u:str}{/each}",
+                "zh": "{#each users as n}{n:str}{/each}",
+            }
+        )
+        self.assertFalse(report.ok)
+        ks = kinds(report, "zh")
+        self.assertIn("MISSING_PLACEHOLDER", ks)  # users[].u
+        self.assertIn("EXTRA_PLACEHOLDER", ks)  # users[].n
+
+    def test_same_field_different_types_detected(self):
+        # Same list, same field, but the field types disagree.
+        report = compare(
+            {
+                "en": "{#each users as u}{u:str}{/each}",
+                "zh": "{#each users as u}{u:int}{/each}",
+            }
+        )
+        self.assertFalse(report.ok)
+        self.assertIn("TYPE_CONFLICT", kinds(report, "zh"))
+
+    def test_same_list_same_field_ok(self):
+        report = compare(
+            {
+                "en": "{#each users as u}{u:str}{/each}",
+                "zh": "{#each users as u}{u:str}{/each}",
+            }
+        )
+        self.assertTrue(report.ok, report.format())
+
     def test_empty_templates_equal(self):
         report = compare({"en": "", "zh": ""})
         self.assertTrue(report.ok, report.format())

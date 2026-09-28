@@ -32,7 +32,9 @@
   `TemplateSyntaxError` 并携带位置。
 
 校验通过后得到**参数签名**：按首次出现顺序排列的参数名、合并后的类型、
-可选标记（循环变量是局部变量，不进签名）。
+可选标记（循环变量是局部变量，不进签名；但其在循环体内的使用会以
+「循环路径.变量」的形式记入 `loop_fields`，如 `users[].u`、嵌套时为
+`users[].orders[].o`，并参与跨语言比较）。
 
 **跨语言比较（`tplcheck.compare`）**：以第一个语言（或指定 `reference=`）
 为基准，逐语言报告：
@@ -42,6 +44,10 @@
 - `ORDER_MISMATCH` — 共有占位符的相对顺序与基准不一致（可用
   `check_order=False` 关闭，适用于语序天然不同的语言对）；
 - `TYPE_CONFLICT` / `OPTIONAL_CONFLICT` — 同名占位符类型/可选性不一致；
+- 循环体字段同样参与比较：同一列表在不同语言里用了不同字段（如
+  `{#each users as u}{u:str}{/each}` 对 `{#each users as n}{n:str}{/each}`）
+  报 `MISSING_PLACEHOLDER` / `EXTRA_PLACEHOLDER`；同一字段类型不一致
+  （`users[].u` 一处 `str` 一处 `int`）报 `TYPE_CONFLICT`；
 - 各语言模板自身的校验错误与语法错误也一并带出（标注语言与位置）。
 
 ## 与渲染实现对拍
