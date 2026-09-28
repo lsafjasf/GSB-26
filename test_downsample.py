@@ -1,5 +1,6 @@
 """downsample 库的自测：口径、空洞、边界、乱序、重复、对拍。"""
 
+import math
 import random
 import unittest
 
@@ -150,6 +151,79 @@ class TestOrderIndependence(unittest.TestCase):
             random.Random(trial).shuffle(shuffled)
             self.assertEqual(downsample(shuffled, 60, ["count", "sum"]), expected)
             self.assertEqual(downsample(shuffled, 60, NON_ADDITIVE_AGGS), expected_na)
+
+    def test_stable_sum_order_independent_with_wide_dynamic_range(self):
+        # 大动态范围 + 交错抵消：每个窗口是若干组 (1e16, 0.1, -1e16)，
+        # 数学真值只保留小值部分。逐项浮点累加在交错顺序下会把 0.1 全部吃掉
+        # 得到 0.0，而在“抵消对相邻”的顺序下得到 2.x，结果随输入顺序漂移。
+        WINDOW = 60
+        pairs = []
+        for bucket, reps in enumerate((10, 20, 40)):
+            t0 = bucket * WINDOW
+            for _ in range(reps):
+                pairs += [(t0 + 1, 1e16), (t0 + 2, 0.1), (t0 + 3, -1e16)]
+            pairs.append((t0 + 4, 0.03 * (bucket + 1)))
+
+        # 多种构造顺序：交错（最坏情况）、抵消对相邻、按值排序、若干随机乱序
+        interleaved = pairs
+        paired = []
+        for bucket, reps in enumerate((10, 20, 40)):
+            t0 = bucket * WINDOW
+            for _ in range(reps):
+                paired += [(t0 + 1, 1e16), (t0 + 3, -1e16), (t0 + 2, 0.1)]
+            paired.append((t0 + 4, 0.03 * (bucket + 1)))
+        by_value_asc = sorted(pairs, key=lambda p: p[1])
+        by_value_desc = sorted(pairs, key=lambda p: p[1], reverse=True)
+        shuffled_variants = []
+        for seed in range(5):
+            variant = pairs[:]
+            random.Random(100 + seed).shuffle(variant)
+            shuffled_variants.append(variant)
+        orders = [interleaved, paired, by_value_asc, by_value_desc] + shuffled_variants
+
+        # 精确求和下，所有顺序必须逐位相等（assertEqual，而非近似比较）。
+        # 可加/不可加口径需分两次请求。
+        reference_sum = downsample(interleaved, WINDOW, ["count", "sum"])
+        reference_avg = downsample(interleaved, WINDOW, "avg")
+        for i, order in enumerate(orders):
+            self.assertEqual(
+                downsample(order, WINDOW, ["count", "sum"]),
+                reference_sum,
+                msg=f"顺序 {i} 下 sum/count 发生漂移",
+            )
+            self.assertEqual(
+                downsample(order, WINDOW, "avg"),
+                reference_avg,
+                msg=f"顺序 {i} 下 avg 发生漂移",
+            )
+
+        # 期望值是正确舍入的精确和：math.fsum 逐窗口独立计算
+        reps_by_bucket = (10, 20, 40)
+        expected_sums = [
+            math.fsum([0.1] * reps + [0.03 * (bucket + 1)])
+            for bucket, reps in enumerate(reps_by_bucket)
+        ]
+        for bucket, expected in enumerate(expected_sums):
+            self.assertEqual(reference_sum[bucket].values["sum"], expected)
+            self.assertEqual(
+                reference_avg[bucket].values["avg"],
+                expected / (3 * reps_by_bucket[bucket] + 1),
+            )
+
+        # 防御性断言：朴素逐项累加确实在该数据上随顺序漂移，
+        # 证明本测试不是“怎么过都行”的无效断言
+        bucket0 = [v for t, v in interleaved if 0 <= t < WINDOW]
+        naive_interleaved = 0.0
+        for v in bucket0:
+            naive_interleaved += v
+        ordered_values = [v for t, v in paired if 0 <= t < WINDOW]
+        naive_paired = 0.0
+        for v in ordered_values:
+            naive_paired += v
+        self.assertNotEqual(naive_interleaved, naive_paired)
+        # 交错顺序下 10 个 0.1 全部被大数吃掉，只剩末尾单独追加的点
+        self.assertEqual(naive_interleaved, bucket0[-1])
+        self.assertNotEqual(naive_paired, expected_sums[0])
 
 
 class TestCrossCheck(unittest.TestCase):

@@ -7,6 +7,9 @@
   同一次降采样请求中混用两类会抛 MixedAggregationError。
 - 无采样点的窗口值为 None（空洞），绝不静默补零。
 - 重复时间戳视为独立采样点，全部计入；输入顺序不影响结果。
+- sum/avg 的数值累加使用 math.fsum 精确求和（正确舍入），
+  而非逐项浮点累加：同一组值无论以何种到达顺序喂入，
+  得到的都是同一个正确舍入结果，浮点误差不会随输入顺序漂移。
 """
 
 from __future__ import annotations
@@ -92,6 +95,20 @@ def _quantile_func(p: float) -> Callable[[Sequence[float]], float]:
     return q
 
 
+def _stable_sum(values: Sequence[float]) -> float:
+    """精确求和：返回值只取决于输入的值集合，与顺序逐位一致。
+
+    使用 math.fsum（Shewchuk 部分和算法），返回正确舍入的浮点和，
+    避免逐项累加/补偿求和在大动态范围数据下随顺序漂移的误差。
+    +inf 与 -inf 混合时数学和未定义，fsum 会抛 ValueError，
+    此时回退为 NaN（同样与顺序无关）。
+    """
+    try:
+        return math.fsum(values)
+    except ValueError:
+        return float("nan")
+
+
 def quantile(p: float) -> Aggregator:
     """构造一个分位数聚合器（不可加口径）。"""
     return Aggregator(f"p{int(round(p * 100))}", MetricKind.NON_ADDITIVE, _quantile_func(p))
@@ -99,9 +116,13 @@ def quantile(p: float) -> Aggregator:
 
 AGGREGATORS: Dict[str, Aggregator] = {
     "count": Aggregator("count", MetricKind.ADDITIVE, lambda vs: float(len(vs))),
-    "sum": Aggregator("sum", MetricKind.ADDITIVE, lambda vs: float(sum(vs))),
+    "sum": Aggregator("sum", MetricKind.ADDITIVE, _stable_sum),
     "max": Aggregator("max", MetricKind.NON_ADDITIVE, lambda vs: float(max(vs))),
-    "avg": Aggregator("avg", MetricKind.NON_ADDITIVE, lambda vs: float(sum(vs)) / len(vs)),
+    "avg": Aggregator(
+        "avg",
+        MetricKind.NON_ADDITIVE,
+        lambda vs: _stable_sum(vs) / len(vs),
+    ),
 }
 
 
