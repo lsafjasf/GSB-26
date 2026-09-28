@@ -4,9 +4,10 @@ merkle.py — 哈希树（Merkle Tree）库，用于集合完整性校验。仅�
 规则约定（构建与验证严格一致）：
   1. 叶子哈希:  H_leaf(d)  = SHA256(b"\\x00" || d)        —— 域分离前缀 0x00
   2. 内部节点:  H_node(l,r) = SHA256(b"\\x01" || l || r)   —— 域分离前缀 0x01
-  3. 奇数节点:  某一层的最后一个节点若没有右兄弟，则与自身配对（复制末尾，
-     即 Bitcoin 风格 duplicate-last）。该规则同时体现在证明中：落单的节点
-     其证明元素为 ('R', 自身哈希)，验证方按同一规则重算。
+  3. 奇数节点:  某一层的最后一个节点若没有右兄弟，则**原样提升**到上一层
+     （carry-up，与 RFC 6962 一致），不与自身配对。落单节点在证明中不产生
+     任何元素，验证方按同一规则重算。这样根摘要与块数一一对应：
+     「n 块」与「n 块再加一份重复的末块」得到不同的根，证明无法跨集合复用。
   4. 空集合:    根摘要为常量 EMPTY_ROOT = SHA256(b"MHT/empty")，树高为 0，
      不存在任何包含证明。
   5. 单叶子树:  根即叶子哈希本身（不再自配对），树高为 0，证明为空列表。
@@ -15,6 +16,7 @@ merkle.py — 哈希树（Merkle Tree）库，用于集合完整性校验。仅�
   direction = 'L' 表示兄弟在左（当前节点为右子），'R' 表示兄弟在右。
   方向编码进证明后，验证无需额外传入叶子下标；任何对数据、顺序、
   路径长度、根摘要的篡改都会导致重算结果与根摘要不一致而被拒绝。
+  落单提升的层不产生证明元素，因此证明长度可能小于树高（不超过树高）。
 """
 
 from __future__ import annotations
@@ -51,9 +53,10 @@ def _build_levels(leaves: List[bytes]) -> List[List[bytes]]:
     while len(current) > 1:
         nxt = []
         for j in range(0, len(current), 2):
-            left = current[j]
-            right = current[j + 1] if j + 1 < len(current) else left  # 奇数: 复制末尾
-            nxt.append(node_hash(left, right))
+            if j + 1 < len(current):
+                nxt.append(node_hash(current[j], current[j + 1]))
+            else:
+                nxt.append(current[j])  # 奇数: 落单节点原样提升
         levels.append(nxt)
         current = nxt
     return levels
@@ -75,7 +78,7 @@ class MerkleTree:
 
     @property
     def height(self) -> int:
-        """树高 = 根到叶子的边数 = 证明长度。空树与单叶子树高度为 0。"""
+        """树高 = 层数 - 1 = 最长证明长度。空树与单叶子树高度为 0。"""
         return len(self._levels) - 1 if self.size > 0 else 0
 
     @property
@@ -96,9 +99,7 @@ class MerkleTree:
             sib = i ^ 1
             if sib < len(cur):
                 proof.append(("L" if sib < i else "R", cur[sib]))
-            else:
-                # 奇数规则: 落单节点与自身配对
-                proof.append(("R", cur[i]))
+            # 奇数规则: 落单节点原样提升，该层不产生证明元素
             i //= 2
         return proof
 
@@ -113,9 +114,10 @@ class MerkleTree:
         for level in range(len(self._levels) - 1):
             cur = self._levels[level]
             pi = i // 2
-            left = cur[2 * pi]
-            right = cur[2 * pi + 1] if 2 * pi + 1 < len(cur) else left
-            self._levels[level + 1][pi] = node_hash(left, right)
+            if 2 * pi + 1 < len(cur):
+                self._levels[level + 1][pi] = node_hash(cur[2 * pi], cur[2 * pi + 1])
+            else:
+                self._levels[level + 1][pi] = cur[2 * pi]  # 落单提升
             i = pi
 
     def append(self, data: bytes) -> None:
@@ -125,21 +127,21 @@ class MerkleTree:
         level = 0
         while True:
             cur = self._levels[level]
-            if len(cur) == 1 and level == len(self._levels) - 1:
-                break  # 单节点即根（空树首次插入）
-            if level == len(self._levels) - 1:
-                self._levels.append([])  # 根分裂，长出新的一层
-            parent_level = self._levels[level + 1]
             pi = i // 2
-            left = cur[2 * pi]
-            right = cur[2 * pi + 1] if 2 * pi + 1 < len(cur) else left
-            ph = node_hash(left, right)
+            if 2 * pi + 1 < len(cur):
+                ph = node_hash(cur[2 * pi], cur[2 * pi + 1])
+            else:
+                ph = cur[2 * pi]  # 落单提升
+            if level == len(self._levels) - 1:
+                if len(cur) == 1:
+                    break  # 单节点即根（空树首次插入）
+                self._levels.append([ph])  # 根分裂，长出新的一层
+                break
+            parent_level = self._levels[level + 1]
             if pi < len(parent_level):
                 parent_level[pi] = ph
             else:
                 parent_level.append(ph)
-            if len(parent_level) == 1 and level + 1 == len(self._levels) - 1:
-                break  # 已到达根
             i = pi
             level += 1
 

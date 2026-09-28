@@ -41,13 +41,25 @@ class TestBuildAndRoot(unittest.TestCase):
         expected = node_hash(leaf_hash(blocks[0]), leaf_hash(blocks[1]))
         self.assertEqual(t.root, expected)
 
-    def test_odd_count_duplicates_last(self):
+    def test_odd_count_promotes_last(self):
         blocks = make_blocks(3)
         t = MerkleTree(blocks)
         h0, h1, h2 = (leaf_hash(b) for b in blocks)
-        expected = node_hash(node_hash(h0, h1), node_hash(h2, h2))  # 复制末尾
+        expected = node_hash(node_hash(h0, h1), h2)  # 落单节点原样提升
         self.assertEqual(t.root, expected)
         self.assertEqual(t.height, 2)
+
+    def test_root_binds_block_count(self):
+        # 根与块数一一对应：n 块 与 「n 块 + 重复末块」必须得到不同的根
+        for n in (1, 2, 3, 4, 5, 7, 8, 9, 100, 1000):
+            blocks = make_blocks(n)
+            root_n = MerkleTree(blocks).root
+            root_dup = MerkleTree(blocks + [blocks[-1]]).root
+            self.assertNotEqual(root_n, root_dup,
+                                f"n={n}：追加重复末块后根摘要未变，块数未被绑定")
+        # 逐字节一致性的反面：旧「复制末尾」规则下 3 块与 4 块（末块重复）根相同
+        b = [b"block-0", b"block-1", b"block-2"]
+        self.assertNotEqual(MerkleTree(b).root, MerkleTree(b + [b[-1]]).root)
 
     def test_empty_data_block(self):
         blocks = [b"", b"", os.urandom(8), b""]
@@ -81,9 +93,24 @@ class TestProofVerification(unittest.TestCase):
         for i, b in enumerate(self.blocks):
             self.assertTrue(verify(self.tree.root, b, self.tree.prove(i)))
 
-    def test_proof_length_equals_height(self):
+    def test_proof_length_at_most_height(self):
         for i in range(len(self.blocks)):
-            self.assertEqual(len(self.tree.prove(i)), self.tree.height)
+            self.assertLessEqual(len(self.tree.prove(i)), self.tree.height)
+
+    def test_proof_not_reusable_across_sets(self):
+        # 证明不承载块数，但根绑定块数：同一份路径不能跨集合复用
+        b = [b"block-0", b"block-1", b"block-2"]
+        t3 = MerkleTree(b)
+        t4 = MerkleTree(b + [b"block-2"])  # 同样的三块再加一份重复的第四块
+        self.assertNotEqual(t3.root, t4.root)
+        # 3 块集合的证明在 4 块集合的根上必须失败，反之亦然
+        self.assertFalse(verify(t4.root, b[2], t3.prove(2)))
+        self.assertFalse(verify(t3.root, b[2], t4.prove(2)))
+        self.assertFalse(verify(t3.root, b[2], t4.prove(3)))
+        # 各自集合内仍然正常通过
+        self.assertTrue(verify(t3.root, b[2], t3.prove(2)))
+        self.assertTrue(verify(t4.root, b[2], t4.prove(2)))
+        self.assertTrue(verify(t4.root, b[2], t4.prove(3)))
 
     def test_tampered_block_rejected(self):
         proof = self.tree.prove(3)
@@ -184,7 +211,10 @@ class TestProofLengthVsHeight(unittest.TestCase):
             t = MerkleTree(make_blocks(n))
             expected = 0 if n == 1 else math.ceil(math.log2(n))
             self.assertEqual(t.height, expected)
-            self.assertEqual(len(t.prove(n - 1)), expected)
+            # 落单提升的层不产生证明元素：证明长度不超过树高
+            self.assertLessEqual(len(t.prove(n - 1)), expected)
+            for i in range(n):
+                self.assertLessEqual(len(t.prove(i)), expected)
 
 
 if __name__ == "__main__":
