@@ -1,0 +1,89 @@
+### python3 -m unittest test_external_sort -v
+test_all_keys_equal (test_external_sort.ExternalSortProperties.test_all_keys_equal) ... ok
+test_chunk_size_one (test_external_sort.ExternalSortProperties.test_chunk_size_one) ... ok
+test_empty_file (test_external_sort.ExternalSortProperties.test_empty_file) ... ok
+test_merge_exception_leaves_no_temp_files (test_external_sort.ExternalSortProperties.test_merge_exception_leaves_no_temp_files) ... ok
+test_no_temp_residue_after_success (test_external_sort.ExternalSortProperties.test_no_temp_residue_after_success) ... ok
+test_random_many_duplicate_keys (test_external_sort.ExternalSortProperties.test_random_many_duplicate_keys) ... ok
+test_readonly_temp_dir_raises_and_leaves_no_residue (test_external_sort.ExternalSortProperties.test_readonly_temp_dir_raises_and_leaves_no_residue) ... ok
+test_single_chunk (test_external_sort.ExternalSortProperties.test_single_chunk) ... ok
+test_single_record (test_external_sort.ExternalSortProperties.test_single_record) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.082s
+
+OK
+
+### python3 -m unittest test_resource_governance -v
+test_mkdtemp_failure_fail_policy_raises (test_resource_governance.DegradationTests.test_mkdtemp_failure_fail_policy_raises) ... ok
+test_mkdtemp_failure_falls_back_to_memory (test_resource_governance.DegradationTests.test_mkdtemp_failure_falls_back_to_memory) ... ok
+test_output_unwritable_is_not_misclassified (test_resource_governance.DegradationTests.test_output_unwritable_is_not_misclassified) ... ok
+test_readonly_dir_fail_policy_raises_without_residue (test_resource_governance.DegradationTests.test_readonly_dir_fail_policy_raises_without_residue) ... ok
+test_readonly_dir_falls_back_to_memory (test_resource_governance.DegradationTests.test_readonly_dir_falls_back_to_memory) ... ok
+test_run_write_failure_falls_back_to_memory (test_resource_governance.DegradationTests.test_run_write_failure_falls_back_to_memory) ... ok
+test_disk_vs_memory_identical (test_resource_governance.DifferentialFallbackTests.test_disk_vs_memory_identical) ... ok
+test_exception_in_final_round_cleans_up (test_resource_governance.MergeExceptionCleanupTests.test_exception_in_final_round_cleans_up) ... ok
+test_exception_in_intermediate_round_cleans_up (test_resource_governance.MergeExceptionCleanupTests.test_exception_in_intermediate_round_cleans_up) ... ok
+test_all_same_key_stable_across_rounds (test_resource_governance.MultiWayMergeTests.test_all_same_key_stable_across_rounds) ... ok
+test_empty_input_multi_round (test_resource_governance.MultiWayMergeTests.test_empty_input_multi_round) ... ok
+test_invalid_merge_ways (test_resource_governance.MultiWayMergeTests.test_invalid_merge_ways) ... ok
+test_no_residue_after_multi_round_success (test_resource_governance.MultiWayMergeTests.test_no_residue_after_multi_round_success) ... ok
+test_three_way_multi_round_with_passthrough (test_resource_governance.MultiWayMergeTests.test_three_way_multi_round_with_passthrough) ... ok
+test_two_way_multi_round (test_resource_governance.MultiWayMergeTests.test_two_way_multi_round) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.359s
+
+OK
+
+### python3 -m unittest test_reproduce -v
+test_bug1_duplicate_records_lost_in_merge (test_reproduce.ReproduceBugs.test_bug1_duplicate_records_lost_in_merge) ... ok
+test_bug2_temp_files_left_after_exception (test_reproduce.ReproduceBugs.test_bug2_temp_files_left_after_exception) ... /usr/lib/python3.12/traceback.py:241: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpgkp21us9/output.txt' mode='w' encoding='utf-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.12/traceback.py:241: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpgkp21us9/extsort_tmp_4175231_0.run' mode='r' encoding='utf-8'>
+  tb.tb_frame.clear()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_bug3_boundary_record_duplicated (test_reproduce.ReproduceBugs.test_bug3_boundary_record_duplicated) ... ok
+test_bug4_stability_claim_violated (test_reproduce.ReproduceBugs.test_bug4_stability_claim_violated) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.006s
+
+OK
+
+### python3 memory_benchmark.py --csv memory_peak_2d.csv
+records=100000, record_size=82B, total=8.2MB
+py_peak: tracemalloc 统计的排序期间 Python 堆峰值（MB）
+maxrss : 隔离子进程 ru_maxrss（MB，含解释器基线）
+
+py_peak (MB)
+chunk_size | runs | ways=2    ways=4    ways=8    ways=16   ways=32  
+---------------------------------------------------------------------
+      1000 |  100 |    0.196    0.193    0.216    0.388    0.738
+      5000 |   20 |    0.853    0.853    0.853    0.853    0.853
+     20000 |    5 |    3.368    3.368    3.367    3.368    3.367
+     50000 |    2 |    8.409    8.408    8.408    8.408    8.408
+    100000 |    1 |   16.708   16.708   16.708   16.708   16.708
+
+maxrss (MB, 隔离子进程)
+chunk_size | runs | ways=2    ways=4    ways=8    ways=16   ways=32  
+---------------------------------------------------------------------
+      1000 |  100 |     15.2     15.3     15.6     15.5     15.9
+      5000 |   20 |     17.0     17.0     17.0     17.0     17.0
+     20000 |    5 |     22.3     22.9     22.9     22.9     22.9
+     50000 |    2 |     32.9     32.9     32.9     32.9     32.9
+    100000 |    1 |     50.9     50.9     51.0     51.0     51.0
+
+merge_rounds（归并轮数）
+chunk_size | runs | ways=2    ways=4    ways=8    ways=16   ways=32  
+---------------------------------------------------------------------
+      1000 |  100 |        7        4        3        2        2
+      5000 |   20 |        5        3        2        2        1
+     20000 |    5 |        3        2        1        1        1
+     50000 |    2 |        1        1        1        1        1
+    100000 |    1 |        0        0        0        0        0
+
+明细已写入 memory_peak_2d.csv
+

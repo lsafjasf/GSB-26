@@ -1,72 +1,106 @@
-# 外部排序缺陷修复说明
+# 外部排序资源治理迭代说明
 
 ## 文件
 
 - `external_sort_buggy.py` — 有缺陷的原始实现（保留用于复现，勿改）
-- `external_sort.py` — 修复后的实现
-- `test_reproduce.py` — 稳定复现四类线上问题的测试（对 buggy 实现全部通过）
-- `test_external_sort.py` — 修复版的守恒/稳定性/异常安全断言（9 个用例）
-- `memory_benchmark.py` — 内存峰值基准
+- `external_sort.py` — 实现：分块落盘 + 多轮 k 路归并 + 降级/清理治理
+- `test_reproduce.py` — 复现四类线上问题（对 buggy 实现全部通过，4 用例）
+- `test_external_sort.py` — 守恒/稳定/异常安全基础断言（9 用例）
+- `test_resource_governance.py` — 本次迭代：多轮归并、降级、异常清理、对拍（15 用例）
+- `memory_benchmark.py` — 峰值内存 chunk_size × merge_ways 二维基准（含隔离子进程 maxrss）
+- `memory_peak_2d.csv` — 二维明细（真实跑出）
+- `run_verification.sh` — 一键复跑，输出落盘 `verification_output.txt`
 
-## 运行命令
+## 运行
 
 ```bash
-python3 -m unittest test_reproduce -v      # 复现四类缺陷（buggy 实现）
-python3 -m unittest test_external_sort -v  # 修复版性质测试
-python3 memory_benchmark.py                # 内存峰值数据
+./run_verification.sh                                  # 一键复跑全部
+python3 -m unittest test_resource_governance -v        # 本次迭代测试
+python3 memory_benchmark.py --csv memory_peak_2d.csv   # 二维内存数据
 ```
 
-## 四类缺陷与修复
+## 本次迭代（资源治理：从“块大小”一条轴扩到临时文件 + 内存）
 
-| # | 缺陷 | 根因（buggy） | 修复 |
-|---|------|----------------|------|
-| 1 | 相同键记录归并时丢失 | `_read_head` 把同 run 内与上一条同键的记录当“重复”跳过 | 归并不去重，每条记录恰好弹出一次 |
-| 2 | 异常后临时文件残留 | 只有正常结束才 `os.unlink`，且无 try/finally | `tempfile.TemporaryDirectory` 托管，正常/异常都清理 |
-| 3 | 块边界记录重复写出 | flush 后 `buf = buf[-1:]` 保留了上一条 | flush 后 `buf.clear()` |
-| 4 | 声称稳定实际不稳定 | 并列时 `<=` 选取更晚的 run | 堆元素 `(key, run_idx, ...)`，并列取 run_idx 小者 |
+### 1. 归并路数轴 `merge_ways`（多轮 k 路归并）
 
-## 归并最小键选取与稳定性
+- 新增参数 `merge_ways`（>=2），限制每轮同时打开的 run 文件句柄数与
+  归并堆大小；run 数超过路数时自动多轮归并（`_merge_round`），单 run 组直通。
+- 归并堆元素仍是 `(key, run_idx, line, stream)`，跨轮同样保持稳定：
+  每轮产物内稳定，下一轮各输入组按起始 run 位置排序编号，并列时
+  run_idx 小者先出。归并内保留键单调不减断言。
+- 返回 `SortResult(backend, num_runs, merge_rounds, merge_ways)` 可观测信息。
 
-最小键用最小堆（`heapq`）选取，堆元素为 `(key, run_idx, line, file)`：
+### 2. 临时目录不可写：两条明确的降级路径（`on_temp_error`）
 
-- 主序 `key`：保证弹出的 key 序列单调不减（merge 内有不变量断言
-  `assert last_key is None or not k < last_key`）；
-- 次序 `run_idx`：run 按输入顺序编号，key 并列时 run_idx 小者（输入位置更早）
-  先弹出，保证跨 run 稳定；
-- run 内部：`list.sort` 是稳定排序，块内相同键保持输入相对顺序；
-- `(key, run_idx)` 对每个堆元素唯一（每个 run 在堆中至多一条），
-  因此堆序全序无歧义，不会退化为比较 line/file。
+- `"fail"`（默认，兼容旧契约）：临时目录创建失败或写 run 文件失败时，
+  抛 `TempDirUnavailableError`（`OSError` 子类），不留临时文件。
+- `"memory"`：同一异常触发纯内存稳定排序 `_in_memory_sort`，
+  返回 `backend=="memory"`，不使用任何临时文件。
+- 错误分类：只有临时存储侧（建临时目录、写中间 run、中间轮读写）的
+  `OSError` 才标记为 `TempDirUnavailableError`；最终输出文件不可写
+  原样抛 `OSError`，不会被误判成“临时目录不可用”。
+- 测试同时覆盖真实只读目录（非 root）与注入失败（root/CI 也能稳定复现），
+  以及首个 run flush 中途写失败的降级。
 
-两条合起来 ⇒ 全局稳定。测试侧不变量断言：
+### 3. 异常后自动清理（含多轮归并中途）
 
-- 守恒：`len(out) == len(records)`；
-- 稳定+有序：`out == sorted(records, key=key)`（Python sorted 为稳定排序）；
-- 逐键相对顺序：输出中每个键的记录序列与输入中该键的记录序列逐项相等。
+- 所有 run 文件位于 `TemporaryDirectory` 托管目录内，任何异常路径都由其
+  递归清理，天然覆盖 split 失败、中间轮失败、最终轮失败。
+- 每轮中间归并成功后立即显式删除被消费的旧 run，把磁盘占用控制在
+  “一轮”量级；归并中途异常时打开的输入 run 由 `_merge_streams` 的
+  `finally` 关闭，半成品由托管目录兜底。
+- 测试在中间轮与最终轮分别注入异常（按 key 调用计数定点爆炸），
+  断言异常后临时目录/`.run` 文件零残留。
 
-## 覆盖的边界情形
+### 4. 降级路径与正常路径对拍
 
-空文件、单块（n < chunk_size）、单记录、全部键相同、chunk_size=1、
-大量重复键、归并中途异常、临时目录只读。
+`test_resource_governance.DifferentialFallbackTests` 对
+{单条、键全异、大量重复键、完全相同记录、空输入} × {chunk=1/37/1000,
+ways=2/3/8} 组合，比较磁盘路径与内存降级路径输出的**字节级一致性**，
+并断言各自的 backend 元信息正确。
 
-## 内存峰值数据
+## 峰值内存二维数据（10 万条 × 82B，真实输出）
 
-`python3 memory_benchmark.py`：100,000 条 × 82B 记录（共 8.2MB），
-`py_peak` 为 tracemalloc 统计的排序期间 Python 堆峰值：
+`py_peak` = tracemalloc 排序期间 Python 堆峰值（MB）：
 
-| chunk_size | run 数 | py_peak (MB) | maxrss (MB) |
-|-----------:|-------:|-------------:|------------:|
-| 1,000      | 100    | 2.2          | 33.7        |
-| 5,000      | 20     | 0.9          | 33.7        |
-| 20,000     | 5      | 3.4          | 33.7        |
-| 50,000     | 2      | 8.4          | 33.7        |
-| 100,000    | 1      | 16.7         | 48.7        |
+| chunk_size | runs | ways=2 | ways=4 | ways=8 | ways=16 | ways=32 |
+|-----------:|-----:|-------:|-------:|-------:|--------:|--------:|
+| 1,000      | 100  | 0.200 | 0.193 | 0.216 | 0.388 | 0.738 |
+| 5,000      | 20   | 0.853 | 0.853 | 0.853 | 0.853 | 0.853 |
+| 20,000     | 5    | 3.368 | 3.368 | 3.367 | 3.368 | 3.367 |
+| 50,000     | 2    | 8.409 | 8.408 | 8.408 | 8.408 | 8.408 |
+| 100,000    | 1    | 16.708 | 16.708 | 16.708 | 16.708 | 16.708 |
+
+归并轮数：
+
+| chunk_size | ways=2 | ways=4 | ways=8 | ways=16 | ways=32 |
+|-----------:|-------:|-------:|-------:|--------:|--------:|
+| 1,000 (100 runs)  | 7 | 4 | 3 | 2 | 2 |
+| 5,000 (20 runs)   | 5 | 3 | 2 | 2 | 1 |
+| 20,000 (5 runs)   | 3 | 2 | 1 | 1 | 1 |
+| 50,000 (2 runs)   | 1 | 1 | 1 | 1 | 1 |
+| 100,000 (1 run)   | 0 | 0 | 0 | 0 | 0 |
 
 结论：
 
-- 峰值内存 ≈ `chunk_size` 条记录的分块缓冲区 + run 数条记录的归并堆
-  （含每 run 一个文件读缓冲），即 **O(chunk_size + num_runs)**；
-- chunk_size 主导：5k→100k 时峰值从 0.9MB 线性涨到 16.7MB；
-- chunk_size 过小（如 1k）时 run 数膨胀，归并阶段 100 个堆元素 +
-  100 个文件读缓冲反而抬高峰值（2.2MB > 5k 时的 0.9MB）；
-- 实践中按可用内存预算选取 chunk_size，例如限制峰值 M 字节、
-  单记录约 s 字节（含 Python 对象开销约 2-3 倍），取 `chunk_size ≈ M / (3s)`。
+- 峰值模型 **O(chunk_size + merge_ways)**：分块缓冲区按 chunk_size 线性
+  增长（5k→100k：0.85→16.7MB，约 20 倍），主导峰值；
+- merge_ways 轴只在 chunk 很小、run 很多时显现：chunk=1,000 时
+  ways 从 2→32，py_peak 0.20→0.74MB（归并堆 + 每路一个文件读缓冲随
+  路数增加）；chunk≥5,000 时分块缓冲区淹没该效应；
+- 增大 merge_ways 的治理收益是**轮数与 IO 趟数下降**（100 runs：
+  ways=2 需 7 轮、ways=32 只需 2 轮），代价是句柄与归并缓冲上升；
+- 选型：按内存预算定 chunk_size（≈ M/(3·s)，s 为单条字节），按文件
+  句柄/缓冲预算定 merge_ways，两者共同把峰值压在 O(chunk_size+merge_ways)。
+
+注：`maxrss` 用隔离子进程逐格测量（ru_maxrss 单调不减，同进程连跑会让
+后格继承前格峰值而失真）；该列含解释器基线，二维明细见 `memory_peak_2d.csv`。
+
+## 上一轮四类缺陷（仍保持修复）
+
+| # | 缺陷 | 修复 |
+|---|------|------|
+| 1 | 相同键归并丢失 | 归并不去重，每条恰好弹出一次 |
+| 2 | 异常后临时文件残留 | TemporaryDirectory 托管 + finally |
+| 3 | 块边界记录重复 | flush 后 `buf.clear()` |
+| 4 | 声称稳定实际不稳定 | 堆元素 `(key, run_idx, ...)`，并列取 run_idx 小者 |
