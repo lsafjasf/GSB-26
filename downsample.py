@@ -7,6 +7,8 @@
   同一次降采样请求中混用两类会抛 MixedAggregationError。
 - 无采样点的窗口值为 None（空洞），绝不静默补零。
 - 重复时间戳视为独立采样点，全部计入；输入顺序不影响结果。
+- sum/avg 用 math.fsum 精确求和（正确舍入），同一批数据任意到达
+  顺序下逐比特一致，大动态范围数据也不会因累加顺序产生不同结果。
 """
 
 from __future__ import annotations
@@ -99,9 +101,9 @@ def quantile(p: float) -> Aggregator:
 
 AGGREGATORS: Dict[str, Aggregator] = {
     "count": Aggregator("count", MetricKind.ADDITIVE, lambda vs: float(len(vs))),
-    "sum": Aggregator("sum", MetricKind.ADDITIVE, lambda vs: float(sum(vs))),
+    "sum": Aggregator("sum", MetricKind.ADDITIVE, lambda vs: float(math.fsum(vs))),
     "max": Aggregator("max", MetricKind.NON_ADDITIVE, lambda vs: float(max(vs))),
-    "avg": Aggregator("avg", MetricKind.NON_ADDITIVE, lambda vs: float(sum(vs)) / len(vs)),
+    "avg": Aggregator("avg", MetricKind.NON_ADDITIVE, lambda vs: float(math.fsum(vs)) / len(vs)),
 }
 
 

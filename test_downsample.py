@@ -2,6 +2,7 @@
 
 import random
 import unittest
+from fractions import Fraction
 
 from downsample import (
     AGGREGATORS,
@@ -150,6 +151,27 @@ class TestOrderIndependence(unittest.TestCase):
             random.Random(trial).shuffle(shuffled)
             self.assertEqual(downsample(shuffled, 60, ["count", "sum"]), expected)
             self.assertEqual(downsample(shuffled, 60, NON_ADDITIVE_AGGS), expected_na)
+
+    def test_large_dynamic_range_order_independent(self):
+        # 大动态范围数据（1e16 与 0.1 同窗）：内置 sum 逐项累加时，
+        # 不同到达顺序会产生不同浮点结果；fsum 精确求和必须逐比特一致。
+        vals = [
+            1.0, -1e8, 1.0, 1e8, 1e15, -1.0, 1e12, 1e16,
+            -0.1, 1.0, -1e15, -0.1, -1e15, -1e15, -1e8, 0.1,
+            -1e8, -1.0, -0.1, -1e12, 0.1, 1e12, 1e12, 0.1,
+            1e16, 1e15, -1e16, -1e15, -0.1, 1e16, 0.1, -1e15,
+        ]
+        exact_sum = float(sum((Fraction(v) for v in vals), Fraction(0)))
+        sums, avgs = set(), set()
+        for trial in range(400):
+            shuffled = vals[:]
+            random.Random(trial).shuffle(shuffled)
+            pts = [(i, v) for i, v in enumerate(shuffled)]
+            sums.add(downsample(pts, 10_000, "sum")[0].values["sum"])
+            avgs.add(downsample(pts, 10_000, "avg")[0].values["avg"])
+        # 400 种顺序下结果必须唯一，且等于数学精确和（正确舍入）
+        self.assertEqual(sums, {exact_sum})
+        self.assertEqual(avgs, {exact_sum / len(vals)})
 
 
 class TestCrossCheck(unittest.TestCase):
