@@ -214,6 +214,43 @@ class TestFlapping(unittest.TestCase):
         self.assertEqual(m.audit_log, [])
 
 
+class TestNoCriticalComponents(unittest.TestCase):
+    def make_noncritical_monitor(self, clock):
+        """配置中没有任何关键组件：cache、recommend 均为非关键。"""
+        configs = [
+            ComponentConfig("cache", critical=False),
+            ComponentConfig("recommend", critical=False),
+        ]
+        return HealthMonitor(configs, clock)
+
+    def test_all_healthy_is_full(self):
+        # 无关键组件且全部健康：不能因 0==0 恒真比较被判成 DOWN
+        clock = FakeClock()
+        m = self.make_noncritical_monitor(clock)
+        for _ in range(5):
+            for name in ("cache", "recommend"):
+                self.assertEqual(m.record(name, True), HealthLevel.FULL)
+        self.assertEqual(m.level, HealthLevel.FULL)
+        self.assertEqual(m.audit_log, [])
+
+    def test_all_down_is_minimal_not_down(self):
+        # 无关键组件且全部异常：最严重只到 MINIMAL，不应判为 DOWN
+        clock = FakeClock()
+        m = self.make_noncritical_monitor(clock)
+        for _ in range(3):
+            m.record("cache", False)
+            m.record("recommend", False)
+        self.assertEqual(m.level, HealthLevel.MINIMAL)
+        self.assertTrue(m.is_allowed("core_query"))
+
+    def test_partial_failure_is_partial(self):
+        clock = FakeClock()
+        m = self.make_noncritical_monitor(clock)
+        for _ in range(3):
+            m.record("cache", False)
+        self.assertEqual(m.level, HealthLevel.PARTIAL)
+
+
 class TestSuccessRateWindow(unittest.TestCase):
     def test_success_rate_uses_sliding_window(self):
         clock = FakeClock()

@@ -135,18 +135,23 @@ class HealthMonitor:
 
     def _recompute_level(self):
         """组合规则：
-        - 关键组件全部异常 -> DOWN
+        - 关键组件全部异常 -> DOWN（需先存在关键组件，否则 0==0 恒成立）
         - 存在关键组件异常（但非全部）-> MINIMAL
         - 关键组件全部正常、存在非关键组件异常 -> PARTIAL
         - 全部正常 -> FULL
+        - 没有关键组件时按非关键组件集合计算：全部异常 -> MINIMAL，
+          部分异常 -> PARTIAL，全部正常 -> FULL（无关键组件不可能 DOWN）
         """
         unhealthy = {n for n, st in self._components.items() if not st.healthy}
         critical_down = {n for n in unhealthy if self._components[n].config.critical}
         total_critical = sum(1 for st in self._components.values() if st.config.critical)
 
-        if len(critical_down) == total_critical:
+        if total_critical > 0 and len(critical_down) == total_critical:
             new_level = HealthLevel.DOWN
         elif critical_down:
+            new_level = HealthLevel.MINIMAL
+        elif total_critical == 0 and unhealthy and len(unhealthy) == len(self._components):
+            # 没有关键组件：非关键组件全部异常，最严重只到 MINIMAL
             new_level = HealthLevel.MINIMAL
         elif unhealthy:
             new_level = HealthLevel.PARTIAL
