@@ -15,8 +15,16 @@ from tablediff import Table, compare
 def naive_diff(left, right, key_cols, ignore, tolerances):
     lcols = [c for c, _ in left.columns]
     rcols = [c for c, _ in right.columns]
+    ltypes = dict(left.columns)
+    rtypes = dict(right.columns)
     common = [c for c in lcols if c in rcols]
-    compared = [c for c in common if c not in set(ignore)]
+    numeric = ("int", "float")
+    # 与库口径一致：主键列只用于对齐；类型不一致列只报结构冲突、不做值比较。
+    compared = [c for c in common
+                if c not in set(ignore)
+                and c not in key_cols
+                and (ltypes[c] == rtypes[c]
+                     or (ltypes[c] in numeric and rtypes[c] in numeric))]
     lidx = {c: i for i, c in enumerate(lcols)}
     ridx = {c: i for i, c in enumerate(rcols)}
     kidx_l = [lidx[c] for c in key_cols]
@@ -169,6 +177,63 @@ class UnitTests(unittest.TestCase):
         t = Table.from_dicts("t", [{"id": 1, "v": 1.5}, {"id": 2, "v": None}])
         self.assertEqual(dict(t.columns)["v"], "float")
 
+    def test_field_examples_limit_configurable_and_flagged(self):
+        # 超宽表：70 个非主键列全部不同；字段级明细上限可配置，超限必须置标记，
+        # 但 field_diff_count / 修改字段计数仍是真实条数。
+        n = 70
+        vcols = [(f"c{i}", "int") for i in range(n)]
+        cols = [("id", "int")] + vcols
+        a = make_table("a", cols, [(0,) + tuple(range(n)),
+                                   (1,) + tuple(range(100, 100 + n))])
+        b = make_table("b", cols, [(0,) + tuple(range(1000, 1000 + n)),
+                                   (1,) + tuple(range(100, 100 + n))])
+
+        # 默认上限 64：行 0 的字段明细被截断到 64 条并置标记
+        rep = compare(a, b, key="id")
+        m0 = next(m for m in rep.diff["modified"] if tuple(m["key"]) == (0,))
+        self.assertEqual(len(m0["fields"]), 64)
+        self.assertTrue(m0["fields_truncated"])
+        self.assertEqual(m0["field_diff_count"], 70)
+        self.assertTrue(rep.diff["fields_truncated"])
+        self.assertTrue(rep.diff["truncated"])
+        self.assertEqual(rep.diff["field_truncated_rows"], 1)
+        self.assertEqual(rep.summary["modified_fields"], 70)
+        self.assertEqual(rep.summary["max_field_examples"], 64)
+
+        # 上限可配置：调小后截断条数随之变化
+        rep10 = compare(a, b, key="id", max_field_examples=10)
+        m0 = rep10.diff["modified"][0]
+        self.assertEqual(len(m0["fields"]), 10)
+        self.assertTrue(m0["fields_truncated"])
+        self.assertEqual(m0["field_diff_count"], 70)
+
+        # None 表示不限：70 条字段明细完整保留，不置截断标记
+        rep_all = compare(a, b, key="id", max_field_examples=None)
+        m0 = next(m for m in rep_all.diff["modified"] if tuple(m["key"]) == (0,))
+        self.assertEqual(len(m0["fields"]), 70)
+        self.assertFalse(m0["fields_truncated"])
+        self.assertFalse(rep_all.diff["fields_truncated"])
+        self.assertFalse(rep_all.diff["truncated"])
+
+        # 非法配置必须显式报错而不是静默截断
+        with self.assertRaises(ValueError):
+            compare(a, b, key="id", max_field_examples=-1)
+
+    def test_compared_columns_align_with_report_exclude_key_and_mismatch(self):
+        # name 列两侧类型不一致（结构冲突），其值虽不同也不得参与值比较；
+        # 主键 id 只用于对齐，不计入 compared_columns（与报告口径一致）。
+        a = make_table("a", [("id", "int"), ("name", "str"), ("v", "int")],
+                       [(1, "7", 1), (2, "8", 2)])
+        b = make_table("b", [("id", "int"), ("name", "int"), ("v", "int")],
+                       [(1, 7, 1), (2, 8, 2)])
+        rep = compare(a, b, key="id")
+        self.assertEqual(rep.schema["compared_columns"], ["v"])
+        self.assertEqual(rep.schema["type_mismatches"][0]["column"], "name")
+        self.assertFalse(rep.schema["consistent"])
+        self.assertEqual(rep.summary["modified_rows"], 0)
+        self.assertEqual(rep.summary["modified_fields"], 0)
+        self.assertEqual(rep.summary["identical_rows"], 2)
+
 
 # ---------------------------------------------------------------- 随机对拍
 def gen_value(rng, typ):
@@ -260,7 +325,8 @@ class DifferentialTests(unittest.TestCase):
             with self.subTest(seed=seed):
                 rep = compare(left, right, key=key_cols,
                               ignore_columns=ignore, tolerances=tol,
-                              max_examples=10 ** 9)
+                              max_examples=10 ** 9,
+                              max_field_examples=None)
                 exp = naive_diff(left, right, key_cols, ignore, tol)
                 got = report_sets(rep)
                 self.assertEqual(got[0], exp[0], "added 不一致")

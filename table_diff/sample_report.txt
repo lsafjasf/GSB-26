@@ -7,7 +7,7 @@
 新增(仅右表): 1  (16.67%)
 删除(仅左表): 1  (16.67%)
 修改(行): 1  (16.67%)
-修改(字段): 1  (11.11%)
+修改(字段): 1  (16.67%)
 完全一致行: 2
 差异总行数: 3  差异占比: 50.00%
 
@@ -16,7 +16,7 @@
 仅左表列: []
 仅右表列: ['vip']
 类型不一致列: []
-参与比较的列: 3 个
+参与比较的列(2 个，不含主键列与类型不一致列): ['name', 'balance']
 
 -- 主键健康度 --
 主键: ['id']
@@ -27,10 +27,11 @@
 忽略列: ['updated_at']
 容差: {'balance': {'atol': 0.01, 'rtol': 0.0}}
 
--- 差异明细(每类最多 1000 条) --
+-- 差异明细(行每类最多 1000 条, 每行字段最多 64 条) --
+明细截断: False  (行数超限: False, 字段超限: False)
 新增示例: [{"key": [5], "row": [5, "erin", 7.7, "2026-09-09", 1]}]
 删除示例: [{"key": [4], "row": [4, "dave", 88.88, "2026-09-04"]}]
-修改示例: [{"key": [3], "fields": [{"column": "balance", "left": 0.0, "right": 10.0}], "field_diff_count": 1}]
+修改示例: [{"key": [3], "fields": [{"column": "balance", "left": 0.0, "right": 10.0}], "field_diff_count": 1, "fields_truncated": false}]
 
 
 ========== JSON 完整报告 ==========
@@ -48,11 +49,12 @@
     "modified_rows": 1,
     "modified_row_ratio": 0.16666666666666666,
     "modified_fields": 1,
-    "modified_field_ratio": 0.1111111111111111,
+    "modified_field_ratio": 0.16666666666666666,
     "identical_rows": 2,
     "diff_rows": 3,
     "diff_row_ratio": 0.5,
-    "max_examples": 1000
+    "max_examples": 1000,
+    "max_field_examples": 64
   },
   "schema": {
     "consistent": false,
@@ -62,7 +64,6 @@
     ],
     "type_mismatches": [],
     "compared_columns": [
-      "id",
       "name",
       "balance"
     ],
@@ -103,6 +104,8 @@
     "ignored_columns": [
       "updated_at"
     ],
+    "max_examples": 1000,
+    "max_field_examples": 64,
     "tolerances": {
       "balance": {
         "atol": 0.01,
@@ -150,9 +153,13 @@
             "right": 10.0
           }
         ],
-        "field_diff_count": 1
+        "field_diff_count": 1,
+        "fields_truncated": false
       }
     ],
+    "rows_truncated": false,
+    "fields_truncated": false,
+    "field_truncated_rows": 0,
     "truncated": false
   }
 }

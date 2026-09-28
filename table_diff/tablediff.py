@@ -147,7 +147,8 @@ class DiffReport:
             f"仅左表列: {sch['left_only_columns']}",
             f"仅右表列: {sch['right_only_columns']}",
             f"类型不一致列: {sch['type_mismatches']}",
-            f"参与比较的列: {len(sch['compared_columns'])} 个",
+            f"参与比较的列({len(sch['compared_columns'])} 个，不含主键列与类型不一致列): "
+            f"{sch['compared_columns']}",
             "",
             "-- 主键健康度 --",
             f"主键: {r['key_columns']}",
@@ -158,7 +159,10 @@ class DiffReport:
             f"忽略列: {r['ignored_columns']}",
             f"容差: {r['tolerances']}",
             "",
-            f"-- 差异明细(每类最多 {s['max_examples']} 条) --",
+            f"-- 差异明细(行每类最多 {s['max_examples']} 条, "
+            f"每行字段最多 {s['max_field_examples'] if s['max_field_examples'] is not None else '不限'} 条) --",
+            f"明细截断: {d['truncated']}  (行数超限: {d['rows_truncated']}, "
+            f"字段超限: {d['fields_truncated']})",
             f"新增示例: {json.dumps(d['added'][:3], ensure_ascii=False, default=repr)}",
             f"删除示例: {json.dumps(d['deleted'][:3], ensure_ascii=False, default=repr)}",
             f"修改示例: {json.dumps(d['modified'][:3], ensure_ascii=False, default=repr)}",
@@ -201,17 +205,28 @@ def compare(left: Table, right: Table,
             key: Sequence[str] | str,
             ignore_columns: Sequence[str] = (),
             tolerances: Optional[Dict[str, Any]] = None,
-            max_examples: int = 1000) -> DiffReport:
+            max_examples: int = 1000,
+            max_field_examples: Optional[int] = 64) -> DiffReport:
     """比较两张表并返回 DiffReport。
 
     - key: 主键列（可复合）。
     - ignore_columns: 不参与比较的列。
     - tolerances: 数值容差，{"*": atol} 或 {"col": {"atol":..,"rtol":..}}。
     - max_examples: 报告中每类差异最多保留的明细条数（计数始终精确）。
+    - max_field_examples: 每条修改行最多保留的字段级明细条数，None 表示不限；
+      超出时该行 fields_truncated 置真、计数仍精确，且报告 diff.truncated 置真。
     """
     key_cols = _normalize_key(key)
     ignore = set(ignore_columns)
     tol_spec = _parse_tolerances(tolerances)
+    if not isinstance(max_examples, int) or max_examples < 0:
+        raise ValueError(f"max_examples 必须是非负整数: {max_examples!r}")
+    if max_field_examples is not None and (
+            not isinstance(max_field_examples, int) or max_field_examples < 0):
+        raise ValueError(
+            f"max_field_examples 必须是非负整数或 None: {max_field_examples!r}")
+    field_cap = (float("inf") if max_field_examples is None
+                 else max_field_examples)
 
     # ---------- 表结构对齐（按列名，绝不按位置） ----------
     lcols = dict(left.columns)
@@ -231,7 +246,11 @@ def compare(left: Table, right: Table,
     if missing_key_cols:
         raise ValueError(f"主键列在两侧表中必须同时存在: {missing_key_cols}")
 
-    compared = [c for c in common if c not in ignore]
+    mismatched_cols = {m["column"] for m in type_mismatches}
+    # 参与比较的列：两侧同名同类型（int/float 互容），且既不是主键列也不在忽略列中。
+    # 主键列仅用于对齐；类型不一致列只在 schema 段报结构冲突，不做值比较。
+    compared = [c for c in common
+                if c not in ignore and c not in key_cols and c not in mismatched_cols]
     lidx = {c: i for i, (c, _) in enumerate(left.columns)}
     ridx = {c: i for i, (c, _) in enumerate(right.columns)}
     key_lidx = tuple(lidx[c] for c in key_cols)
@@ -252,6 +271,7 @@ def compare(left: Table, right: Table,
     modified: List[Dict[str, Any]] = []
     n_added = n_deleted = n_modified_rows = n_modified_fields = 0
     identical = 0
+    n_field_truncated_rows = 0
 
     field_idx = [(c, lidx[c], ridx[c]) for c in compared]
 
@@ -264,18 +284,24 @@ def compare(left: Table, right: Table,
             continue
         fields = []
         nfields = 0
+        fields_truncated = False
         for c, li, ri in field_idx:
             lv, rv = lrow[li], rrow[ri]
             if not values_equal(lv, rv, tol_for(c)):
                 nfields += 1
-                if len(fields) < 64:
+                if len(fields) < field_cap:
                     fields.append({"column": c, "left": lv, "right": rv})
+                else:
+                    fields_truncated = True
         if nfields:
             n_modified_rows += 1
             n_modified_fields += nfields
+            if fields_truncated:
+                n_field_truncated_rows += 1
             if len(modified) < max_examples:
                 modified.append({"key": k, "fields": fields,
-                                 "field_diff_count": nfields})
+                                 "field_diff_count": nfields,
+                                 "fields_truncated": fields_truncated})
         else:
             identical += 1
 
@@ -313,6 +339,7 @@ def compare(left: Table, right: Table,
         "diff_rows": diff_rows,
         "diff_row_ratio": diff_rows / base,
         "max_examples": max_examples,
+        "max_field_examples": max_field_examples,
     }
     schema = {
         "consistent": schema_consistent,
@@ -337,11 +364,18 @@ def compare(left: Table, right: Table,
     rules = {
         "key_columns": list(key_cols),
         "ignored_columns": sorted(ignore),
+        "max_examples": max_examples,
+        "max_field_examples": max_field_examples,
         "tolerances": {c: {"atol": t.atol, "rtol": t.rtol}
                        for c, t in sorted(tol_spec.items())},
     }
+    rows_truncated = any(n > max_examples
+                         for n in (n_added, n_deleted, n_modified_rows))
+    fields_truncated = n_field_truncated_rows > 0
     diff = {"added": added, "deleted": deleted, "modified": modified,
-            "truncated": any(n > max_examples for n in
-                             (n_added, n_deleted, n_modified_rows))}
+            "rows_truncated": rows_truncated,
+            "fields_truncated": fields_truncated,
+            "field_truncated_rows": n_field_truncated_rows,
+            "truncated": rows_truncated or fields_truncated}
     return DiffReport(summary=summary, schema=schema, keys=keys,
                       rules=rules, diff=diff)

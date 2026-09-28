@@ -36,7 +36,9 @@ rep = compare(left, right,
               ignore_columns=["updated_at"],         # 忽略列
               tolerances={"balance": {"atol": 0.01}, # 数值容差（绝对/相对）
                           "*": 0.0},
-              max_examples=1000)                     # 明细截断，计数始终精确
+              max_examples=1000,                     # 行级明细截断，计数始终精确
+              max_field_examples=64)                 # 每条修改行的字段明细上限
+                                                      # （None=不限），超限置标记
 
 print(rep.to_text())      # 文本报告
 rep.to_json()             # JSON 报告（忽略列/容差等规则记录在 rules 段）
@@ -52,7 +54,12 @@ rep.summary["equal"]      # 总体结论
 - **主键缺失**（任一键列为 None）与**主键重复**：该行不参与对齐比较，
   在报告 `keys` 段计数并给出示例（重复键保留首行参与比较，其余排除并计数）。
 - **表结构不一致**：仅左/右表存在的列、同名列类型不一致都列在 `schema` 段；
-  只对两侧同名的公共列做比较（int/float 视为兼容数值类型）。
+  只对两侧同名且类型兼容（int/float 互容）的非主键列做值比较；主键列只用于
+  对齐、类型不一致列只报结构冲突，二者都不计入 `compared_columns`。
+- **明细截断**：`max_examples` 限制每类差异行数，`max_field_examples` 限制
+  每条修改行保留的字段明细数（默认 64，`None` 不限）。计数始终精确；任一层
+  超限都会在报告置标记（`diff.truncated`，并细分为 `rows_truncated` 与
+  `fields_truncated`，被截断的行带 `fields_truncated`），不会被当成全量明细。
 - **忽略列与容差**：忽略列完全不参与比较；容差仅对数值生效
   （`abs(a-b) <= max(atol, rtol*max(|a|,|b|))`），规则原样记录在报告 `rules` 段。
 
@@ -68,9 +75,10 @@ rep.summary["equal"]      # 总体结论
 | 场景 | 规模 | 比较耗时 | 进程峰值 RSS |
 |---|---|---|---|
 | 空表 | 0 行 | <1 ms | 13.4 MB |
-| 单侧存在列 | 10 万行 × 3 比较列 | 0.11 s | 69.6 MB |
-| 超宽表 | 2 万行 × 1000 列 | 1.5 s | 326 MB |
-| 百万行表 | 100 万行 × 8 列 | 1.8 s | 693 MB |
+| 单侧存在列 | 10 万行 × 2 比较列 | 0.10 s | 69.8 MB |
+| 超宽表 | 2 万行 × 999 比较列 | 1.35 s | 326 MB |
+| 百万行表 | 100 万行 × 7 比较列 | 1.37 s | 693 MB |
 
 内存口径：`resource.getrusage(RUSAGE_SELF).ru_maxrss`（含数据本身）。
-大表场景建议用 `max_examples` 限制明细条数（计数不受影响）。
+大表场景建议用 `max_examples` / `max_field_examples` 限制明细条数（计数不受影响，
+超限时报告会显式置截断标记）。
