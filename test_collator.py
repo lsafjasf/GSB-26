@@ -73,6 +73,19 @@ class TestBasicCases(unittest.TestCase):
         items = ["x1000000000000", "x9", "x100"]
         self.assertEqual(self.collator.sort(items), ["x9", "x100", "x1000000000000"])
 
+    def test_superscript_digits_fall_back_to_char_compare(self):
+        # 上标数字（如 ²，Unicode No 类）isdigit() 为真但 \d 不匹配、
+        # int() 无法转换：不得中断排序，应降级为逐字符比较。
+        items = ["a1", "²", "b2", "x²3"]
+        result = self.collator.sort(items)
+        self.assertEqual(result, ["a1", "b2", "x²3", "²"])
+        # 与 is_covered 口径一致：上标数字不算数字覆盖，按未覆盖字符报告
+        self.assertFalse(self.collator.is_covered("²"))
+        self.assertEqual(self.collator.uncovered_chars(["²"]), {"²": 1})
+        # 普通十进制数字仍按数值比较
+        self.assertTrue(self.collator.is_covered("5"))
+        self.assertEqual(self.collator.sort(["a10", "a2"]), ["a2", "a10"])
+
     def test_stability(self):
         # 相同排序键的记录保持原始相对顺序
         records = [("a", 0), ("A", 1), ("a", 2), ("A", 3), ("á", 4), ("a", 5)]

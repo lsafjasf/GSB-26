@@ -58,11 +58,18 @@ class Collator:
         for part in _DIGIT_RUN.split(s):
             if not part:
                 continue
-            if part.isdigit():
-                elements.append(("num", int(part)))
+            if part.isdecimal():
+                elements.extend(self._to_element(part))
             else:
                 elements.extend(("char", c) for c in part)
         return elements
+
+    def _to_element(self, part):
+        """把切分出的片段转为元素；数值转换失败时降级为逐字符比较。"""
+        try:
+            return [("num", int(part))]
+        except ValueError:
+            return [("char", c) for c in part]
 
     def _primary_weight(self, kind, value):
         if kind == "num":
@@ -108,7 +115,7 @@ class Collator:
         return sorted(items, key=lambda item: self.sort_key(key(item)))
 
     def is_covered(self, ch):
-        if self.numeric and ch.isdigit():
+        if self.numeric and ch.isdecimal():
             return True
         return ch in self.mappings
 
