@@ -68,11 +68,11 @@ _CLASS_FRAGMENTS = {
 _FUSED_CLASSES = {
     frozenset(["alpha"]): r"[^\W\d_]",
     frozenset(["alpha", "underscore"]): r"[^\W\d]",
-    frozenset(["alpha", "digit"]): r"[^\W_]",
-    frozenset(["alpha", "digit", "underscore"]): r"\w",
+    frozenset(["alpha", "digit"]): r"(?:[^\W\d_]|[0-9])",
+    frozenset(["alpha", "digit", "underscore"]): r"(?:[^\W\d_]|[0-9_])",
     frozenset(["digit"]): r"[0-9]",
     frozenset(["underscore"]): r"_",
-    frozenset(["digit", "underscore"]): r"[\d_]",
+    frozenset(["digit", "underscore"]): r"[0-9_]",
 }
 
 
@@ -184,7 +184,7 @@ class Rule:
     # ---- number ------------------------------------------------------------
     def _build_number(self):
         us = bool(self.spec.get("allow_underscore", False))
-        dec_digits = r"\d(?:_?\d)*" if us else r"\d+"
+        dec_digits = r"[0-9](?:_?[0-9])*" if us else r"[0-9]+"
         parts = []
         if self.spec.get("allow_hex", False):
             hex_digits = (r"[0-9A-Fa-f](?:_?[0-9A-Fa-f])*" if us

@@ -16,7 +16,7 @@ OPERATORS = ["<<=", ">>=", "==", "!=", "<=", ">=", "&&", "||", "++", "--",
              "+=", "-=", "*=", "/=", "<<", ">>", "+", "-", "*", "/", "%",
              "=", "<", ">", "!", "&", "|", "^", "~", "(", ")", "{", "}",
              "[", "]", ";", ",", ".", "?", ":"]
-IDENT_CHARS = "abcXYZ_09" + "é中日λж文"
+IDENT_CHARS = "abcXYZ_09" + "é中日λж文" + "٣٢２５"
 ILLEGAL_CHARS = ["@", "#", "$", "`", "\x07", "\\"]
 
 
@@ -154,6 +154,8 @@ def main():
         "a" * 10000,
         '"unterminated', "'dangling\\", "/* never closed",
         "@#$`", "1e 0x 1__2 12_", "if iffy if_",
+        # non-ASCII digits at identifier/number boundaries
+        "x٣y 1٣ 变量２ 1.５ x_٢ ٣x 0x１Ｆ 1e３",
     ]
     for i, src in enumerate(edge_cases):
         if not compare(lexer, ref, src, f"edge#{i}"):
