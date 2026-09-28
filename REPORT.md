@@ -19,7 +19,7 @@
 ## 不变量（测试断言）
 
 - `len(visit_order) == len(set(visit_order))`：每节点恰好访问一次。
-- `edges_processed == graph.unique_edge_count()`：每条唯一有向边恰好处理一次。
+- `edges_processed == 从起点可达的唯一有向边数`：起点可达分量内每条唯一有向边恰好处理一次。注意不是全图 `unique_edge_count()`——不可达分量的边本就不会被遍历，拿全图口径比较会误报。
 - 异常后 `visited == set()` 且 `visit_order == []`；再次遍历结果与全新实例一致。
 
 ## 性能数据（1,000,000 节点 / 10,000,000 边，含 50 万并行边）
@@ -40,6 +40,6 @@
 
 ```bash
 python3 test_reproduce.py   # 复现缺陷版四类问题（4 用例）
-python3 test_dfs.py         # 修复版回归测试 + 不变量断言（10 用例）
+python3 test_dfs.py         # 修复版回归测试 + 不变量断言（11 用例）
 python3 bench.py            # 百万节点/千万边性能与内存基准
 ```

@@ -50,7 +50,8 @@ class DFS:
 
         不变量：
         - 每个可达节点恰好访问一次（visit_order 无重复）。
-        - 每条唯一有向边 (u, v) 恰好处理一次（edges_processed 计数）。
+        - 从 start 可达的每条唯一有向边 (u, v) 恰好处理一次
+          （edges_processed 计数；不可达分量的边不计入）。
         - 抛异常时实例状态照样复位，再次遍历结果不变。
         """
         visited = set()
@@ -59,6 +60,7 @@ class DFS:
         # 同步到实例级，便于遍历期间外部观察；finally 中保证清理。
         self.visited = visited
         self.visit_order = order
+        self.edges_processed = 0
         try:
             visited.add(start)
             order.append(start)
@@ -84,6 +86,10 @@ class DFS:
                     stack.pop()
             self.edges_processed = edges
             return list(order)
+        except BaseException:
+            # 异常路径同样不留部分计数。
+            self.edges_processed = 0
+            raise
         finally:
             # 缺陷4修复：无论正常返回还是异常，实例状态一律复位。
             self.visited = set()

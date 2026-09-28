@@ -50,7 +50,8 @@ def main():
     visited = len(order)
     unique_edges = g.unique_edge_count()
     assert visited == len(set(order)), "节点重复访问"
-    assert dfs.edges_processed == unique_edges, "边处理次数不等于唯一边数"
+    # 链式主干保证全图从 0 可达，故可达唯一边数 == 全图唯一边数
+    assert dfs.edges_processed == unique_edges, "边处理次数不等于可达唯一边数"
 
     print(f"节点数:                {N:,}")
     print(f"总边数(含并行边):      {M:,}")
