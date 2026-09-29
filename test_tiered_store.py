@@ -157,6 +157,33 @@ class EdgeCaseTest(unittest.TestCase):
                 s["hot"]  # 热点持续访问
             self.assertIn("hot", s.hot_keys())
 
+    def test_missing_keys_do_not_pollute_freq_table(self):
+        # 回归：读不存在的键不得更新频次表。
+        # 修复前每次 miss 都会在 _freq 新增一条记录，百万个无效查询 -> 频次表无限增长，
+        # 且 miss 推进 _tick 触发指数衰减，把真实热点的频次也一起抹掉。
+        with TieredStore(1024) as s:
+            for i in range(1_000_000):
+                s.get(f"missing-{i}")
+
+            self.assertEqual(s.metrics.misses, 1_000_000)
+            self.assertEqual(len(s), 0)
+            self.assertEqual(len(s._freq), 0)   # 无写入时频次表必须为空
+            self.assertEqual(s._tick, 0)        # 无效查询不推进访问时钟
+
+            # 写入 10 个真实 key 后再打百万级无效查询：
+            # 频次表规模只与真实 key 数有关，与无效查询量无关（有界）
+            for i in range(10):
+                s.put(f"real-{i}", b"v")
+            for i in range(1_000_000):
+                s.get(f"ghost-{i}")
+
+            self.assertEqual(s.metrics.misses, 2_000_000)
+            self.assertEqual(len(s._freq), 10)
+            self.assertLessEqual(len(s._freq), len(s))  # 频次键集合不超出真实数据集合
+            self.assertEqual(set(s._freq), {f"real-{i}" for i in range(10)})
+            # 真实 key 的频次未因无效查询触发的衰减而被清零
+            self.assertEqual(s._freq["real-0"], 1.0)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -12,7 +12,7 @@
 ## 运行命令
 
 ```bash
-python3 test_tiered_store.py   # 13 个测试：对拍 + 边界
+python3 test_tiered_store.py   # 14 个测试：对拍 + 边界
 python3 experiments.py         # 3 组实验，打印命中率/延迟/磁盘 IO/收敛时间
 ```
 
@@ -82,3 +82,6 @@ score(key) = freq_weight * freq(key) + recency_weight / (1 + age(key))
   覆盖默认/LRU/LFU/预取+提前下沉/超小容量五种配置。
 - 边界情形：空存储、单条数据、容量小于单条数据（直接落盘）、容量为 0（全部数据冷）、
   覆盖冷层旧值、读后上浮与连锁淘汰、突发热点驻留。
+- 频次表有界：读不存在的键只计 `misses`，不更新频次表、不推进访问时钟，
+  因此百万级无效查询不会让频次结构增长（规模只与真实 key 数有关），也不会
+  因 miss 推进 tick 触发衰减而抹掉真实热点频次（百万次 miss 回归用例）。

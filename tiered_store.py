@@ -225,12 +225,13 @@ class TieredStore:
             self._maybe_sink(protect=key)
 
     def _get_inner(self, key: str, default):
-        self._touch(key)
         if key in self._hot:
+            self._touch(key)  # 频次更新只针对真实命中，避免不存在的键污染频次表
             self._meta[key].last_access = self._tick
             self.metrics.hot_hits += 1
             return self._hot[key]
         if key in self._cold:
+            self._touch(key)  # miss 既不记录频次也不推进 tick，防止无效查询带偏冷热判定
             self.metrics.cold_hits += 1
             value = self._read_cold(key)
             self._promote(key, value)
