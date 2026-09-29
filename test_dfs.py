@@ -205,7 +205,7 @@ class FixedInvariantsTest(unittest.TestCase):
         self.assertEqual([e.id for e in edges], ["a", "b"])
 
     def test_traversal_order_is_deterministic(self):
-        """邻接顺序 = 插入顺序；节点顺序 = 先序 DFS；可复现。"""
+        """邻接顺序 = (终点, edge_id) 升序；节点顺序 = 先序 DFS；可复现。"""
         g = Graph(directed=False)
         # 显式控制邻接表插入顺序
         g.add_edge("0-1", 0, 1)
@@ -219,6 +219,65 @@ class FixedInvariantsTest(unittest.TestCase):
             result = DFSWalker(g).walk(0)
             self.assertEqual(result.nodes, expected_nodes)
             self.assertEqual([e.id for e in result.edges], expected_edges)
+
+    def test_adjacency_sorted_by_endpoint_then_edge_id(self):
+        """邻接表按 (终点, edge_id) 升序，与插入先后无关。"""
+        g = Graph(directed=True)
+        # 故意以“乱序”插入：若按插入顺序遍历会先走 e9
+        g.add_edge("e9", 0, 5)
+        g.add_edge("e1", 0, 2)
+        g.add_edge("e5", 0, 3)
+        g.add_edge("e0", 2, 5)
+        g.add_edge("e7", 3, 5)
+        # 排序后 0 的邻接边为 (2,e1),(3,e5),(5,e9)
+        self.assertEqual([e.id for e in g.edges_from(0)],
+                         ["e1", "e5", "e9"])
+        expected_nodes = [0, 2, 5, 3]
+        expected_edges = ["e1", "e0", "e5", "e7", "e9"]
+        for _ in range(3):  # 同图同配置，多次遍历逐条一致
+            result = DFSWalker(g).walk(0)
+            self.assertEqual(result.nodes, expected_nodes)
+            self.assertEqual([e.id for e in result.edges], expected_edges)
+
+    def test_adjacency_sort_is_insertion_order_independent(self):
+        """同一批边以两种相反顺序插入，遍历结果完全一致。"""
+        def build(edge_seq):
+            g = Graph(directed=True)
+            for eid, u, v in edge_seq:
+                g.add_edge(eid, u, v)
+            return g
+
+        edges = [("a", 0, 2), ("b", 0, 1), ("c", 1, 3),
+                 ("d", 2, 3), ("e", 0, 3)]
+        r1 = DFSWalker(build(edges)).walk(0)
+        r2 = DFSWalker(build(list(reversed(edges)))).walk(0)
+        self.assertEqual(r1.nodes, r2.nodes)
+        self.assertEqual([e.id for e in r1.edges],
+                         [e.id for e in r2.edges])
+
+    def test_duplicate_edge_id_rejected(self):
+        """重复 edge_id 直接抛 ValueError（边身份无歧义）。"""
+        g = Graph(directed=True)
+        g.add_edge("x", 0, 1)
+        with self.assertRaises(ValueError):
+            g.add_edge("x", 1, 2)
+        with self.assertRaises(ValueError):
+            g.add_edge("x", 0, 1)  # 同端点同 id 同样拒绝
+
+    def test_self_loop_processed_once(self):
+        """自环：有向/无向都只存一份、恰好处理一次。"""
+        for directed in (True, False):
+            g = Graph(directed=directed)
+            g.add_edge("loop", 0, 0)
+            g.add_edge("out", 0, 1)
+            edge_hits = []
+            result = DFSWalker(
+                g, on_edge=lambda e: edge_hits.append(e.id)).walk(0)
+            self.assertEqual(edge_hits, ["loop", "out"])
+            self.assertEqual(result.nodes, [0, 1])
+            self.assertTrue(result.completed)
+            self.assertEqual(len(g.edges_from(0)),
+                             2)  # 无向自环不生成反向副本
 
     def test_random_graph_invariants(self):
         """随机有向多重图：节点访问次数 == 可达节点数；边次数 == 边总数。"""

@@ -8,17 +8,28 @@
      随后再次遍历与“全新遍历”结果完全一致。
 
 遍历顺序规则（结果可复现）：
-  - 图中的节点顺序为 add_node 的插入顺序（邻接表以 dict 保存）。
-  - 每个节点的邻接边顺序为 add_edge 的插入顺序（稳定、确定）。
+  - 每个节点的邻接边按 (终点, edge_id) 升序排序（懒排序：首次访问
+    邻接表时执行，add_edge 保持 O(1)；排序后缓存，图不再变更则
+    后续遍历零开销）。与 add_edge 的调用先后顺序无关。
+  - 约束：同一邻接表内的终点之间、以及 edge_id 之间必须可相互比较
+    （推荐统一使用 int 或 str；混用不可比较类型会在排序时抛 TypeError）。
   - 采用“先序 DFS + 发现时标记（gray 标记）”：
       * 起点最先访问；
-      * 进入节点 v 时按邻接表插入顺序依次处理边；
+      * 进入节点 v 时按上述排序后的邻接顺序依次处理边；
       * 沿当前边到达的新节点立即入栈，且该节点的边排在栈中
         其后邻接边之前处理（即标准 DFS 的先深入、再回溯顺序）；
       * 节点在“发现”（入栈）时标记，而不是“离开”（出栈）时标记，
         因此菱形/环中同一节点只会被入栈一次。
-  - undirected 边即使从两个端点分别被看到，也只处理一次。
-  - 多重图：相同 (u, v) 之间的并行边具有不同 edge_id，各自处理一次。
+
+去重策略（重复边 / 自环）：
+  - edge_id 全局唯一：add_edge 重复使用已有 edge_id 直接抛
+    ValueError（fail-fast），保证“边身份 == edge_id”无歧义。
+  - 并行边（同端点、不同 edge_id）：全部保留，各自恰好处理一次
+    （多重图语义），邻接表内按 edge_id 决定相对顺序。
+  - 自环 (u, u)：有向图存一份、处理一次；无向图同样只存一份
+    （不为自环生成反向副本）、处理一次。
+  - 无向非自环边：在两个端点的邻接表各存一份，遍历时按 edge_id
+    去重（seen_edges），全图恰好处理一次。
 """
 
 from __future__ import annotations
@@ -31,29 +42,47 @@ WalkResult = namedtuple("WalkResult", ["nodes", "edges", "completed"])
 
 
 class Graph:
-    """带边 id 的（有向/无向）多重邻接表。
+    """带边 id 的（有向/无向）多重邻接表，邻接顺序按规则排序。
 
-    节点必须可哈希；邻接顺序等于插入顺序，故遍历顺序完全确定。
+    节点必须可哈希；每个节点的邻接边按 (终点, edge_id) 升序排列，
+    与插入先后无关，故遍历顺序完全确定、可复现。
+    edge_id 在图内全局唯一，重复添加抛 ValueError。
     """
 
     def __init__(self, directed: bool = False) -> None:
         self.directed = directed
         self._adj: Dict[Any, List[Edge]] = {}
+        self._edge_ids: set = set()
+        self._sorted: bool = True  # 所有邻接表是否已按规则排序
 
     def add_node(self, node: Any) -> None:
         self._adj.setdefault(node, [])
 
     def add_edge(self, edge_id: Any, u: Any, v: Any) -> None:
+        if edge_id in self._edge_ids:
+            raise ValueError(f"duplicate edge_id: {edge_id!r}")
+        self._edge_ids.add(edge_id)
         self.add_node(u)
         self.add_node(v)
         self._adj[u].append(Edge(edge_id, u, v))
         if not self.directed and u != v:
             self._adj[v].append(Edge(edge_id, v, u))
+        self._sorted = False
 
     def nodes(self) -> List[Any]:
         return list(self._adj.keys())
 
+    def _sort_adjacency(self) -> None:
+        # 懒排序：首次读取邻接表时一次性排序，之后缓存。
+        # 排序键 (edge.v, edge.id)：同一节点的邻接边先按终点升序，
+        # 终点相同（并行边/自环）再按 edge_id 升序。
+        if not self._sorted:
+            for adj in self._adj.values():
+                adj.sort(key=lambda e: (e.v, e.id))
+            self._sorted = True
+
     def edges_from(self, node: Any) -> List[Edge]:
+        self._sort_adjacency()
         return self._adj.get(node, ())
 
 
