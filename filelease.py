@@ -10,6 +10,10 @@
   旧持有者被抢占后，其续期/释放/受保护写入都会被拒绝。
 * 时钟漂移检测：续期时对比「墙钟锚点 + 单调钟增量」与当前墙钟，
   偏差超过 drift_tolerance 即判定漂移（含时钟回拨），持有者必须放弃。
+* 可观测性（可选，默认关闭）：report=True 时把获取/续期/释放/抢占/损坏隔离
+  等事件以 JSONL 追加到 `<path>.events`。事件与锁文件状态变更在同一把
+  flock 守卫内写入，且每个状态事件内嵌当时落盘的 record 快照，
+  因此报告数据可与锁文件逐条对数。开启报告不改变加解锁语义与租约时长。
 """
 
 from __future__ import annotations
@@ -81,17 +85,40 @@ class FileLeaseLock:
     """
 
     def __init__(self, path, holder_id=None, ttl=10.0, drift_tolerance=0.5,
-                 time_fn=time.time, mono_fn=time.monotonic):
+                 time_fn=time.time, mono_fn=time.monotonic,
+                 report=False, report_path=None):
         if ttl <= 0:
             raise ValueError("ttl must be positive")
         self.path = os.fspath(path)
         self.guard_path = self.path + ".guard"
         self.gen_path = self.path + ".gen"
+        self.report_path = (os.fspath(report_path) if report_path
+                            else self.path + ".events") if report else None
         self.holder_id = holder_id or _default_holder_id()
         self.ttl = float(ttl)
         self.drift_tolerance = float(drift_tolerance)
         self._time = time_fn
         self._mono = mono_fn
+
+    # ---------------- 事件日志（可观测性） ----------------
+
+    def _log_event(self, event: dict) -> None:
+        """把一条事件追加到 <path>.events（JSONL + fsync）。
+
+        必须在 _guard 临界区内、且紧跟对应的锁文件写之后调用，
+        这样事件流与锁文件状态转移一一对应，可对数。
+        事件写失败会向上抛出（fail-closed），保证「日志与锁文件一致」
+        不被静默破坏；report 关闭时本函数完全不会被调用。
+        """
+        if self.report_path is None:
+            return
+        line = json.dumps(event, sort_keys=True).encode("utf-8") + b"\n"
+        fd = os.open(self.report_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+        try:
+            os.write(fd, line)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
 
     # ---------------- 底层 IO ----------------
 
@@ -161,8 +188,11 @@ class FileLeaseLock:
 
     # ---------------- 获取 ----------------
 
-    def try_acquire(self):
-        """非阻塞获取；成功返回 Lease，锁被他人持有且未过期返回 None。"""
+    def try_acquire(self, waited=0.0):
+        """非阻塞获取；成功返回 Lease，锁被他人持有且未过期返回 None。
+
+        waited: 调用方已为本次获取等待的秒数（仅用于事件日志）。
+        """
         with self._guard():
             now = self._time()
             sidecar_gen = self._read_sidecar_gen()
@@ -171,12 +201,24 @@ class FileLeaseLock:
             except _Corrupt:
                 # 损坏文件不可信：隔离后按缺失处理，代际从旁车文件恢复。
                 self._quarantine_corrupt()
+                self._log_event({"v": 1, "ts": now, "event": "corrupt_quarantine",
+                                 "holder": self.holder_id})
                 rec = None
 
             if rec is None:
                 base_gen = sidecar_gen
+                preempted = None
             elif rec["state"] != "held" or rec["expires_at"] <= now:
                 base_gen = max(rec["generation"], sidecar_gen)   # 已释放或已过期：允许抢占
+                preempted = None
+                if rec["state"] == "held":
+                    # 上一持有者未释放就已过期：异常退出（或停滞）后的回收。
+                    preempted = {
+                        "holder": rec["holder"],
+                        "generation": rec["generation"],
+                        "expired_at": rec["expires_at"],
+                        "reclaim_delay_ms": round((now - rec["expires_at"]) * 1000, 3),
+                    }
             else:
                 return None                                       # 他人持有且未过期
 
@@ -192,16 +234,31 @@ class FileLeaseLock:
             }
             self._write_record(new_rec)
             self._write_sidecar_gen(generation)
+            self._log_event({
+                "v": 1, "ts": now, "event": "acquire",
+                "holder": self.holder_id,
+                "generation": generation,
+                "prev_generation": rec["generation"] if rec else None,
+                "wait_ms": round(waited * 1000, 3),
+                "preempted": preempted,
+                "record": dict(new_rec),
+            })
             return Lease(self, generation, new_rec["expires_at"])
 
     def acquire(self, timeout=None, poll_interval=0.05):
         """阻塞获取，直到成功或超时（timeout=None 表示无限等待）。"""
+        start = self._mono()
         deadline = None if timeout is None else self._mono() + timeout
         while True:
-            lease = self.try_acquire()
+            lease = self.try_acquire(waited=self._mono() - start)
             if lease is not None:
                 return lease
             if deadline is not None and self._mono() >= deadline:
+                with self._guard():
+                    self._log_event({"v": 1, "ts": self._time(),
+                                     "event": "acquire_timeout",
+                                     "holder": self.holder_id,
+                                     "wait_ms": round((self._mono() - start) * 1000, 3)})
                 raise AcquireTimeout("could not acquire %s within %.3fs"
                                      % (self.path, timeout))
             self._mono_sleep(min(poll_interval, 0.05))
@@ -269,9 +326,17 @@ class Lease:
                 self._valid = False
                 raise LeaseExpired("lease already expired before renew")
 
+            prev_expires_at = rec["expires_at"]
             rec["issued_at"] = now
             rec["expires_at"] = now + lock.ttl
             lock._write_record(rec)
+            lock._log_event({
+                "v": 1, "ts": now, "event": "renew",
+                "holder": self.holder_id,
+                "generation": self.generation,
+                "remaining_ms": round((prev_expires_at - now) * 1000, 3),
+                "record": dict(rec),
+            })
             self.expires_at = rec["expires_at"]
             self._wall_anchor = now
             self._mono_anchor = lock._mono()
@@ -291,9 +356,17 @@ class Lease:
                     or rec["generation"] != self.generation:
                 self._valid = False
                 raise LeaseStolen("cannot release: lease no longer ours")
+            now = lock._time()
             rec["state"] = "released"
-            rec["expires_at"] = lock._time()
+            rec["expires_at"] = now
             lock._write_record(rec)
+            lock._log_event({
+                "v": 1, "ts": now, "event": "release",
+                "holder": self.holder_id,
+                "generation": self.generation,
+                "since_issued_ms": round((now - rec["issued_at"]) * 1000, 3),
+                "record": dict(rec),
+            })
             self._valid = False
 
     def ensure_valid(self) -> None:

@@ -1,4 +1,4 @@
-"""demo.py: 演示强杀恢复时间线 + 多进程争抢耗时分布。
+"""demo.py: 演示强杀恢复时间线 + 多进程争抢耗时分布 + 租约使用报告。
 
 运行: python3 demo.py
 """
@@ -10,10 +10,12 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from filelease import FileLeaseLock
+from leasereport import build_report, check_consistency, read_events, render_text
 
 
 def demo_kill_recovery(workdir):
@@ -87,10 +89,51 @@ def demo_contention(workdir, procs=8, rounds=5):
           % (n, lats[0], pct(0.5), pct(0.9), pct(0.99), lats[-1], sum(lats) / n))
 
 
+def demo_report(workdir):
+    print("=" * 60)
+    print("演示 3: 租约使用报告（等待时长/续期/抢占回收/代际变化）")
+    print("=" * 60)
+    lock_path = os.path.join(workdir, "report.lock")
+
+    # 场景 1: A 持锁续期，B 并发等待 -> 等待时长 + 续期频率
+    lock_a = FileLeaseLock(lock_path, holder_id="worker-A", ttl=0.5, report=True)
+    lease_a = lock_a.acquire(timeout=2)
+    stop, _, _ = lease_a.auto_renew(interval=0.2)
+    lock_b = FileLeaseLock(lock_path, holder_id="worker-B", ttl=0.5, report=True)
+    got_b = []
+
+    def _b_acquire():
+        got_b.append(lock_b.acquire(timeout=5))
+
+    waiter = threading.Thread(target=_b_acquire)
+    waiter.start()                                    # B 开始排队等待
+    time.sleep(0.7)                                   # A 继续持锁续期
+    stop.set()
+    lease_a.release()
+    waiter.join()
+    got_b[0].release()
+
+    # 场景 2: 持有者异常退出（不释放，租约过期）-> 抢占 + 回收
+    lock_c = FileLeaseLock(lock_path, holder_id="crashed-C", ttl=0.4, report=True)
+    lock_c.acquire(timeout=2)                         # 故意不续期不释放，模拟崩溃
+    time.sleep(0.6)
+    lock_d = FileLeaseLock(lock_path, holder_id="recover-D", ttl=0.5, report=True)
+    lease_d = lock_d.acquire(timeout=5)
+    lease_d.release()
+
+    events = read_events(lock_path + ".events")
+    print(render_text(build_report(events), lock_path=lock_path))
+    ok, detail = check_consistency(lock_path)
+    print("\n[一致性校验] %s: %s" % ("通过" if ok else "失败", detail))
+    print("导出: python3 leasereport.py %s --start <ts> --end <ts> [--json] [--check]"
+          % lock_path)
+
+
 if __name__ == "__main__":
     workdir = tempfile.mkdtemp(prefix="filelease-demo-")
     try:
         demo_kill_recovery(workdir)
         demo_contention(workdir)
+        demo_report(workdir)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
