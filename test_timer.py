@@ -330,6 +330,51 @@ class TestSystemClockSmoke(unittest.TestCase):
         timer.stop(2.0)
         self.assertGreater(len(col.ticks), count_at_pause)
 
+    def test_default_clock_no_busy_wait_without_precision_regression(self):
+        """默认用法（SystemClock）：睡眠期间必须真正阻塞，不得忙等；
+        同时触发时刻精度相对修复前不退化。"""
+        if not hasattr(time, "thread_time"):
+            self.skipTest("平台不支持 time.thread_time")
+
+        period = 0.05
+        n_cycles = 30
+        col = Collector()
+        cpu_samples = []
+
+        def on_tick(tick):
+            # 回调运行在计时器线程内，thread_time() 统计的正是该线程
+            # 自身消耗的 CPU 时间（不含等待阻塞期间的空闲时间）。
+            cpu_samples.append(time.thread_time())
+            col(tick)
+
+        timer = PeriodicTimer(period, on_tick)
+        timer.start()
+        deadline = time.monotonic() + n_cycles * period + 2.0
+        while len(col.ticks) < n_cycles and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertGreaterEqual(len(col.ticks), n_cycles)
+
+        ticks = col.ticks[:n_cycles]
+        wall = ticks[-1].actual - ticks[0].actual
+        cpu = cpu_samples[n_cycles - 1] - cpu_samples[0]
+        timer.stop(2.0)
+
+        lateness = [t.lateness for t in ticks]
+        max_abs_lateness = max(abs(x) for x in lateness)
+        avg_gap = wall / (n_cycles - 1)
+        print(
+            f"\n默认时钟 {n_cycles} 个周期(period={period * 1000:.0f}ms): "
+            f"wall={wall:.3f}s 计时器线程cpu={cpu:.4f}s cpu/wall={cpu / wall:.2%} "
+            f"平均间隔={avg_gap * 1000:.2f}ms 最大|偏差|={max_abs_lateness * 1000:.2f}ms"
+        )
+
+        # 忙等消失：线程自身 CPU 时间远小于挂钟时间（修复前该比值接近 100%）。
+        self.assertLess(cpu / wall, 0.25)
+        # 精度不退化：平均间隔贴近 period，且每次触发的偏差保持毫秒级。
+        self.assertAlmostEqual(avg_gap, period, delta=0.01)
+        self.assertLessEqual(max_abs_lateness, 0.02)
+        self.assertTrue(all(x >= -0.005 for x in lateness))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

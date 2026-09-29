@@ -225,6 +225,11 @@ class PeriodicTimer:
         self._loop_thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
         self._resume = threading.Event()
+        # 可中断睡眠的"唤醒信号"。与 _resume 分离：_resume 表示暂停恢复
+        # 语义（生命周期内常置位），_wake 只在每次等待前清除、由 pause/stop
+        # 置位，避免等待一个早已置位的事件而立即返回（忙等）。
+        self._wake = threading.Event()
+        self._wake_lock = threading.Lock()
         self._paused_ack = threading.Event()
         self._paused = False
 
@@ -241,6 +246,7 @@ class PeriodicTimer:
             raise RuntimeError("计时器已在运行")
         self._stop.clear()
         self._resume.set()
+        self._wake.clear()
         self._paused = False
         self._paused_ack.clear()
         self._thread = threading.Thread(target=self._run_loop, args=(None,), daemon=True)
@@ -249,6 +255,8 @@ class PeriodicTimer:
     def stop(self, timeout: Optional[float] = None) -> None:
         self._stop.set()
         self._resume.set()
+        with self._wake_lock:
+            self._wake.set()
         if self._thread is not None:
             self._thread.join(timeout)
 
@@ -262,8 +270,10 @@ class PeriodicTimer:
         暂停在回调返回后生效，避免自我等待死锁。
         """
         self._paused_ack.clear()
-        self._paused = True
-        self._resume.clear()
+        with self._wake_lock:
+            self._paused = True
+            self._resume.clear()
+            self._wake.set()
         if threading.current_thread() is self._loop_thread:
             return True
         return self._paused_ack.wait(timeout)
@@ -376,11 +386,20 @@ class PeriodicTimer:
         if isinstance(self.clock, SystemClock):
             deadline = time.monotonic() + seconds
             while True:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
+                with self._wake_lock:
+                    # 持锁复查标志，与 pause/stop 的置位互斥，杜绝
+                    # "唤醒信号刚置位就被本循环清掉"的丢唤醒窗口。
+                    if self._stop.is_set() or self._paused:
+                        return
+                    self._wake.clear()
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        return
+                interrupted = self._wake.wait(remaining)
+                if not interrupted:
                     return
-                if self._resume.wait(remaining):
-                    return
+                # 被唤醒但标志已解除（如 pause 后立即 resume）：回到循环
+                # 复查并继续睡到原 deadline，不提前触发。
         else:
             self.clock.sleep(seconds)
 
