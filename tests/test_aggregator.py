@@ -63,6 +63,52 @@ class TestAggregator(unittest.TestCase):
         self.assertEqual(snap["cum_total"], 7)
         self.assertEqual(snap["dims"], {"dimA": 3, "dimB": 4})
 
+    def test_dedup_hit_records_per_batch(self):
+        """去重命中记录：每批的命中次数与命中时提交序号可输出、可核对。"""
+        agg = Aggregator()
+        self.assertTrue(agg.apply_batch("batch-1", [("dimA", 3)]))
+        self.assertTrue(agg.apply_batch("batch-2", [("dimB", 4)]))
+        for _ in range(3):
+            self.assertFalse(agg.apply_batch("batch-1", [("dimA", 3)]))
+        self.assertFalse(agg.apply_batch("batch-2", [("dimB", 4)]))
+
+        report = agg.dedup_report()
+        self.assertEqual(set(report), {"batch-1", "batch-2"})
+        self.assertEqual(
+            report["batch-1"],
+            {"applied_commit": 1, "hits": 3, "last_hit_commit": 2},
+        )
+        self.assertEqual(
+            report["batch-2"],
+            {"applied_commit": 2, "hits": 1, "last_hit_commit": 2},
+        )
+        # 重复投递不产生新提交：commit_seq 只等于成功落账的批次数
+        self.assertEqual(agg.snapshot()["commit_seq"], 2)
+        self.assertEqual(agg.snapshot()["cum_total"], 7)
+
+    def test_dedup_hit_records_concurrent_retry_storm(self):
+        """并发重投风暴下去重命中记录完整：命中总数 == 重复投递次数。"""
+        agg = Aggregator()
+        retries_per_thread = 200
+        barrier = threading.Barrier(THREADS)
+
+        def worker():
+            barrier.wait()
+            for _ in range(retries_per_thread):
+                agg.apply_batch("hot-batch", [("dimA", 1)])
+
+        threads = [threading.Thread(target=worker) for _ in range(THREADS)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        report = agg.dedup_report()
+        total_deliveries = THREADS * retries_per_thread
+        self.assertEqual(report["hot-batch"]["hits"], total_deliveries - 1)
+        self.assertEqual(agg.snapshot()["cum_total"], 1)
+        self.assertEqual(agg.snapshot()["commit_seq"], 1)
+
     def test_concurrent_retry_storm_idempotent(self):
         """多线程同时重投同一批次，仍然只计一次。"""
         agg = Aggregator()
@@ -82,7 +128,8 @@ class TestAggregator(unittest.TestCase):
         self.assertEqual(agg.snapshot()["cum_total"], 7)
 
     def test_snapshot_consistent_under_concurrency(self):
-        """并发读断言：任何快照都是某个一致状态，且累计值单调不回退。"""
+        """并发读断言：任何快照都落在某个提交边界上（完整状态），
+        commit_seq 与累计值单调不回退，绝不出现部分更新的中间态。"""
         agg = Aggregator()
         done = threading.Event()
         violations = []
@@ -93,18 +140,22 @@ class TestAggregator(unittest.TestCase):
 
         def reader():
             prev_cum = 0
+            prev_commit = 0
             while not done.is_set():
                 snap = agg.snapshot()
                 ok = (
                     sum(snap["dims"].values()) == snap["total"]
                     and sum(snap["cum_dims"].values()) == snap["cum_total"]
                     and snap["cum_total"] >= prev_cum
+                    and snap["commit_seq"] >= prev_commit
+                    and 0 <= snap["commit_seq"] <= THREADS * BATCHES_PER_THREAD
                     and all(v >= 0 for v in snap["dims"].values())
                     and all(v >= 0 for v in snap["cum_dims"].values())
                 )
                 if not ok:
                     violations.append(snap)
                 prev_cum = snap["cum_total"]
+                prev_commit = snap["commit_seq"]
 
         writers = [threading.Thread(target=writer, args=(i,)) for i in range(THREADS)]
         rt = threading.Thread(target=reader)
@@ -122,7 +173,10 @@ class TestAggregator(unittest.TestCase):
             for t in range(THREADS)
             for s in range(BATCHES_PER_THREAD)
         )
-        self.assertEqual(agg.snapshot()["cum_total"], expected)
+        final = agg.snapshot()
+        self.assertEqual(final["cum_total"], expected)
+        # 每次成功落账恰好构成一次提交
+        self.assertEqual(final["commit_seq"], THREADS * BATCHES_PER_THREAD)
 
     def test_failed_batch_is_atomic(self):
         """原子性断言：失败批次零副作用，修正后同 batch_id 可安全重投。"""

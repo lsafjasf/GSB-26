@@ -11,6 +11,14 @@
 去重依据：batch_id（建议上游使用“消息ID / 任务ID+批次序号”等全局唯一
 标识）。去重表容量有界（dedup_capacity），超出后按 FIFO 驱逐最老记录；
 调用方需保证重试发生在该窗口内。
+
+读取语义：每次成功落账构成一次“提交”，分配单调递增的提交序号
+commit_seq（从 1 开始）。snapshot() 在锁内一次性拷贝，返回的始终是
+某次提交之后的完整状态并携带该 commit_seq；读者连续两次快照的
+commit_seq 单调不减，绝不出现跨批次的部分更新中间态。
+
+去重命中记录：每次重复投递（batch_id 命中去重表）都会计入该批次的
+命中记录，可通过 dedup_report() 输出每批的命中次数与命中时的提交序号。
 """
 
 import threading
@@ -27,6 +35,8 @@ class Aggregator:
         self._seen_batches = set()  # 批次幂等键
         self._batch_order = deque()
         self._dedup_capacity = dedup_capacity
+        self._commit_seq = 0        # 提交序号，每次成功落账 +1
+        self._dedup_records = {}    # batch_id -> 去重命中记录
 
     @staticmethod
     def _validate(samples):
@@ -48,11 +58,22 @@ class Aggregator:
         batch_sum = sum(n for _, n in prepared)
         with self._lock:
             if batch_id in self._seen_batches:
+                rec = self._dedup_records[batch_id]
+                rec["hits"] += 1
+                rec["last_hit_commit"] = self._commit_seq
                 return False
             self._seen_batches.add(batch_id)
             self._batch_order.append(batch_id)
             while len(self._batch_order) > self._dedup_capacity:
-                self._seen_batches.discard(self._batch_order.popleft())
+                evicted = self._batch_order.popleft()
+                self._seen_batches.discard(evicted)
+                self._dedup_records.pop(evicted, None)
+            self._commit_seq += 1
+            self._dedup_records[batch_id] = {
+                "applied_commit": self._commit_seq,
+                "hits": 0,
+                "last_hit_commit": None,
+            }
             for dim, n in prepared:
                 self._dims[dim] = self._dims.get(dim, 0) + n
                 self._cum_dims[dim] = self._cum_dims.get(dim, 0) + n
@@ -61,14 +82,30 @@ class Aggregator:
         return True
 
     def snapshot(self):
-        """返回某一一致状态的全量快照（窗口值 + 累计值）。"""
+        """返回某一一致状态的全量快照（窗口值 + 累计值 + 提交序号）。
+
+        快照在锁内一次性拷贝，对应 commit_seq 次提交之后的完整状态；
+        重复投递不产生新提交，commit_seq 不变。
+        """
         with self._lock:
             return {
                 "dims": dict(self._dims),
                 "total": self._total,
                 "cum_dims": dict(self._cum_dims),
                 "cum_total": self._cum_total,
+                "commit_seq": self._commit_seq,
             }
+
+    def dedup_report(self):
+        """输出每批的去重命中记录（一致性快照，与统计读取同一锁）。
+
+        返回 {batch_id: {"applied_commit": 落账时的提交序号,
+                          "hits": 重复投递命中次数,
+                          "last_hit_commit": 最近一次命中时的提交序号}}。
+        hits == 0 表示该批次从未被重复投递。
+        """
+        with self._lock:
+            return {bid: dict(rec) for bid, rec in self._dedup_records.items()}
 
     def flush(self):
         """原子地取出当前窗口并清零；累计值不回退，保证单调性。"""

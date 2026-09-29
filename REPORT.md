@@ -18,7 +18,7 @@
 # 复现四类缺陷（4 个用例，断言缺陷存在）
 python3 -m unittest discover -s tests -p 'test_buggy_reproduce.py' -v
 
-# 修复后回归（6 个用例：自洽、幂等、并发读一致、原子性、单调性）
+# 修复后回归（8 个用例：自洽、幂等、去重命中记录、并发读一致、原子性、单调性）
 python3 -m unittest discover -s tests -p 'test_aggregator.py' -v
 
 # 全部测试
@@ -68,6 +68,25 @@ python3 bench.py
 - 去重判断与落账在同一临界区，多线程同时重投同一批次也只计一次
   （`test_concurrent_retry_storm_idempotent`）。
 - 校验失败的批次**不**占用幂等键，修正内容后可安全重投。
+- **去重命中记录**：每次重复投递命中去重表时，在该批次的记录上累计
+  `hits` 并记录命中时的提交序号 `last_hit_commit`；`dedup_report()`
+  输出每批的 `{applied_commit, hits, last_hit_commit}`，与统计读取共用
+  同一把锁，输出本身也是一致快照。批次记录随去重表 FIFO 驱逐一并清除。
+  断言：`test_dedup_hit_records_per_batch`（逐批核对命中次数与提交序号）、
+  `test_dedup_hit_records_concurrent_retry_storm`（8 线程重投风暴下
+  命中总数严格等于重复投递次数）。
+
+## 一致快照读取语义
+
+- **提交边界**：每次成功落账构成一次提交，分配单调递增的 `commit_seq`
+  （从 1 开始）；重复投递与校验失败的批次不产生提交。
+- **快照语义**：`snapshot()` 在锁内一次性拷贝，返回的始终是某次提交之后
+  的完整状态并携带 `commit_seq`——读者要么看到第 k 次提交的完整状态、
+  要么看到第 k+1 次提交的完整状态，绝不出现部分更新的中间态。
+- **并发读断言**：`test_snapshot_consistent_under_concurrency` 在 8 写 1 读
+  下校验每个快照：`sum(dims)==total`、`sum(cum_dims)==cum_total`、
+  `commit_seq` 与 `cum_total` 单调不回退、所有计数非负；写完后
+  `commit_seq == 成功批次数`、`cum_total == 期望总和`。
 
 ## 自洽与单调性保证
 
