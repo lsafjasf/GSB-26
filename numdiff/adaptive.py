@@ -49,6 +49,7 @@ class DiffResult:
     trunc_est: float = 0.0   # 截断误差估计
     round_est: float = 0.0   # 舍入/噪声误差估计
     higher_deriv: float = 0.0  # 估计出的高阶导数（f3 或 f4）
+    reliable: bool = True    # False 表示该噪声水平下数值微分不可信，应停止
 
 
 def optimal_step_theory(order, f_abs, higher_deriv, eps_abs):
