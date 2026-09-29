@@ -35,8 +35,8 @@ python3 test_dep_manifest.py
 ## 输入格式
 
 - `deps.json`：`{"direct": ["name", {"name": "x", "version": "1.0", "source": "..."}]}`
-- `lock.json`：`{"packages": [{"name", "version", "source", "dependencies": [...]}]}`，`version`/`source` 允许为 `null`（将触发人工确认标记）。
-- `artifact.txt`：每行一个组件，`name` 或 `name@version`，`#` 开头为注释。
+- `lock.json`：`{"packages": [{"name", "version", "source", "dependencies": [...]}]}`，`version`/`source` 允许为 `null`（将触发人工确认标记）。组件身份为 **名称+版本**，允许同名不同版本的多条记录，各自独立成组件。
+- `artifact.txt`：每行一个组件，`name` 或 `name@version`，`#` 开头为注释。以 `@` 开头的名字（如 `@scope/pkg`）合法，开头的 `@` 不作版本分隔符；同名不同版本的行各自保留。
 
 ## 样例与产物
 

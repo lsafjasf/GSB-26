@@ -122,6 +122,54 @@ class DiffReportTest(unittest.TestCase):
         self.assertTrue(report["summary"]["consistent"])
 
 
+class ArtifactParsingTest(unittest.TestCase):
+    """产物清单解析与 名称+版本 组件身份的回归用例。"""
+
+    def test_leading_at_name_without_version(self):
+        # 回归：此前按最后一个 @ 拆分会把 "@scope/pkg" 的名字切成空串
+        # 并抛异常，整个核对流程中断，差异报告写不出来。
+        artifact = dm.parse_artifact("@scope/pkg\n@scope/pkg@1.2\nplain@2\n")
+        self.assertEqual(artifact, {
+            ("@scope/pkg", None),
+            ("@scope/pkg", "1.2"),
+            ("plain", "2"),
+        })
+        manifest = dm.build_manifest(
+            {"direct": ["plain"]},
+            make_lock([{"name": "plain", "version": "2", "source": "s",
+                        "dependencies": []}]))
+        report = dm.diff_report(manifest, artifact)
+        self.assertEqual(
+            [(c["name"], c["version"])
+             for c in report["uncovered_in_artifact"]],
+            [("@scope/pkg", None), ("@scope/pkg", "1.2")])
+        self.assertFalse(report["summary"]["consistent"])
+
+    def test_same_name_multiple_versions(self):
+        # 回归：锁文件同名不同版本的两条记录不得互相覆盖。
+        lock = make_lock([
+            {"name": "app", "version": "1.0", "source": "s",
+             "dependencies": ["lib"]},
+            {"name": "lib", "version": "1.0", "source": "s",
+             "dependencies": []},
+            {"name": "lib", "version": "2.0", "source": "s",
+             "dependencies": []},
+        ])
+        manifest = dm.build_manifest({"direct": ["app"]}, lock)
+        lib_versions = sorted(c["version"] for c in manifest["components"]
+                              if c["name"] == "lib")
+        self.assertEqual(lib_versions, ["1.0", "2.0"])
+        # 产物实际引用 lib@2.0：lib@1.0 应报缺失，lib@2.0 不算未覆盖
+        report = dm.diff_report(
+            manifest, dm.parse_artifact("app@1.0\nlib@2.0\n"))
+        self.assertEqual(
+            [(c["name"], c["version"])
+             for c in report["missing_in_artifact"]],
+            [("lib", "1.0")])
+        self.assertEqual(report["uncovered_in_artifact"], [])
+        self.assertEqual(report["version_mismatches"], [])
+
+
 class ReproducibilityTest(unittest.TestCase):
     """同一输入多次生成，清单内容与顺序字节级一致；输入顺序无关。"""
 
