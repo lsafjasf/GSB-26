@@ -20,6 +20,8 @@
   适合按“字符数”做配额的场景，与终端/字体渲染宽度无关。
 - "width"：按显示宽度限制（East Asian Width：W/F 计 2，组合记号、
   控制符、格式符计 0，其余计 1；含 ZWJ 的簇整体按一个显示单元计 2）。
+  肤色修饰符等并入基字符的 Extend 不额外占宽（👍 与 🏽 在 East Asian
+  Width 中同为 W，朴素求和会把 👍🏽 算成 4 列，实际只渲染 2 列）。
   适合终端列宽、定宽预览等场景。同一个字素簇永不拆分，因此实际
   宽度可能略小于 limit，但绝不超出。
 - "bytes"：按 UTF-8 字节预算限制。适合存储/传输按字节计费的场景；
@@ -88,10 +90,21 @@ def char_width(ch):
 
 
 def grapheme_width(cluster):
-    """字素簇的显示宽度。ZWJ 序列整体渲染为一个字形，计 2。"""
+    """字素簇的显示宽度。
+
+    ZWJ 序列整体渲染为一个字形，计 2；否则宽度只由簇的“基字符”贡献：
+    并入基字符的 Extend（组合记号、肤色修饰符 U+1F3FB..U+1F3FF、
+    变体选择符）不额外占宽。否则 "👍🏽" 会因基字符与肤色修饰符在
+    East Asian Width 中同为 W 而被计成 4 列，而终端实际只渲染 2 列。
+    """
     if ZWJ in cluster:
         return 2
-    return sum(char_width(ch) for ch in cluster)
+    width = 0
+    for i, ch in enumerate(cluster):
+        if i and _is_extend(ch):
+            continue
+        width += char_width(ch)
+    return width
 
 
 def _cluster_cost(cluster, strategy):
@@ -112,6 +125,12 @@ def chunk_text(text, size, *, strategy="codepoints"):
 
     保证："".join(chunk_text(text, size, strategy=...)) == text，
     且除原文自身结尾外，任何片段都不以不完整字素结尾。
+
+    例外（显式声明）：若单个字素簇自身的代价就超过 size（如 size=1 而
+    该簇是宽度 2 的汉字，或一个 UTF-8 占 4 字节的表情），该簇仍独占
+    一个片段、该片段超出预算——字素簇不可拆分，拆分必然破坏守恒保证。
+    除此例外，每个片段的代价均不超过 size。truncate 没有此例外：
+    放不进预算的超宽簇直接被丢弃。
     """
     _check_strategy(strategy)
     if size <= 0:

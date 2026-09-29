@@ -179,6 +179,63 @@ class StrategyTests(unittest.TestCase):
         self.assertEqual(chunker.grapheme_width("👨‍👩‍👧"), 2)
         self.assertEqual(chunker.truncate("👨‍👩‍👧ab", 2, strategy="width"), "👨‍👩‍👧")
 
+    def test_skin_tone_modifier_adds_no_width(self):
+        # 回归：基字符 👍 与肤色修饰符 🏽 在 East Asian Width 中同为 W，
+        # 旧实现各计 2，整簇被算成 4 列；修饰符属于 Extend，不额外占宽，
+        # 整簇终端只占 2 列。
+        cluster = "👍🏽"
+        self.assertEqual(chunker.graphemes(cluster), [cluster])
+        self.assertEqual(chunker.grapheme_width(cluster), 2)
+        # 分块路径用同一套宽度口径：size=2 时整簇放得下，不产生超预算片段
+        chunks = chunker.chunk_text("ab" + cluster + "cd", 2, strategy="width")
+        self.assertEqual("".join(chunks), "ab" + cluster + "cd")
+        self.assertIn(cluster, chunks)
+        for chunk in chunks:
+            width = sum(chunker.grapheme_width(g) for g in chunker.iter_graphemes(chunk))
+            self.assertLessEqual(width, 2)
+        # 截断路径同理：limit=2 时保留整簇而不是返回空串
+        self.assertEqual(chunker.truncate(cluster + "ab", 2, strategy="width"), cluster)
+
+    def test_chunk_oversized_cluster_is_declared_exception(self):
+        # 单个字素簇自身超过预算时，分块路径的显式例外：
+        # 该簇独占一个片段且该片段超出预算（簇不可拆分）；
+        # 其余片段仍必须满足预算，且整体拼接守恒。
+        text = "a中b"  # 'a'/'b' 宽度 1，'中' 宽度 2
+        chunks = chunker.chunk_text(text, 1, strategy="width")
+        self.assertEqual(chunks, ["a", "中", "b"])
+        self.assertEqual("".join(chunks), text)
+        chunk_widths = [
+            sum(chunker.grapheme_width(g) for g in chunker.iter_graphemes(chunk))
+            for chunk in chunks
+        ]
+        self.assertEqual(chunk_widths, [1, 2, 1])
+        over_budget = [
+            chunk for chunk, width in zip(chunks, chunk_widths) if width > 1
+        ]
+        self.assertEqual(over_budget, ["中"])
+        self.assertTrue(all(len(chunker.graphemes(chunk)) == 1 for chunk in over_budget))
+        # bytes 策略同样适用：单簇 4 字节 vs. size=3
+        emoji = "😀"
+        self.assertEqual(len(emoji.encode("utf-8")), 4)
+        byte_chunks = chunker.chunk_text("a" + emoji + "b", 3, strategy="bytes")
+        self.assertEqual("".join(byte_chunks), "a" + emoji + "b")
+        byte_sizes = [len(chunk.encode("utf-8")) for chunk in byte_chunks]
+        self.assertEqual(byte_sizes, [1, 4, 1])
+
+    def test_truncate_has_no_oversized_cluster_exception(self):
+        # 截断路径不存在超宽簇例外：放不进预算的簇直接丢弃，
+        # 对任何 limit 结果的实际代价都严格不超过预算。
+        text = "中👍🏽"  # '中' 宽 2，'👍🏽' 宽 2
+        self.assertEqual(chunker.truncate(text, 1, strategy="width"), "")
+        self.assertEqual(chunker.truncate(text, 2, strategy="width"), "中")
+        self.assertEqual(chunker.truncate(text, 4, strategy="width"), text)
+        for limit in range(1, 10):
+            head = chunker.truncate(text, limit, strategy="width")
+            width = sum(chunker.grapheme_width(g) for g in chunker.iter_graphemes(head))
+            self.assertLessEqual(width, limit, msg="limit=%r head=%r" % (limit, head))
+        # bytes 策略同样严格：预算 3 放不下占 4 字节的 😀
+        self.assertEqual(chunker.truncate("a😀", 3, strategy="bytes"), "a")
+
     def test_strategies_differ_on_same_input(self):
         text = "中文ab"
         # 同为 limit=3：宽度策略只能放下一个汉字，字素策略能放三个字素
