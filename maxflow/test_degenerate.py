@@ -2,18 +2,19 @@
 
 覆盖：反平行边、自环、零容量边、容量为零的源出边、超大容量、
 源汇相同、无路径、单边、完全二分网络。
+所有用例对 Dinic / 推送-重标号 / 暴力增广 三种实现同时生效。
 """
 
 import unittest
 
-from maxflow import MaxFlow
+from maxflow import MaxFlow, PushRelabelMaxFlow
 from bruteforce import BruteForceMaxFlow
 
 BIG = 10**18  # 超大容量，验证不溢出
 
 
 def both_classes():
-    return (MaxFlow, BruteForceMaxFlow)
+    return (MaxFlow, PushRelabelMaxFlow, BruteForceMaxFlow)
 
 
 class TestDegenerate(unittest.TestCase):
@@ -100,10 +101,11 @@ class TestDegenerate(unittest.TestCase):
 
     def test_huge_bottleneck(self):
         # 大容量被小瓶颈截断
-        mf = MaxFlow(3)
-        mf.add_edge(0, 1, BIG)
-        mf.add_edge(1, 2, 7)
-        self.assertEqual(mf.max_flow(0, 2), 7)
+        for cls in both_classes():
+            mf = cls(3)
+            mf.add_edge(0, 1, BIG)
+            mf.add_edge(1, 2, 7)
+            self.assertEqual(mf.max_flow(0, 2), 7)
 
     def test_same_source_sink(self):
         for cls in both_classes():
@@ -138,8 +140,9 @@ class TestDegenerate(unittest.TestCase):
             self.assertEqual(edges, [(0, 1, 42)])
 
     def test_single_vertex(self):
-        mf = MaxFlow(1)
-        self.assertEqual(mf.max_flow(0, 0), 0)
+        for cls in both_classes():
+            mf = cls(1)
+            self.assertEqual(mf.max_flow(0, 0), 0)
 
     def test_complete_bipartite(self):
         # K_{p,q}：源接左部容量 a_i，右部接汇容量 b_j，中间边容量 INF

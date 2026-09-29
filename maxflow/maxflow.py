@@ -1,8 +1,11 @@
-"""maxflow.py — 最大流 / 最小割库（Dinic 算法，仅标准库）
+"""maxflow.py — 最大流 / 最小割库（Dinic + 推送-重标号，仅标准库）
 
-算法：Dinic（BFS 分层 + DFS 阻塞流，当前弧优化）
-复杂度：一般图 O(V^2 * E)；单位容量图 O(E * sqrt(V))；
-        二分匹配 O(E * sqrt(V))。
+算法（统一接口 make_maxflow(n, algorithm=...) 选择）：
+- "dinic"        : Dinic（BFS 分层 + DFS 阻塞流，当前弧优化）。
+                   一般图 O(V^2 * E)；单位容量图 O(E * sqrt(V))；
+                   二分匹配 O(E * sqrt(V))。
+- "push_relabel" : 推送-重标号（highest-label 选择 + gap 启发式，
+                   当前弧优化）。O(V^2 * sqrt(E))。
 
 设计要点：
 - 反平行边 (u->v 与 v->u 同时存在)：每条原始边独立建正/反两条残量边，
@@ -10,6 +13,8 @@
 - 自环 / 零容量边：允许加入，分层图中不会被使用，不影响结果。
 - 超大容量：Python int 无溢出；内部 INF 取所有容量之和，保持整数运算。
 - s == t：按约定返回流值 0 与空割（无 s-t 流可定义）。
+- 两种算法共用同一残量图结构，max_flow 后均可调用 min_cut / flow_edges；
+  运行统计（相位数 / 推送次数等）写入 self.stats。
 """
 
 import sys
@@ -32,6 +37,7 @@ class MaxFlow:
         self.n = n
         self.g = [[] for _ in range(n)]
         self._orig = []       # 原始边: (u, v, cap, 正向边对象)
+        self.stats = {"algorithm": "dinic", "phases": 0}
 
     def add_edge(self, u, v, cap):
         """添加容量为 cap 的有向边 u->v，返回边的编号（按加入顺序）。"""
@@ -88,10 +94,13 @@ class MaxFlow:
         # INF = 所有原始容量之和（有限、不溢出，纯整数）
         inf = sum(c for _, _, c, _ in self._orig) or 1
         flow = 0
+        phases = 0
         while True:
             level = self._bfs_levels(s, t)
             if level[t] < 0:
+                self.stats = {"algorithm": "dinic", "phases": phases}
                 return flow
+            phases += 1
             it = [0] * self.n
             while True:
                 f = self._dfs_blocking(s, t, inf, level, it)
@@ -141,3 +150,124 @@ class MaxFlow:
             if f > 0:
                 out.append((u, v, f))
         return out
+
+
+class PushRelabelMaxFlow(MaxFlow):
+    """推送-重标号算法（highest-label 选择 + gap 启发式 + 当前弧）。
+
+    与 Dinic 共用同一残量图结构；max_flow 结束后残量网络同样
+    支持 min_cut / flow_edges，且可重复调用（在残量上继续求流）。
+    统计写入 self.stats: pushes（推送次数）、relabels（重标号次数）。
+    """
+
+    def max_flow(self, s, t):
+        if not (0 <= s < self.n and 0 <= t < self.n):
+            raise ValueError("vertex out of range")
+        if s == t:
+            return 0
+        n = self.n
+        g = self.g
+        height = [0] * n
+        excess = [0] * n
+        cur = [0] * n
+        # 活跃点高度恒 < 2n（存在到 s 的残量路），桶数组留 1 格余量
+        count = [0] * (2 * n + 1)   # 各高度顶点数（gap 启发式用）
+        count[0] = n - 1
+        height[s] = n
+        count[n] = 1
+        buckets = [[] for _ in range(2 * n + 1)]
+        in_bucket = [False] * n
+        pushes = 0
+        relabels = 0
+
+        # 预流：饱和 s 的所有残量出边
+        for e in g[s]:
+            if e.cap > 0 and e.to != s:
+                d = e.cap
+                e.cap = 0
+                g[e.to][e.rev].cap += d
+                excess[e.to] += d
+                v = e.to
+                if v != t and not in_bucket[v]:
+                    in_bucket[v] = True
+                    buckets[0].append(v)
+
+        max_h = 0
+        while max_h >= 0:
+            if not buckets[max_h]:
+                max_h -= 1
+                continue
+            u = buckets[max_h].pop()
+            if not in_bucket[u] or height[u] != max_h:
+                continue            # 过期条目（gap 提升后新高度处有副本）
+            in_bucket[u] = False
+            gu = g[u]
+            # discharge(u)：推送/重标号直到盈余清零
+            while excess[u] > 0:
+                if cur[u] == len(gu):
+                    # 重标号：抬到最低残量邻居之上
+                    old = height[u]
+                    mh = 2 * n
+                    for e in gu:
+                        if e.cap > 0 and height[e.to] < mh:
+                            mh = height[e.to]
+                    # 盈余非空 => 必有残量出边，mh 必被更新
+                    new_h = mh + 1
+                    count[old] -= 1
+                    height[u] = new_h
+                    count[new_h] += 1
+                    relabels += 1
+                    cur[u] = 0
+                    if count[old] == 0 and old < n:
+                        # gap：高度 (old, n) 内的点到不了 t，抬到 n
+                        raised_active = False
+                        for v in range(n):
+                            hv = height[v]
+                            if v != s and old < hv < n:
+                                count[hv] -= 1
+                                height[v] = n
+                                count[n] += 1
+                                if in_bucket[v]:
+                                    buckets[n].append(v)
+                                    raised_active = True
+                        if raised_active and max_h < n:
+                            max_h = n
+                    continue
+                e = gu[cur[u]]
+                if e.cap > 0 and height[e.to] + 1 == height[u]:
+                    d = e.cap if e.cap < excess[u] else excess[u]
+                    e.cap -= d
+                    g[e.to][e.rev].cap += d
+                    excess[u] -= d
+                    excess[e.to] += d
+                    pushes += 1
+                    v = e.to
+                    if v != s and v != t and not in_bucket[v]:
+                        in_bucket[v] = True
+                        hv = height[v]
+                        buckets[hv].append(v)
+                        if hv > max_h:
+                            max_h = hv
+                else:
+                    cur[u] += 1
+
+        self.stats = {"algorithm": "push_relabel",
+                      "pushes": pushes, "relabels": relabels}
+        return excess[t]
+
+
+ALGORITHMS = ("dinic", "push_relabel")
+
+
+def make_maxflow(n, algorithm="dinic"):
+    """统一接口：按算法名构造最大流求解器。
+
+    algorithm ∈ ALGORITHMS；返回的对象均有
+    add_edge / max_flow / min_cut / flow_edges / stats。
+    """
+    if algorithm == "dinic":
+        return MaxFlow(n)
+    if algorithm == "push_relabel":
+        return PushRelabelMaxFlow(n)
+    raise ValueError(f"unknown algorithm {algorithm!r}, "
+                     f"choose from {ALGORITHMS}")

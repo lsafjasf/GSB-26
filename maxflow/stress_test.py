@@ -1,10 +1,10 @@
-"""stress_test.py — Dinic 与暴力增广在随机小图上对拍。
+"""stress_test.py — Dinic / 推送-重标号 / 暴力增广 三方对拍。
 
 校验项：
-1. 两者最大流值一致；
-2. 两者最小割容量一致，且各自等于流值（对偶性）；
-3. Dinic 给出的割边集合合法（全部 S->T，容量和 = 流值）；
-4. Dinic 的流满足容量约束与流量守恒。
+1. 三种实现的最大流值一致；
+2. 三者最小割容量一致，且各自等于流值（对偶性）；
+3. Dinic / 推送-重标号给出的割边集合合法（全部 S->T，容量和 = 流值）；
+4. Dinic / 推送-重标号的流满足容量约束与流量守恒。
 
 用法: python3 stress_test.py [轮数] [随机种子]
 """
@@ -12,7 +12,7 @@
 import random
 import sys
 
-from maxflow import MaxFlow
+from maxflow import MaxFlow, PushRelabelMaxFlow
 from bruteforce import BruteForceMaxFlow
 
 
@@ -62,20 +62,26 @@ def run_rounds(rounds, seed):
 
         a = MaxFlow(n)
         b = BruteForceMaxFlow(n)
+        p = PushRelabelMaxFlow(n)
         for u, v, c in edges:
             a.add_edge(u, v, c)
             b.add_edge(u, v, c)
+            p.add_edge(u, v, c)
 
         fa = a.max_flow(s, t)
         fb = b.max_flow(s, t)
-        assert fa == fb, f"round {it}: flow mismatch dinic={fa} brute={fb}\n" \
-                         f"n={n} s={s} t={t} edges={edges}"
+        fp = p.max_flow(s, t)
+        assert fa == fb == fp, \
+            f"round {it}: flow mismatch dinic={fa} brute={fb} pr={fp}\n" \
+            f"n={n} s={s} t={t} edges={edges}"
 
         ca, cut_edges, S = a.min_cut(s, t)
         cb, _, _ = b.min_cut(s, t)
+        cp, cut_edges_p, S_p = p.min_cut(s, t)
         assert ca == fa, f"round {it}: dinic cut {ca} != flow {fa}"
         assert cb == fb, f"round {it}: brute cut {cb} != flow {fb}"
-        assert ca == cb, f"round {it}: cut mismatch {ca} vs {cb}"
+        assert cp == fp, f"round {it}: push-relabel cut {cp} != flow {fp}"
+        assert ca == cb == cp, f"round {it}: cut mismatch {ca} {cb} {cp}"
 
         if s != t:
             assert S[s] and not S[t], f"round {it}: invalid side assignment"
@@ -83,6 +89,9 @@ def run_rounds(rounds, seed):
                 assert S[u] and not S[v], f"round {it}: cut edge crosses wrong way"
             assert sum(c for _, _, c in cut_edges) == fa
             check_flow_valid(a, s, t, fa)
+            assert S_p[s] and not S_p[t]
+            assert sum(c for _, _, c in cut_edges_p) == fp
+            check_flow_valid(p, s, t, fp)
 
         if it % 2000 == 0:
             print(f"  ... {it} rounds OK", flush=True)
