@@ -104,7 +104,10 @@ class TxStore:
         for txid in order:
             st = txs[txid]
             for op in st["ops"]:
-                self._data[op["key"]] = op["new"]
+                if op.get("del"):
+                    self._data.pop(op["key"], None)
+                else:
+                    self._data[op["key"]] = op["new"]
             if not st["committed"] or st["rolling"]:
                 # 未提交（崩溃于事务中途）或处于回滚中：逆序撤销全部操作。
                 # 应用旧值本身幂等，重复执行结果一致。
@@ -203,6 +206,22 @@ class Transaction:
                    "key": key, "had": had, "old": old, "new": value}
             store._append(rec)
             store._data[key] = value
+            self._ops.append(rec)
+            self._keys.add(key)
+            self._seq += 1
+
+    def delete(self, key: str) -> None:
+        """删除 key（不存在则为 no-op）。逆操作仍是恢复 had/old，可回滚。"""
+        store = self._store
+        with store._lock:
+            if self._state != "active":
+                raise TxError(f"cannot delete in state {self._state}")
+            had = key in store._data
+            old = store._data.get(key)
+            rec = {"type": "op", "tx": self._id, "seq": self._seq,
+                   "key": key, "had": had, "old": old, "del": True}
+            store._append(rec)
+            store._data.pop(key, None)
             self._ops.append(rec)
             self._keys.add(key)
             self._seq += 1

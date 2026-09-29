@@ -31,6 +31,9 @@ class SnapshotRef:
     def set(self, k, v):
         self.data[k] = v
 
+    def delete(self, k):
+        self.data.pop(k, None)
+
     def commit(self):
         self._snap = None
 
@@ -140,19 +143,57 @@ class TestBasic(Base):
 
 class TestDifferential(Base):
     def test_against_snapshot_reference(self):
+        # 300 组随机序列全部打在同一份持续存在的磁盘日志上，
+        # 覆盖 set/delete/commit/rollback，并周期性重启走 recover 重放。
+        s = self.open()
+        ref = SnapshotRef()
+        crash_child = (
+            "import sys;sys.path.insert(0,%r);import undolog;"
+            "s=undolog.TxStore(sys.argv[1]);"
+            "t=s.begin();"
+            "t.set('k0','crash');t.set('junk','x');"
+            "os._exit(1)" % REPO
+        )
+        reopen_count = 0
         for trial in range(300):
             rng = random.Random(trial)
-            with tempfile.TemporaryDirectory() as d:
-                s = TxStore(os.path.join(d, "tx.log"))
-            ref = SnapshotRef()
+            if trial in (77, 222):
+                # 真杀进程：事务未提交即崩溃，重开后该事务应被整体撤销
+                s.close()
+                r = subprocess.run(
+                    [sys.executable, "-c", "import os;" + crash_child, self.path],
+                    capture_output=True)
+                self.assertEqual(r.returncode, 1)
+                s = self.open()
+                reopen_count += 1
+                self.assertEqual(s.dump(), ref.data, f"trial={trial} crash-abort")
+                continue
+            if trial % 50 == 49:
+                # 干净重启：重放磁盘日志重建状态
+                s.close()
+                s = self.open()
+                reopen_count += 1
+                self.assertEqual(s.dump(), ref.data, f"trial={trial} reopen")
             for _ in range(rng.randint(1, 6)):
                 tx = s.begin()
                 ref.begin()
                 for _ in range(rng.choice([0, 1, rng.randint(2, 60)])):
                     k = f"k{rng.randint(0, 30)}"
-                    v = rng.randint(-1000, 1000)
-                    tx.set(k, v)
-                    ref.set(k, v)
+                    if rng.random() < 0.3:
+                        tx.delete(k)
+                        ref.delete(k)
+                    else:
+                        v = rng.choice([
+                            rng.randint(-1000, 1000),
+                            f"v{rng.randint(0, 999)}",
+                            [rng.randint(0, 9), "x"],
+                            {"n": rng.randint(0, 9)},
+                            None, True,
+                        ])
+                        tx.set(k, v)
+                        ref.set(k, v)
+                    # 逐条比对：每个操作后全量状态与参照一致
+                    self.assertEqual(s.dump(), ref.data, f"trial={trial} mid-tx")
                 if rng.random() < 0.5:
                     tx.commit()
                     ref.commit()
@@ -160,7 +201,11 @@ class TestDifferential(Base):
                     tx.rollback()
                     ref.rollback()
                 self.assertEqual(s.dump(), ref.data, f"trial={trial}")
-            s.close()
+        s.close()
+        # 存储文件确实持续存在且承载了全部随机序列的日志
+        self.assertTrue(os.path.exists(self.path))
+        self.assertGreater(os.path.getsize(self.path), 0)
+        self.assertGreaterEqual(reopen_count, 7)
 
 
 class TestResume(Base):
@@ -260,6 +305,56 @@ class TestResume(Base):
         s = self.open()
         self.assertEqual(s.dump(), {})  # 未提交事务被撤销
         s.close()
+
+    def test_restart_then_continue_rollback(self):
+        # 回滚被真杀进程打断 -> 重启后续滚到完成 -> 新事务提交 -> 再次
+        # 回滚中崩溃 -> 再重启动续滚。两轮跨重启断点续滚打在同一份日志上。
+        crash_child = (
+            "import sys,os;sys.path.insert(0,%r);import undolog;"
+            "s=undolog.TxStore(sys.argv[1]);"
+            "t=s.begin();"
+            "[t.set('k%%d'%%i,i) for i in range(300)];"
+            "t.commit();"
+            "s._undo_hook=lambda c: os._exit(1) if c==int(sys.argv[2]) else None;"
+            "t.rollback()" % REPO
+        )
+
+        def crash_rollback(stop_at):
+            return subprocess.run(
+                [sys.executable, "-c", crash_child, self.path, str(stop_at)],
+                capture_output=True)
+
+        # 基线数据（已提交，任何回滚都不应影响它）
+        s = self.open()
+        t0 = s.begin()
+        t0.set("base", "keep")
+        t0.commit()
+        s.close()
+
+        # 第一轮：回滚到第 100 步时硬崩溃，重启后从断点续滚
+        r = crash_rollback(100)
+        self.assertEqual(r.returncode, 1)
+        s = self.open()
+        self.assertEqual(s.dump(), {"base": "keep"})
+        # 续滚完成后可以开新事务并提交
+        t1 = s.begin()
+        t1.set("after", 1)
+        t1.commit()
+        s.close()
+
+        # 第二轮：再次回滚中崩溃（第 250 步），重启后续滚
+        r = crash_rollback(250)
+        self.assertEqual(r.returncode, 1)
+        s = self.open()
+        self.assertEqual(s.dump(), {"base": "keep", "after": 1})
+        s.close()
+
+        # 两轮各 300 个操作，undone 标记恰好各 300 个（续滚只补缺失部分），
+        # rollback_done 各出现一次
+        with open(self.path, "rb") as f:
+            log = f.read()
+        self.assertEqual(log.count(b'"undone"'), 600)
+        self.assertEqual(log.count(b'"rollback_done"'), 2)
 
 
 class TestConcurrency(Base):

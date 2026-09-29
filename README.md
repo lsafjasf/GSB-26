@@ -10,7 +10,7 @@
 ## 运行
 
 ```bash
-python3 -m unittest -v test_undolog.py          # 全部 14 个测试
+python3 -m unittest -v test_undolog.py          # 全部 15 个测试
 python3 -m unittest test_undolog.TestScaleAndPerf.test_perf_rollback_100k  # 只看性能
 ```
 
@@ -33,8 +33,14 @@ python3 -m unittest test_undolog.TestScaleAndPerf.test_perf_rollback_100k  # 只
   事务提交前崩溃自动 abort。
 
 **对拍**：`test_against_snapshot_reference` 用 300 组随机种子，每组 1–6 个事务、
-每事务 0–60 个随机写、随机提交/回滚，与「快照旧状态 + 整体恢复」的参照实现
-`SnapshotRef` 逐事务比对，数据完全一致。
+每事务 0–60 个随机 set/delete、随机提交/回滚，全部打在同一份持续存在的
+磁盘日志上，与「快照旧状态 + 整体恢复」的参照实现 `SnapshotRef` 逐条比对；
+期间周期性重启走 `recover` 重放磁盘日志，并两次注入 `os._exit` 硬崩溃
+（未提交事务须被整体撤销），重开后继续与参照比对。
+
+**重启续滚**：`test_restart_then_continue_rollback` 在同一日志文件上跑两轮
+「回滚中 `os._exit` 硬崩溃 → 重启 recover 断点续滚 → 新事务提交」，验证跨重启
+续滚结果正确且 `undone`/`rollback_done` 标记不重复。
 
 ## 并发可见性说明
 
@@ -70,4 +76,4 @@ python3 -m unittest test_undolog.TestScaleAndPerf.test_perf_rollback_100k  # 只
 
 - 单写入者模型，不支持并发事务交错（读者并发安全）。
 - 日志只追加不压缩，长期运行需自行做 checkpoint/截断。
-- key 须为 str，value 须为 JSON 可序列化。
+- key 须为 str，value 须为 JSON 可序列化；`delete` 删除不存在的 key 为 no-op。
