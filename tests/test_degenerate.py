@@ -185,6 +185,44 @@ class TestDegenerate(unittest.TestCase):
         self.assertEqual(value, brute_max_flow(4, edges, 0, 3))
         self.assertEqual(cap, brute_min_cut_capacity(4, edges, 0, 3))
 
+    def test_current_arc_blocking_flow(self):
+        # 当前弧优化回归用例（分层对抗网络）：
+        # 宽走廊 0->1->...->w（容量 k）末端扇出 k 条单位容量车道 w->v_j->t。
+        # 正确写法在 1 个相位内推出全部 k 单位阻塞流；游标提前前移的
+        # 错误写法会退化成 k 个相位、每相位只推 1 条增广路。
+        k, corridor = 20, 6
+        edges = [(i, i + 1, k) for i in range(corridor)]
+        w = corridor
+        base = w + 1
+        t = base + k
+        n = t + 1
+        for j in range(k):
+            v = base + j
+            edges.append((w, v, 1))
+            edges.append((v, t, 1))
+
+        mf = MaxFlow(n)
+        for edge in edges:
+            mf.add_edge(*edge)
+        self.assertEqual(mf.max_flow(0, t), k)
+        self.assertEqual(mf.phase_count, 1, "阻塞流必须在单个相位内推完")
+        self.assertEqual(mf.cut_capacity(), k)
+        self.assertEqual(brute_max_flow(n, edges, 0, t), k)
+
+    def test_current_arc_partial_bottleneck_reuse(self):
+        # 更一般的回归：一条宽弧后接两条不同瓶颈（1 和 3），共享上游宽弧。
+        # 第一次增广沿瓶颈 1 的路推 1 单位后宽弧仍有残量，游标不能前移，
+        # 同一相位须继续沿另一条路推 3 单位 —— 仍是 1 个相位。
+        # 顶点: s=0, a=1；路 a->x=2->t=4（容量 1），路 a->y=3->t（容量 3）
+        edges = [(0, 1, 10), (1, 2, 10), (2, 4, 1),
+                 (1, 3, 10), (3, 4, 3)]
+        mf = MaxFlow(5)
+        for edge in edges:
+            mf.add_edge(*edge)
+        self.assertEqual(mf.max_flow(0, 4), 4)
+        self.assertEqual(mf.phase_count, 1)
+        self.assertEqual(mf.cut_capacity(), 4)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

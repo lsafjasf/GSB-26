@@ -116,6 +116,7 @@ class MaxFlow:
         self._t = None
         self._reach = None        # 最大流后残量网络中从 s 可达的顶点
         self._flow = None
+        self.phase_count = 0      # 上次 max_flow 的 BFS 分层相位数（调试/基准用）
 
     # -------------------------------------------------- 构图
     def add_edge(self, u, v, capacity):
@@ -150,6 +151,7 @@ class MaxFlow:
         s = _check_vertex(s, self.n, "s")
         t = _check_vertex(t, self.n, "t")
         self._s, self._t = s, t
+        self.phase_count = 0
 
         if s == t:
             self._flow = 0
@@ -173,6 +175,7 @@ class MaxFlow:
                         queue.append(arc.to)
             if level[t] < 0:
                 break
+            self.phase_count += 1
 
             # 当前弧迭代式 DFS，反复增广直到阻塞
             cur = [0] * n
@@ -187,21 +190,33 @@ class MaxFlow:
         return self._flow
 
     def _augment(self, s, t, level, cur):
-        """在分层图上找一条 s->t 增广路并推送瓶颈流量，显式栈实现。"""
+        """在分层图上找一条 s->t 增广路并推送瓶颈流量，显式栈实现。
+
+        当前弧游标只在该弧被确认无法再贡献流量（推送后饱和，或弧头在
+        当前分层图中已是死路）时才前移；否则保留游标，使同一相位可以
+        反复利用仍有残量、下游仍可达 t 的弧，真正得到阻塞流。
+        """
         adj = self._adj
         vertices = [s]
-        path = []  # 与 vertices 对齐：path[i] 是 vertices[i] -> vertices[i+1] 的弧
+        arcs_to = [None]   # arcs_to[i] 是到达 vertices[i] 所经的弧（s 处为 None）
 
         while vertices:
             u = vertices[-1]
 
             if u == t:
-                bottleneck = None
-                for arc in path:
-                    bottleneck = arc.cap if bottleneck is None else min(bottleneck, arc.cap)
+                path = arcs_to[1:]
+                bottleneck = min(arc.cap for arc in path)
                 for arc in path:
                     arc.cap -= bottleneck
                     adj[arc.to][arc.rev].cap += bottleneck
+                # 沿栈回溯，弹出已饱和的弧；第一个仍有残量的弧留在顶点上，
+                # 游标不动，下一次从该顶点继续尝试它；路径更上方仍可复用。
+                while path:
+                    arc = path.pop()
+                    vertices.pop()
+                    arcs_to.pop()
+                    if arc.cap > 0:
+                        break
                 return bottleneck
 
             arcs = adj[u]
@@ -211,17 +226,17 @@ class MaxFlow:
                 if arc.cap > 0 and level[arc.to] == level[u] + 1:
                     break
                 i += 1
-            cur[u] = i + 1 if i < len(arcs) else i
+            cur[u] = i
 
             if i < len(arcs):
                 vertices.append(arc.to)
-                path.append(arc)
+                arcs_to.append(arc)
             else:
-                # u 在当前分层图中到不了 t，标记后回溯（当前弧/死路剪枝）
+                # u 在当前分层图中到不了 t：标记死路，由父顶点把对应弧
+                # 判废并前移游标（死路剪枝）
                 level[u] = -1
                 vertices.pop()
-                if path:
-                    path.pop()
+                arcs_to.pop()
 
         return 0
 
