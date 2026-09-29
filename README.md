@@ -10,7 +10,8 @@
 | `numfmt.py` | 库源码：精确舍入、本地化排版、科学计数法自动切换 |
 | `locales.json` | 语言/格式配置样例：en_US、de_DE、fr_FR、zh_CN、hi_IN、会计风格等 |
 | `selftest.py` | 单元自测（28 例）：零/负零、极值、超长小数、缺项配置、切换边界 |
-| `diff_test.py` | 对拍脚本：numfmt(Fraction) vs 独立参照(Decimal 高精度)，随机用例 |
+| `diff_test.py` | 对拍脚本：numfmt(Fraction) vs 独立参照(Decimal 解析+舍入)，随机用例 |
+| `coverage_stats.py` | 覆盖统计：对拍实际覆盖的精度/舍入/分组宽度/语言配置数字 |
 | `bench.py` | 性能测试：格式化十万次耗时 |
 
 ## 快速开始
@@ -91,12 +92,25 @@ format_number("12345678.9", {"precision": 1}, locales["hi_IN"])  # '₹1,23,45,6
 
 ## 对拍
 
-参照实现 `diff_test.py` 独立采用 `decimal.Decimal` 高精度 `quantize`
-（600 位上下文，舍入前后精度按需扩展），且每个参照结果再用 Fraction
-精确验证“最近邻 + 半值规则”。随机值覆盖十进制字符串（含超长小数/指数/负零）、
-float（含 5e-324 次正规数、1.79e308 极值）、大整数、Fraction、精确半值、Decimal；
-配置覆盖两种精度模式、0–25 位精度、两种舍入、科学计数法阈值、6 种分组宽度、
-6 套语言配置及随机货币/括号/正号组合。默认 20,000 例，已验证 100,000 例一致。
+参照实现 `diff_test.py` 不导入 numfmt 的任何内部函数，解析与舍入均走独立的
+Decimal 路线：字符串由 decimal 模块自己的解析器处理（指数写法、负零符号独立
+判定），float 按二进制精确值展开为十进制，Fraction 在 800 位精度下相除；舍入用
+高精度 `quantize`，每个参照结果再用 Fraction 精确验证“最近邻 + 半值规则”
+（校验基准由参照自己的解析结果推出，不经过 numfmt 的解析代码）。随机值覆盖
+十进制字符串（含超长小数/指数/负零）、float（含 5e-324 次正规数、1.79e308
+极值）、大整数、Fraction、精确半值、Decimal；配置覆盖科学计数法阈值及随机
+货币/括号/正号组合，其余维度数字由 `python3 coverage_stats.py` 统计产出
+（与代码同源，非手写）：
+
+```
+精度模式: 2 种 (decimal_places, significant)
+精度取值: decimal_places 0–25 (26 个), significant 1–25 (25 个)
+舍入规则: 2 种 (half_up, half_even)
+分组宽度: 5 种 ((3,), (3, 2), (2,), (4,), (3, 2, 2))
+语言配置: 7 套 (en_US, de_DE, fr_FR, zh_CN, hi_IN, en_US_accounting, de_DE_signed)
+```
+
+默认 20,000 例，已验证 100,000 例一致。
 
 ## 性能数据
 
@@ -115,5 +129,6 @@ float（含 5e-324 次正规数、1.79e308 极值）、大整数、Fraction、�
 python3 selftest.py            # 28 个单元自测
 python3 diff_test.py           # 20,000 例对拍
 python3 diff_test.py 100000    # 100,000 例对拍
+python3 coverage_stats.py      # 统计对拍覆盖数字（上文表格来源）
 python3 bench.py               # 十万次性能测试
 ```

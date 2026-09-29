@@ -1,8 +1,12 @@
 """对拍脚本：numfmt（Fraction 实现） vs 独立参照实现（Decimal 高精度）。
 
-参照实现故意走另一条技术路线：
+参照实现故意走另一条技术路线，且不导入 numfmt 的任何内部函数：
+- 解析独立：str 由 decimal 模块自己的解析器处理（含指数写法与负零符号），
+  float 经 Decimal 的二进制精确展开，Fraction 在 800 位精度下相除；
+  numfmt 一侧的解析偏差（浮点转精确值、指数写法、负零）会被对拍发现
 - 舍入用 decimal.Decimal.quantize（ROUND_HALF_UP / ROUND_HALF_EVEN）
-- 每个参照结果再用 Fraction 精确校验一次（最近邻 + 半值规则）
+- 每个参照结果再用 Fraction 精确校验一次（最近邻 + 半值规则），
+  校验基准由参照自己的解析结果推出，不经过 numfmt 的解析代码
 - 随机覆盖多语言、多精度、多分组、科学计数法阈值
 
 运行：python3 diff_test.py [用例数，默认 20000]
@@ -17,54 +21,81 @@ from numfmt import (
     LocaleConfig,
     PrecisionMode,
     RoundingMode,
-    _to_signed_fraction,
     format_number,
     load_locales,
 )
 
+# ------------------------------------------------------------ 随机空间定义
+# coverage_stats.py 从这些常量统计真实覆盖数字，改动此处即改动统计结果。
+
+REF_PREC = 800  # 参照 Decimal 精度：远超本测试输入的有效位数与精度需求
+
+PRECISION_DECIMAL_PLACES = range(0, 26)  # 小数位精度取值
+PRECISION_SIGNIFICANT = range(1, 26)     # 有效数字精度取值
+GROUP_WIDTHS = [(3,), (3, 2), (2,), (4,), (3, 2, 2)]
+
 # ------------------------------------------------------------ 参照实现
 
-def ref_decimal_exponent(frac):
-    """十进制指数：Decimal 估算 + Fraction 精确校正。"""
-    with localcontext() as ctx:
-        ctx.prec = 50
-        d = Decimal(frac.numerator) / Decimal(frac.denominator)
-        e = d.adjusted()
-    while frac >= Fraction(10) ** (e + 1):
-        e += 1
-    while frac < Fraction(10) ** e:
-        e -= 1
-    return e
+def ref_parse(value):
+    """参照实现的独立解析，走 Decimal 表示（numfmt 走 Fraction 表示）。
+
+    返回 (是否负, |值| 的 Decimal)。str 由 decimal 模块自己的解析器处理，
+    指数写法与负零符号由此独立判定；float 按其二进制精确值展开为十进制；
+    Fraction 在 REF_PREC 位精度下相除（本测试输入的分母与舍入边界之间的
+    最小非零间距 >= 1e-45，800 位截断可证不跨越任何舍入边界）。
+    """
+    if isinstance(value, bool):
+        raise TypeError("不支持 bool 类型")
+    if isinstance(value, Fraction):
+        with localcontext() as ctx:
+            ctx.prec = REF_PREC
+            dec = Decimal(value.numerator) / Decimal(value.denominator)
+    elif isinstance(value, str):
+        dec = Decimal(value.strip())
+    elif isinstance(value, (int, float, Decimal)):
+        dec = Decimal(value)
+    else:
+        raise TypeError(f"不支持的类型: {type(value).__name__}")
+    if not dec.is_finite():
+        raise ValueError("不支持 NaN / Inf")
+    return dec.is_signed(), dec.copy_abs()  # copy_abs 不经上下文，保持精确
 
 
-def ref_round(frac, spec):
-    """用 Decimal 高精度舍入，返回 (数字串, 指数)；并用 Fraction 精确校验。"""
+def ref_exact(value, dec):
+    """精确校验基准：Fraction 输入即精确值本身（无需解析）；
+    其余输入由参照自己的 Decimal 解析结果精确转换，不经过 numfmt。"""
+    if isinstance(value, Fraction):
+        return abs(value)
+    return Fraction(dec)
+
+
+def ref_round(dec, exact, spec):
+    """用 Decimal.quantize 高精度舍入，返回 (数字串, 指数)；并用 Fraction 精确校验。"""
     if spec.precision_mode is PrecisionMode.DECIMAL_PLACES:
         exp = -spec.precision
-    elif frac == 0:
+    elif dec == 0:
         exp = -(spec.precision - 1)
     else:
-        exp = ref_decimal_exponent(frac) - spec.precision + 1
-    if frac == 0:
+        exp = dec.adjusted() - spec.precision + 1
+    if dec == 0:
         return "0", exp
     with localcontext() as ctx:
-        ctx.prec = max(600, ref_decimal_exponent(frac) - exp + 30)
-        d = Decimal(frac.numerator) / Decimal(frac.denominator)
+        ctx.prec = REF_PREC
         mode = ROUND_HALF_UP if spec.rounding is RoundingMode.HALF_UP else ROUND_HALF_EVEN
-        q = d.quantize(Decimal(1).scaleb(exp), rounding=mode)
+        q = dec.quantize(Decimal(1).scaleb(exp), rounding=mode)
     digits = "".join(str(x) for x in q.as_tuple().digits)
-    if spec.precision_mode in (PrecisionMode.SIGNIFICANT,) and len(digits) > spec.precision:
+    if spec.precision_mode is PrecisionMode.SIGNIFICANT and len(digits) > spec.precision:
         digits = digits[:-1]  # 进位多出的末位必为 0
         exp += 1
     # ---- 精确校验：结果必须是最近邻，半值时必须满足对应规则 ----
     m = int(digits)
     unit = Fraction(10) ** exp
     value = m * unit
-    diff = abs(value - frac)
-    assert 2 * diff <= unit, f"参照实现舍入误差超过半值: {frac} {spec}"
+    diff = abs(value - exact)
+    assert 2 * diff <= unit, f"参照实现舍入误差超过半值: {exact} {spec}"
     if 2 * diff == unit:
         if spec.rounding is RoundingMode.HALF_UP:
-            assert value > frac, "HALF_UP 半值必须远离零进位"
+            assert value > exact, "HALF_UP 半值必须远离零进位"
         else:
             assert m % 2 == 0, "HALF_EVEN 半值必须取偶"
     return digits, exp
@@ -81,8 +112,8 @@ def ref_group(int_part, widths, sep):
     return sep.join(reversed(out))
 
 
-def ref_format(negative, frac, spec, loc):
-    digits, exp = ref_round(frac, spec)
+def ref_format(negative, dec, exact, spec, loc):
+    digits, exp = ref_round(dec, exact, spec)
     if digits == "0" and not spec.keep_negative_zero:
         negative = False
     e = exp + len(digits) - 1
@@ -151,7 +182,10 @@ def random_value(rng):
 
 def random_spec(rng):
     mode = rng.choice([PrecisionMode.DECIMAL_PLACES, PrecisionMode.SIGNIFICANT])
-    precision = rng.randrange(0, 26) if mode is PrecisionMode.DECIMAL_PLACES else rng.randrange(1, 26)
+    precision = rng.choice(
+        PRECISION_DECIMAL_PLACES if mode is PrecisionMode.DECIMAL_PLACES
+        else PRECISION_SIGNIFICANT
+    )
     sci_high = rng.choice([None, None, rng.randrange(3, 15)])
     sci_low = rng.choice([None, None, -rng.randrange(2, 9)])
     return FormatSpec(
@@ -173,7 +207,7 @@ def random_locale(rng, locales):
     return LocaleConfig(
         decimal_sep=decimal_sep,
         group_sep=group_sep,
-        group_width=rng.choice([(3,), (3, 2), (2,), (4,), (3, 2, 2)]),
+        group_width=rng.choice(GROUP_WIDTHS),
         negative_sign=rng.choice(["-", "−"]),
         positive_sign=rng.choice(["", "+"]),
         negative_parens=rng.random() < 0.2,
@@ -193,8 +227,8 @@ def main():
         spec = random_spec(rng)
         loc = random_locale(rng, locales)
         got = format_number(value, spec, loc)
-        negative, frac = _to_signed_fraction(value)
-        want = ref_format(negative, frac, spec, loc)
+        negative, dec = ref_parse(value)
+        want = ref_format(negative, dec, ref_exact(value, dec), spec, loc)
         if got != want:
             mismatches += 1
             print(f"[不一致 #{mismatches}] value={value!r}")
