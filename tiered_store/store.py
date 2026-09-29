@@ -186,6 +186,12 @@ class TieredStore:
 
     def _promote(self, key: str) -> bytes:
         value = self._read_cold(key)
+        size = self._meta[key].size if key in self._meta else len(value)
+        evictable = any(k != key for k in self._hot)
+        if size > self.capacity or (self._hot_bytes + size > self.capacity and not evictable):
+            # 热层注定放不下 (单条数据超容量, 或容量为 0 / 热层已无其他 key 可淘汰):
+            # 保留冷层文件, 数据留在冷层直接返回, 避免 "读完即删、再写回" 的写放大。
+            return value
         os.unlink(self._path(key))
         self._cold.discard(key)
         self._insert_hot(key, value)

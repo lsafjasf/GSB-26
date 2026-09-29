@@ -70,7 +70,14 @@ def test_tiny_capacity():
     s.put("big2", "y" * 128)
     assert s.get("big2") == b"y" * 128
     assert s.get("big") == b"x" * 64  # 反复读仍正确
-    print("  ok: 容量小于单条数据 (直接落盘, 读取仍正确)")
+    # 容量小于单条数据: 读冷数据时应留在冷层直接返回, 不得触发额外写盘。
+    # 两次 put 各落盘 1 次, 三次 get 均为纯读 (读次数 == get 次数, 写次数不随读增长)。
+    m = s.metrics.snapshot()
+    assert m["disk_write_ops"] == 2, f"读不应导致回写, disk_write_ops={m['disk_write_ops']}"
+    assert m["disk_read_ops"] == 3, f"三次冷读, disk_read_ops={m['disk_read_ops']}"
+    assert "big" in s.cold_keys and "big2" in s.cold_keys
+    print("  ok: 容量小于单条数据 (直接落盘, 反复读取不产生写放大: "
+          f"disk_r={m['disk_read_ops']}, disk_w={m['disk_write_ops']})")
 
 
 def test_all_cold():
