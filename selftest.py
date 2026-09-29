@@ -20,6 +20,7 @@ from contract_fw.core import (
     VERDICT_CONDITIONAL,
     VERDICT_INCOMPATIBLE,
 )
+from contract_fw.report import render_diffs
 
 CASES = [
     # 对照组：两个实现行为一致，框架不得报告任何差异
@@ -38,6 +39,9 @@ CASES = [
      "input": {}, "expect": {"result": 0}, "side_effects": ["audit"]},
     {"id": "c_repeat", "severity": "major", "op": "counter",
      "input": {}, "repeat": 2, "expect": {"result": 5}},
+    # 前几次调用一致、后续重复调用才出现差异：差异报告必须能区分两侧
+    {"id": "c_late_diff", "severity": "major", "op": "late",
+     "input": {}, "repeat": 3, "expect": {"result": 7}},
     {"id": "c_partial", "severity": "critical", "op": "batch",
      "input": {"items": [1, 0, 2]},
      "expect": {"result": {"ok": [1, 2], "bad": [0]}}},
@@ -48,6 +52,7 @@ CASES = [
 
 EXPECTED_BAD_DIFFS = {
     "c_result", "c_err_type", "c_timeout", "c_side_effect", "c_repeat", "c_partial",
+    "c_late_diff",
 }
 CONTROL_CASES = {"c_ok_result", "c_ok_error"}
 
@@ -72,6 +77,8 @@ class Good:
             return 0
         if op == "counter":
             return 5
+        if op == "late":
+            return 7
         if op == "batch":
             items = payload["items"]
             return {"ok": [x for x in items if x], "bad": [x for x in items if not x]}
@@ -86,6 +93,7 @@ class Bad:
 
     def __init__(self):
         self._counter_calls = 0
+        self._late_calls = 0
 
     def call(self, op, payload, ctx):
         if op == "add":
@@ -104,6 +112,9 @@ class Bad:
         if op == "counter":
             self._counter_calls += 1
             return 5 if self._counter_calls == 1 else 6      # 重复调用不一致
+        if op == "late":
+            self._late_calls += 1
+            return 7 if self._late_calls <= 2 else 8         # 前 2 次一致，第 3 次分叉
         if op == "batch":
             raise ZeroDivisionError("bad item")              # 部分失败语义不一致
         if op == "label":
@@ -167,6 +178,19 @@ def main():
     diffs_minor = behavior_diffs(res_good, res_minor)
     check({d.case["id"] for d in diffs_minor} == {"c_minor_only"},
           "差异集合 == {c_minor_only}", failures)
+
+    print("自测 5：前几次一致、后续分叉时，差异报告能区分两侧")
+    diff_lines, _ = render_diffs(CASES, {"good": res_good, "bad": res_bad}, "good")
+    start = next(i for i, l in enumerate(diff_lines) if "c_late_diff" in l)
+    ref_line = diff_lines[start + 1]
+    cand_line = diff_lines[start + 2]
+    check("参考" in ref_line and "候选" in cand_line,
+          "c_late_diff 报告包含参考/候选两行", failures)
+    check(ref_line != cand_line.replace("候选", "参考").replace("bad", "good"),
+          "两侧描述不相同（未把分叉吞掉）\n      参考行：%s\n      候选行：%s"
+          % (ref_line.strip(), cand_line.strip()), failures)
+    check("第 3 次" in cand_line and "8" in cand_line and "8" not in ref_line,
+          "候选行指出第 3 次返回 8，参考行始终为 7", failures)
 
     if failures:
         print("\n自测失败 %d 项：" % len(failures))

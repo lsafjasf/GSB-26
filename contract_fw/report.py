@@ -91,9 +91,20 @@ def render_diffs(cases, results_by_impl, reference_name):
         for d in diffs:
             lines.append("    - 用例 %s（%s，%s）：" % (
                 d.case["id"], d.case.get("category", "-"), d.case.get("severity", "major")))
-            lines.append("        参考 %s：%s" % (reference_name, d.reference.observed.describe()))
-            lines.append("        候选 %s：%s" % (name, d.candidate.observed.describe()))
+            lines.append("        参考 %s：%s" % (reference_name, _describe_sequence(d.reference)))
+            lines.append("        候选 %s：%s" % (name, _describe_sequence(d.candidate)))
     return lines, diffs_by_impl
+
+
+def _describe_sequence(case_result):
+    """描述一次用例执行的完整调用序列；单次调用保持简洁，重复调用逐次列出。"""
+    outcomes = case_result.outcomes
+    if len(outcomes) == 1:
+        return outcomes[0].describe()
+    return "；".join(
+        "第 %d 次%s" % (index, outcome.describe())
+        for index, outcome in enumerate(outcomes, start=1)
+    )
 
 
 def render_verdicts(diffs_by_impl, reference_name):
