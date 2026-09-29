@@ -10,13 +10,13 @@
 ## 运行
 
 ```bash
-python3 -m unittest -v test_undolog.py          # 全部 14 个测试
+python3 -m unittest -v test_undolog.py          # 全部 15 个测试
 python3 -m unittest test_undolog.TestScaleAndPerf.test_perf_rollback_100k  # 只看性能
 ```
 
 ## 设计
 
-**撤销日志**：每个写操作在应用前，先把逆操作（`old` 旧值 + `had` 是否存在）
+**撤销日志**：每个写操作（`set`/`delete`）在应用前，先把逆操作（`old` 旧值 + `had` 是否存在）
 以 JSON Lines 追加到磁盘日志（`begin/op/commit/rollback_begin/undone/rollback_done`）。
 回滚按逆序应用逆操作，每步写 `undone` 标记，最后写 `rollback_done`。
 
@@ -33,8 +33,11 @@ python3 -m unittest test_undolog.TestScaleAndPerf.test_perf_rollback_100k  # 只
   事务提交前崩溃自动 abort。
 
 **对拍**：`test_against_snapshot_reference` 用 300 组随机种子，每组 1–6 个事务、
-每事务 0–60 个随机写、随机提交/回滚，与「快照旧状态 + 整体恢复」的参照实现
-`SnapshotRef` 逐事务比对，数据完全一致。
+每事务 0–60 个随机写/删、随机提交/回滚，与「快照旧状态 + 整体恢复」的参照实现
+`SnapshotRef` 逐事务比对。存储文件在整个用例期间持续存在：每个事务后随机
+重启（关闭并重开 `TxStore`，走 `recover` 日志重放）再比对，用例结束最终
+重启重放一次并断言磁盘日志非空，确保磁盘日志与重启恢复路径被真实覆盖。
+`test_restart_continues_rollback` 覆盖「回滚中途失败即关闭、重启后断点续滚」。
 
 ## 并发可见性说明
 

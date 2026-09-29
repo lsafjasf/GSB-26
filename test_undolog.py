@@ -31,6 +31,9 @@ class SnapshotRef:
     def set(self, k, v):
         self.data[k] = v
 
+    def delete(self, k):
+        self.data.pop(k, None)
+
     def commit(self):
         self._snap = None
 
@@ -142,17 +145,22 @@ class TestDifferential(Base):
     def test_against_snapshot_reference(self):
         for trial in range(300):
             rng = random.Random(trial)
-            with tempfile.TemporaryDirectory() as d:
-                s = TxStore(os.path.join(d, "tx.log"))
+            # 存储文件在整个用例期间持续存在，且会被反复重启重放
+            path = os.path.join(self._tmp.name, f"diff-{trial}.log")
+            s = TxStore(path)
             ref = SnapshotRef()
             for _ in range(rng.randint(1, 6)):
                 tx = s.begin()
                 ref.begin()
                 for _ in range(rng.choice([0, 1, rng.randint(2, 60)])):
                     k = f"k{rng.randint(0, 30)}"
-                    v = rng.randint(-1000, 1000)
-                    tx.set(k, v)
-                    ref.set(k, v)
+                    if rng.random() < 0.25:
+                        tx.delete(k)
+                        ref.delete(k)
+                    else:
+                        v = rng.randint(-1000, 1000)
+                        tx.set(k, v)
+                        ref.set(k, v)
                 if rng.random() < 0.5:
                     tx.commit()
                     ref.commit()
@@ -160,6 +168,18 @@ class TestDifferential(Base):
                     tx.rollback()
                     ref.rollback()
                 self.assertEqual(s.dump(), ref.data, f"trial={trial}")
+                if rng.random() < 0.25:
+                    # 随机重启：从磁盘日志重放恢复，再与参照比对
+                    s.close()
+                    s = TxStore(path)
+                    self.assertEqual(s.dump(), ref.data,
+                                     f"trial={trial} reopen")
+            s.close()
+            # 磁盘日志必须真实落盘且非空
+            self.assertGreater(os.path.getsize(path), 0)
+            # 最终重启重放：recover 的结果必须与参照一致
+            s = TxStore(path)
+            self.assertEqual(s.dump(), ref.data, f"trial={trial} final reopen")
             s.close()
 
 
@@ -260,6 +280,39 @@ class TestResume(Base):
         s = self.open()
         self.assertEqual(s.dump(), {})  # 未提交事务被撤销
         s.close()
+
+    def test_restart_continues_rollback(self):
+        s = self.open()
+        t0 = s.begin()
+        t0.set("base", 1)
+        t0.commit()
+        tx = s.begin()
+        for i in range(200):
+            tx.set(f"k{i}", i)
+        tx.delete("base")
+        calls = [0]
+        fail = [True]
+
+        def hook(_):
+            calls[0] += 1
+            if fail[0] and calls[0] == 80:
+                raise RuntimeError("injected rollback failure")
+
+        s._undo_hook = hook
+        with self.assertRaises(RuntimeError):
+            tx.rollback()
+        self.assertEqual(tx.state, "rolling")
+        s.close()  # 回滚未完成即关闭，模拟重启
+        # 重启：recover 从断点继续回滚到完成
+        s2 = self.open()
+        self.assertEqual(s2.dump(), {"base": 1})
+        with open(self.path, "rb") as f:
+            log = f.read()
+        self.assertEqual(log.count(b'"rollback_begin"'), 1)
+        self.assertEqual(log.count(b'"rollback_done"'), 1)
+        # undone 标记总数 == 操作数（200 set + 1 delete），续滚只补缺失部分
+        self.assertEqual(log.count(b'"undone"'), 201)
+        s2.close()
 
 
 class TestConcurrency(Base):
