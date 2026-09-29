@@ -1,5 +1,10 @@
 """batcher 库自测：分发正确性、合并计数、超时、边界、分片、取消、调用次数对比。
 
+调度器覆盖：
+- ManualScheduler（虚拟时钟）：除 RealSchedulerSmokeTest 外的全部用例；
+- ThreadingScheduler（真实定时器，生产默认）：RealSchedulerSmokeTest 冒烟用例
+  （窗口触发、数量触发、提交方不被 handler 阻塞）。
+
 运行：python3 -m unittest test_batcher -v
 """
 
@@ -78,11 +83,11 @@ class TriggerTest(unittest.TestCase):
         handler = RecordingHandler()
         b, sch = make_batcher(handler, max_batch_size=3, window=10.0)
         futs = [b.submit(f"k{i}", i) for i in range(3)]
-        # 未到窗口时间，但数量已满 => 已触发
-        self.assertEqual(handler.n_calls, 1)
-        self.assertEqual(handler.calls[0], [0, 1, 2])
+        # 未到窗口时间，但数量已满 => 已触发（后台线程执行下游调用）
         self.assertEqual([f.result(timeout=5) for f in futs],
                          [("ok", 0), ("ok", 1), ("ok", 2)])
+        self.assertEqual(handler.n_calls, 1)
+        self.assertEqual(handler.calls[0], [0, 1, 2])
 
     def test_window_triggers_before_count(self):
         handler = RecordingHandler()
@@ -255,13 +260,16 @@ class ShardTest(unittest.TestCase):
         handler = RecordingHandler()
         b, sch = make_batcher(handler, max_batch_size=3, window=10.0)
         futs = [b.submit(f"k{i}", i) for i in range(7)]
-        # 7 条 => 3 + 3 已立即触发，剩 1 条等窗口
+        # 7 条 => 3 + 3 立即触发（后台线程执行），剩 1 条等窗口
+        self.assertEqual([f.result(timeout=5) for f in futs[:6]],
+                         [("ok", i) for i in range(6)])
         self.assertEqual(handler.n_calls, 2)
-        self.assertEqual(handler.calls[0], [0, 1, 2])
-        self.assertEqual(handler.calls[1], [3, 4, 5])
+        # 两片在各自后台线程执行，到达顺序不定，按内容比较
+        self.assertEqual(sorted(handler.calls, key=lambda c: c[0]),
+                         [[0, 1, 2], [3, 4, 5]])
         sch.advance(10.0)
         self.assertEqual(handler.n_calls, 3)
-        self.assertEqual(handler.calls[2], [6])
+        self.assertEqual(handler.calls[-1], [6])
         self.assertEqual([f.result(timeout=5) for f in futs],
                          [("ok", i) for i in range(7)])
         self.assertEqual(b.stats["downstream_items"], 7)
@@ -341,6 +349,58 @@ class CallCountComparisonTest(unittest.TestCase):
         self.assertEqual(stats["downstream_items"], n_keys)
         self.assertEqual(batched_calls, 1)  # 10 个 key 合并进 1 批
         self.assertLess(batched_calls, unbatched_calls)
+
+
+class RealSchedulerSmokeTest(unittest.TestCase):
+    """生产配置冒烟：默认 ThreadingScheduler（threading.Timer）+ 真实线程。
+
+    与 ManualScheduler 用例互补：不推进虚拟时间，让真实定时器真实到期，
+    覆盖窗口触发与数量触发两条路径；同时回归"提交方不被 handler 阻塞"。
+    用例只依赖宽松的时间余量（阈值留 2 倍以上），可稳定重复运行。
+    """
+
+    def test_window_trigger_with_real_timer(self):
+        handler = RecordingHandler()
+        b = Batcher(handler, max_batch_size=100, window=0.05, timeout=5.0)
+        t0 = time.monotonic()
+        f = b.submit("k", "req")
+        self.assertEqual(handler.n_calls, 0)  # 窗口未到期不触发
+        self.assertEqual(f.result(timeout=5), ("ok", "req"))
+        elapsed = time.monotonic() - t0
+        self.assertEqual(handler.n_calls, 1)
+        self.assertEqual(handler.calls[0], ["req"])
+        # 确实等了真实窗口（threading.Timer 不会提前触发，留 20% 余量）
+        self.assertGreaterEqual(elapsed, 0.04)
+
+    def test_count_trigger_with_real_timer(self):
+        handler = RecordingHandler()
+        b = Batcher(handler, max_batch_size=3, window=30.0, timeout=5.0)
+        futs = [b.submit(f"k{i}", i) for i in range(3)]
+        # 窗口长达 30s，能拿到结果只可能是数量触发
+        self.assertEqual([f.result(timeout=5) for f in futs],
+                         [("ok", 0), ("ok", 1), ("ok", 2)])
+        self.assertEqual(handler.n_calls, 1)
+        self.assertEqual(handler.calls[0], [0, 1, 2])
+
+    def test_submit_is_not_blocked_by_handler(self):
+        """回归：数量触发不得在提交方线程内同步执行 handler。
+
+        handler 耗时 0.4s；若 submit 同步执行下游调用，凑满批次的那次
+        submit 会被卡满 0.4s（timeout=None 时甚至无限期卡住）。
+        """
+        def slow_fn(reqs):
+            time.sleep(0.4)
+            return [("ok", r) for r in reqs]
+
+        handler = RecordingHandler(slow_fn)
+        b = Batcher(handler, max_batch_size=2, window=30.0, timeout=5.0)
+        t0 = time.monotonic()
+        f1 = b.submit("a", 1)
+        f2 = b.submit("b", 2)  # 凑满批次，触发数量 flush
+        submit_elapsed = time.monotonic() - t0
+        self.assertLess(submit_elapsed, 0.2)  # 阈值仅为 handler 耗时的一半
+        self.assertEqual(f1.result(timeout=5), ("ok", 1))
+        self.assertEqual(f2.result(timeout=5), ("ok", 2))
 
 
 if __name__ == "__main__":

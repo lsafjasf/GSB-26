@@ -102,6 +102,9 @@ class Batcher:
     def submit(self, key: Hashable, request: Any = None) -> Future:
         """提交一个请求，返回 Future。
 
+        提交本身不被下游 handler 阻塞：批量提交（无论数量还是窗口
+        触发）都在后台线程执行，结果通过 Future 异步结算。
+
         - 同 key 且尚未提交的请求会被合并：共享同一条下游请求与结果；
         - Future 的结果为 handler 返回的对应元素；失败时通过
           future.exception() / result() 抛出拿到：
@@ -127,7 +130,13 @@ class Batcher:
             if len(self._pending) >= self._max_batch_size:
                 chunks = self._collect_flush_locked()
         future.add_done_callback(lambda f: self._on_waiter_done(f, item))
-        self._run_chunks(chunks)
+        if chunks:
+            # 数量触发：下游调用放到后台线程执行，与窗口触发在 Timer
+            # 线程执行对称。若在提交方线程同步执行，handler 的延迟
+            # （timeout=None 时甚至是永久挂起）会全部由凑满批次的
+            # 调用方承担。
+            threading.Thread(target=self._run_chunks, args=(chunks,),
+                             daemon=True).start()
         return future
 
     def call(self, key: Hashable, request: Any = None, timeout: Optional[float] = None) -> Any:
