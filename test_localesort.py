@@ -1,11 +1,17 @@
-"""localesort 自测：全序断言、稳定性、对拍、边界情形、未覆盖报告。"""
+"""localesort 自测：全序断言、稳定性、对拍、边界情形、未覆盖报告、
+配置校验、规则完整性检查、未覆盖字符处理策略。"""
 
 import json
 import random
 import unittest
 from functools import cmp_to_key
 
-from localesort import LocaleSorter
+from localesort import (
+    ConfigError,
+    LocaleSorter,
+    UncoveredCharError,
+    validate_config,
+)
 
 CONFIG_PATH = "sort_rules.json"
 
@@ -247,6 +253,160 @@ class UncoveredReportTest(unittest.TestCase):
         self.assertNotIn("北", report)
         self.assertNotIn("a", report)
         self.assertNotIn("1", report)
+
+
+class ConfigValidationTest(unittest.TestCase):
+    """自定义配置校验：合法配置通过，非法配置给出可定位的问题。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.config = load_config()
+
+    def test_shipped_config_is_valid(self):
+        self.assertEqual(validate_config(self.config), [])
+        # 构造 sorter 不抛异常
+        LocaleSorter(self.config)
+
+    def test_rejects_bad_enum_values(self):
+        for key, bad in (("case_first", "uppercase"),
+                         ("unknown_position", "middle"),
+                         ("uncovered_policy", "ignore")):
+            cfg = dict(self.config)
+            cfg[key] = bad
+            issues = validate_config(cfg)
+            self.assertTrue(any(key in msg for msg in issues), issues)
+            with self.assertRaises(ConfigError):
+                LocaleSorter(cfg)
+
+    def test_rejects_cross_table_overlap(self):
+        cfg = dict(self.config)
+        cfg["symbols"] = dict(cfg["symbols"])
+        cfg["symbols"]["a"] = 9  # 'a' 已在 letters 中
+        issues = validate_config(cfg)
+        self.assertTrue(any("同时出现" in msg for msg in issues), issues)
+        with self.assertRaises(ConfigError):
+            LocaleSorter(cfg)
+
+    def test_rejects_duplicate_symbol_rank(self):
+        cfg = dict(self.config)
+        cfg["symbols"] = dict(cfg["symbols"])
+        cfg["symbols"]["#"] = 0  # 位次 0 已被空格占用
+        issues = validate_config(cfg)
+        self.assertTrue(any("重复占用" in msg for msg in issues), issues)
+
+    def test_rejects_bad_cjk_entry(self):
+        cfg = dict(self.config)
+        cfg["cjk"] = dict(cfg["cjk"])
+        cfg["cjk"]["测试"] = {"pinyin": "ce", "tone": 1}  # 键非单字符
+        cfg["cjk"]["测"] = {"pinyin": "", "tone": 9}      # 空拼音 + 声调越界
+        issues = validate_config(cfg)
+        self.assertTrue(any("单字符" in msg for msg in issues), issues)
+        self.assertTrue(any("pinyin" in msg for msg in issues), issues)
+        self.assertTrue(any("tone" in msg for msg in issues), issues)
+
+
+class CoverageCheckTest(unittest.TestCase):
+    """规则完整性检查：报告未覆盖类别，结论可复算。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sorter = LocaleSorter.from_file(CONFIG_PATH)
+        cls.report = cls.sorter.coverage_check()
+
+    def test_report_is_reproducible(self):
+        again = self.sorter.coverage_check()
+        self.assertEqual(self.report, again)
+        self.assertEqual(self.report["digest"], again["digest"])
+        self.assertEqual(len(self.report["digest"]), 64)  # sha256 hex
+
+    def test_uncovered_categories_are_actually_uncovered(self):
+        covered = self.sorter.covered_chars()
+        for entry in self.report["uncovered_categories"]:
+            self.assertGreater(entry["uncovered"], 0)
+            for ch in entry["samples"]:
+                self.assertNotIn(ch, covered)
+
+    def test_known_gaps_are_reported(self):
+        # 配置未声明假名/emoji/货币符号：Lo(部分)、So、Sc 应出现在缺口里
+        cats = {e["category"] for e in self.report["uncovered_categories"]}
+        self.assertIn("So", cats)   # 其他符号（emoji 等）
+        self.assertIn("Sc", cats)   # 货币符号（€ 等）
+        # 已覆盖类别内计数应与配置一致
+        self.assertEqual(
+            self.report["categories"]["Nd"]["covered"], 10)  # ASCII 数字
+
+    def test_format_is_deterministic(self):
+        text1 = self.sorter.format_coverage_report(self.report)
+        text2 = self.sorter.format_coverage_report()
+        self.assertEqual(text1, text2)
+        self.assertIn(self.report["digest"], text1)
+
+
+class UncoveredPolicyTest(unittest.TestCase):
+    """未覆盖字符处理策略：codepoint / error / fold。"""
+
+    DATA = ["文件2", "apple", "ångström", "abc", "龘", "€9", "文件10", "Ábc"]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.base = load_config()
+
+    def make_sorter(self, policy):
+        cfg = dict(self.base)
+        cfg["uncovered_policy"] = policy
+        return LocaleSorter(cfg)
+
+    def assert_total_order(self, sorter, data):
+        for a in data:
+            self.assertEqual(sorter.compare(a, a), 0)
+            for b in data:
+                ab = sorter.compare(a, b)
+                ba = sorter.compare(b, a)
+                self.assertEqual((ab > 0) - (ab < 0), -((ba > 0) - (ba < 0)))
+
+    def test_codepoint_policy_is_default_and_unchanged(self):
+        sorter = self.make_sorter("codepoint")
+        got = sorter.sort(self.DATA)
+        # 未覆盖字符（文/件/龘/€/å）回退到末尾按码位：å<€<件<文<龘
+        self.assertEqual(got[:3], ["abc", "Ábc", "apple"])
+        self.assertEqual(got[3:], ["ångström", "€9", "文件2", "文件10", "龘"])
+        self.assert_total_order(sorter, self.DATA)
+
+    def test_error_policy_raises_with_location(self):
+        sorter = self.make_sorter("error")
+        # 全覆盖数据正常工作
+        self.assertEqual(sorter.sort(["abc", "Ábc", "apple"]),
+                         ["abc", "Ábc", "apple"])
+        with self.assertRaises(UncoveredCharError) as ctx:
+            sorter.sort(self.DATA)
+        self.assertIn("U+", str(ctx.exception))
+
+    def test_fold_policy_folds_into_equivalence_class(self):
+        sorter = self.make_sorter("fold")
+        got = sorter.sort(self.DATA)
+        # å 折叠进 a 等价类（an..<ap.. 故在 apple 前）；文/件/龘/€ 无法折叠仍回退码位
+        self.assertEqual(got[:4], ["abc", "Ábc", "ångström", "apple"])
+        self.assertEqual(got[4:], ["€9", "文件2", "文件10", "龘"])
+        # 折叠确定性：同一等价类内原字符 < 折叠字符
+        self.assertLess(sorter.compare("a", "å"), 0)
+        self.assert_total_order(sorter, self.DATA)
+
+    def test_policy_switch_is_stable_and_explainable(self):
+        # 同一批数据、同一策略：重复排序结果一致
+        for policy in ("codepoint", "fold"):
+            sorter = self.make_sorter(policy)
+            first = sorter.sort(self.DATA)
+            second = sorter.sort(list(self.DATA))
+            self.assertEqual(first, second)
+        # explain 能说明每个未覆盖字符走了哪条路径
+        fold = self.make_sorter("fold")
+        sources = [e["source"] for e in fold.explain("aå文")]
+        self.assertEqual(sources[0], "letters")
+        self.assertEqual(sources[1], "fold->'a'")
+        self.assertEqual(sources[2], "fold->codepoint")
+        codepoint = self.make_sorter("codepoint")
+        sources = [e["source"] for e in codepoint.explain("a文")]
+        self.assertEqual(sources, ["letters", "codepoint"])
 
 
 if __name__ == "__main__":

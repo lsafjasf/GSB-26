@@ -3,6 +3,7 @@
   "numeric": true,
   "case_first": "lower",
   "unknown_position": "end",
+  "uncovered_policy": "codepoint",
   "symbols": {
     " ": 0,
     "-": 1,

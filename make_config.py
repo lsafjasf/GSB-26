@@ -86,6 +86,7 @@ def main():
         "numeric": True,
         "case_first": "lower",
         "unknown_position": "end",
+        "uncovered_policy": "codepoint",
         "symbols": SYMBOLS,
         "letters": build_letters(),
         "cjk": {
