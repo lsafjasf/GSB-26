@@ -15,7 +15,8 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from flakyhunter.core import JsonlSink, execute_round, load_records, load_tests
-from flakyhunter.judge import judge_records
+from flakyhunter.judge import (DEFAULT_P0, confidence_stable_fail,
+                               confidence_stable_pass, judge_records)
 from flakyhunter.order_analysis import analyze_order
 from flakyhunter.quarantine import QuarantineRegistry
 
@@ -64,6 +65,22 @@ for tid, expect in [("test_flaky_p010", "flaky"), ("test_flaky_p030", "flaky"),
     check(f"{tid} -> {expect}", v.verdict == expect,
           f"(实际={v.verdict}, 失败率={v.failure_rate:.3f} "
           f"CI=[{v.ci_low:.3f},{v.ci_high:.3f}])")
+
+print("== 2b. 置信度公式：stable_pass 与 stable_fail 分别推导，不得共用 ==")
+n_runs = REPEATS * 2
+expect_pass = 1 - (1 - DEFAULT_P0) ** n_runs
+expect_fail = 1 - DEFAULT_P0 ** n_runs
+sp_conf = verdicts["test_stable_00"].confidence
+sf_conf = verdicts["test_stable_fail"].confidence
+check("stable_pass 置信度 = 1-(1-p0)^n",
+      abs(sp_conf - expect_pass) < 1e-12, f"{sp_conf:.4f}")
+check("stable_fail 置信度 = 1-p0^n",
+      abs(sf_conf - expect_fail) < 1e-12, f"{sf_conf:.4f}")
+check("两类结论不共用同一公式",
+      confidence_stable_pass is not confidence_stable_fail
+      and confidence_stable_pass(n_runs, DEFAULT_P0)
+          != confidence_stable_fail(n_runs, DEFAULT_P0),
+      f"pass={sp_conf:.4f} fail={sf_conf:.4f}")
 
 print("== 3. 顺序相关性：固定 vs 打乱对比 ==")
 order_tests = load_tests(os.path.join(HERE, "order_tests.py"))

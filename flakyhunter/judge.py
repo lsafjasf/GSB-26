@@ -6,10 +6,14 @@
     - k == n   -> stable_fail（稳定失败）
     - 0 < k < n -> flaky（不稳定）
   - 置信度（对 stable_* 判定）：
-      假设真实失败率至少为 p0（默认 0.05，即“最低值得关心的失败率”），
-      那么 n 次全通过（或全失败）的概率为 (1-p0)^n。
-      置信度 = 1 - (1-p0)^n，表示“真实失败率低于 p0”的可信程度。
-      例：n=60, p0=0.05 -> 置信度 95.4%。
+      两类稳定结论分别推导，不得共用同一公式：
+      - stable_pass（按失败率推导）：若真实失败率 p >= p0，则 n 次全通过的
+        概率为 (1-p)^n <= (1-p0)^n，故“真实失败率 < p0”的置信度为
+        1 - (1-p0)^n。例：n=60, p0=0.05 -> 置信度 95.4%。
+      - stable_fail（按通过率推导）：若真实通过率 q >= 1-p0（即失败率
+        <= p0），则 n 次全失败的概率为 (1-q)^n <= p0^n，故“真实失败率
+        > p0”的置信度为 1 - p0^n。例：n=60, p0=0.05 -> 置信度约为 1
+        （误差 0.05^60 ~ 8.7e-79）。
   - 对 flaky 判定：报告失败率及其 Wilson 95% 置信区间。
 """
 from __future__ import annotations
@@ -19,6 +23,16 @@ from dataclasses import dataclass
 
 DEFAULT_P0 = 0.05
 Z_95 = 1.96
+
+
+def confidence_stable_pass(n: int, p0: float = DEFAULT_P0) -> float:
+    """stable_pass 置信度：1 - (1-p0)^n（按失败率推导）。"""
+    return 1 - (1 - p0) ** n
+
+
+def confidence_stable_fail(n: int, p0: float = DEFAULT_P0) -> float:
+    """stable_fail 置信度：1 - p0^n（按通过率推导）。"""
+    return 1 - p0 ** n
 
 
 def wilson_interval(k: int, n: int, z: float = Z_95) -> tuple[float, float]:
@@ -56,10 +70,16 @@ class Verdict:
         )
         if self.verdict == "flaky":
             return base + f"\n    判定依据: 0 < failures < runs，同一测试出现两种结果"
+        if self.verdict == "stable_pass":
+            return base + (
+                f"\n    判定依据: {self.runs} 次全部通过；若真实失败率>={self.p0}，"
+                f"全通过的概率仅 {(1-self.p0)**self.runs:.4f}，"
+                f"故「失败率<{self.p0}」的置信度 {self.confidence:.4f}"
+            )
         return base + (
-            f"\n    判定依据: {self.runs} 次结果一致；若真实失败率>={self.p0}，"
-            f"出现该结果的概率仅 {(1-self.p0)**self.runs:.4f}，"
-            f"故置信度 {self.confidence:.4f}"
+            f"\n    判定依据: {self.runs} 次全部失败；若真实通过率>={1-self.p0}"
+            f"（即失败率<={self.p0}），全失败的概率仅 {self.p0**self.runs:.2e}，"
+            f"故「失败率>{self.p0}」的置信度 {self.confidence:.4f}"
         )
 
 
@@ -71,13 +91,17 @@ def classify(test_id: str, statuses: list[str], durations: list[float],
     bad = failures + errors
     rate = bad / n if n else 0.0
     ci_low, ci_high = wilson_interval(bad, n)
-    confidence = 1 - (1 - p0) ** n
     if bad == 0:
         verdict = "stable_pass"
+        confidence = confidence_stable_pass(n, p0)
     elif bad == n:
         verdict = "stable_fail"
+        confidence = confidence_stable_fail(n, p0)
     else:
         verdict = "flaky"
+        confidence = float("nan")
+    # 两类 stable 结论必须各自使用独立推导的公式，防止再次共用同一个公式
+    assert confidence_stable_pass is not confidence_stable_fail
     avg = sum(durations) / n if n else 0.0
     return Verdict(test_id, n, failures, errors, verdict, rate,
                    confidence, ci_low, ci_high, avg, p0)

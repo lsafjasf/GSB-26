@@ -59,7 +59,8 @@ def cmd_judge(args) -> int:
         if v.verdict == "flaky":
             flaky += 1
     print(f"\n共 {len(verdicts)} 个测试：flaky={flaky}，"
-          f"阈值 p0={args.p0}（stable 判定置信度 = 1-(1-p0)^n）")
+          f"阈值 p0={args.p0}（stable_pass 置信度 = 1-(1-p0)^n，"
+          f"stable_fail 置信度 = 1-p0^n）")
     return 1 if flaky and not args.allow_flaky else 0
 
 
