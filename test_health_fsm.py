@@ -179,6 +179,39 @@ class TestCombination(unittest.TestCase):
             m.record("payment", False)
         self.assertEqual(m.level, HealthLevel.DOWN)
 
+    def test_no_critical_components_uses_noncritical_set(self):
+        """未配置关键组件时按非关键组件集合计算：全健康为完整，全部异常为最小可用。
+
+        回归用例：异常关键组件数 == 关键组件总数在两者皆为 0 时恒真，
+        曾导致所有组件健康也被误判为不可用。
+        """
+        clock = FakeClock()
+        m = HealthMonitor(
+            [
+                ComponentConfig("cache", critical=False),
+                ComponentConfig("recommend", critical=False),
+            ],
+            clock,
+        )
+        levels = []
+        for _ in range(3):
+            clock.advance()
+            levels.append(m.record("cache", True))
+            clock.advance()
+            levels.append(m.record("recommend", True))
+        self.assertEqual(m.level, HealthLevel.FULL)
+        self.assertNotIn(HealthLevel.DOWN, levels)
+        # 两个非关键组件连续失败到阈值：仅一个异常时为部分降级，全部异常时为最小可用
+        for _ in range(3):
+            clock.advance()
+            m.record("cache", False)
+            clock.advance()
+            levels.append(m.record("recommend", False))
+        self.assertEqual(m.level, HealthLevel.MINIMAL)
+        self.assertNotIn(HealthLevel.DOWN, levels)
+        self.assertTrue(m.is_allowed("core_query"))
+        self.assertFalse(m.is_allowed("write_order"))
+
 
 class TestFlapping(unittest.TestCase):
     def test_rapid_flapping_is_damped_by_hysteresis(self):

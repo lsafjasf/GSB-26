@@ -15,8 +15,8 @@ from enum import IntEnum
 class HealthLevel(IntEnum):
     """健康等级，数值越大能力越完整。"""
 
-    DOWN = 0      # 不可用：所有关键组件均异常
-    MINIMAL = 1   # 最小可用：至少一个关键组件异常，但仍有关键组件可用
+    DOWN = 0      # 不可用：所有关键组件均异常（至少配置了一个关键组件）
+    MINIMAL = 1   # 最小可用：至少一个关键组件异常但仍有关键组件可用；无关键组件配置时，所有非关键组件均异常也判此级
     PARTIAL = 2   # 部分降级：关键组件全部正常，存在非关键组件异常
     FULL = 3      # 完整：全部组件正常
 
@@ -135,18 +135,19 @@ class HealthMonitor:
 
     def _recompute_level(self):
         """组合规则：
-        - 关键组件全部异常 -> DOWN
+        - 关键组件全部异常（关键组件总数 > 0）-> DOWN
         - 存在关键组件异常（但非全部）-> MINIMAL
         - 关键组件全部正常、存在非关键组件异常 -> PARTIAL
         - 全部正常 -> FULL
+        - 未配置关键组件时按非关键组件集合计算：全部异常 -> MINIMAL，否则按非关键规则
         """
         unhealthy = {n for n, st in self._components.items() if not st.healthy}
         critical_down = {n for n in unhealthy if self._components[n].config.critical}
         total_critical = sum(1 for st in self._components.values() if st.config.critical)
 
-        if len(critical_down) == total_critical:
+        if total_critical > 0 and len(critical_down) == total_critical:
             new_level = HealthLevel.DOWN
-        elif critical_down:
+        elif critical_down or (total_critical == 0 and unhealthy and len(unhealthy) == len(self._components)):
             new_level = HealthLevel.MINIMAL
         elif unhealthy:
             new_level = HealthLevel.PARTIAL
