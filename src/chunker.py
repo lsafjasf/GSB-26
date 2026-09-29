@@ -19,9 +19,11 @@
 - "codepoints"：按字素簇数量限制（与旧按码位限制并存，但绝不拆簇）。
   适合按“字符数”做配额的场景，与终端/字体渲染宽度无关。
 - "width"：按显示宽度限制（East Asian Width：W/F 计 2，组合记号、
-  控制符、格式符计 0，其余计 1；含 ZWJ 的簇整体按一个显示单元计 2）。
-  适合终端列宽、定宽预览等场景。同一个字素簇永不拆分，因此实际
-  宽度可能略小于 limit，但绝不超出。
+  肤色修饰符、变体选择符、控制符、格式符计 0，其余计 1；
+  含 ZWJ 的簇整体按一个显示单元计 2）。适合终端列宽、定宽预览
+  等场景。同一个字素簇永不拆分：truncate 的实际宽度可能略小于
+  limit 但绝不超出；chunk_text 中若单个簇自身宽度超过 size，
+  该簇独占一个片段（唯一允许超出的例外，见 chunk_text 文档）。
 - "bytes"：按 UTF-8 字节预算限制。适合存储/传输按字节计费的场景；
   截断点必为字素边界，截断结果与原文剩余部分可直接拼接还原。
 """
@@ -79,8 +81,12 @@ def graphemes(text):
 
 
 def char_width(ch):
-    """单个码位的显示宽度（wcwidth 的简化版）。"""
-    if unicodedata.combining(ch):
+    """单个码位的显示宽度（wcwidth 的简化版）。
+
+    Extend 类字符（组合记号、肤色修饰符、变体选择符）不单独占宽，
+    计 0；否则修饰符会被重复计宽（如 👍🏽 被算成 4 而非 2）。
+    """
+    if _is_extend(ch):
         return 0
     if unicodedata.category(ch) in ("Cc", "Cf"):
         return 0
@@ -112,6 +118,10 @@ def chunk_text(text, size, *, strategy="codepoints"):
 
     保证："".join(chunk_text(text, size, strategy=...)) == text，
     且除原文自身结尾外，任何片段都不以不完整字素结尾。
+
+    显式例外：字素簇不可拆分，因此当单个簇的成本（如显示宽度）本身
+    超过 size 时，该簇独占一个片段，此片段是唯一允许超出 size 的情形。
+    （truncate 不同：超预算的簇会被整体丢弃，结果绝不超出 limit。）
     """
     _check_strategy(strategy)
     if size <= 0:

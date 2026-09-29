@@ -192,5 +192,43 @@ class StrategyTests(unittest.TestCase):
             chunker.chunk_text("abc", 2, strategy="bogus")
 
 
+class WidthBudgetTests(unittest.TestCase):
+    """宽度口径：修饰符不额外占宽；分块/截断与上限的关系被显式约定。"""
+
+    def test_modifier_cluster_width_not_double_counted(self):
+        # 👍🏽 整体渲染为一个字形：宽 2，而不是 2+2=4
+        self.assertEqual(chunker.grapheme_width("👍🏽"), 2)
+        self.assertEqual(chunker.grapheme_width("👍"), 2)
+        # 分块：size=2 时每片恰好放一个带修饰符的簇，不再被挤成空片
+        self.assertEqual(
+            chunker.chunk_text("👍🏽👍🏽", 2, strategy="width"),
+            ["👍🏽", "👍🏽"],
+        )
+        # 截断：limit=2 能放下整个簇
+        self.assertEqual(chunker.truncate("👍🏽!", 2, strategy="width"), "👍🏽")
+
+    def test_chunk_single_oversized_cluster_is_declared_exception(self):
+        # 显式例外：簇不可拆分，单个超宽簇独占一个片段并超出 size
+        chunks = chunker.chunk_text("中a", 1, strategy="width")
+        self.assertEqual(chunks, ["中", "a"])
+        self.assertGreater(chunker.grapheme_width(chunks[0]), 1)
+        # 不变量：任何超出 size 的片段都必须是且仅是单个字素簇
+        text = "中a👨‍👩‍👧b👍🏽c"
+        for size in (1, 2):
+            for chunk in chunker.chunk_text(text, size, strategy="width"):
+                width = sum(
+                    chunker.grapheme_width(g)
+                    for g in chunker.iter_graphemes(chunk)
+                )
+                if width > size:
+                    self.assertEqual(chunker.graphemes(chunk), [chunk])
+
+    def test_truncate_never_exceeds_even_with_oversized_head(self):
+        # 截断没有例外：首簇就超预算时整体丢弃，结果绝不超出 limit
+        self.assertEqual(chunker.truncate("中文", 1, strategy="width"), "")
+        self.assertEqual(chunker.truncate("👨‍👩‍👧ab", 1, strategy="width"), "")
+        self.assertEqual(chunker.truncate("👍🏽ab", 1, strategy="width"), "")
+
+
 if __name__ == "__main__":
     unittest.main()
