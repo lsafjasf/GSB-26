@@ -46,13 +46,15 @@ class BasicCases(unittest.TestCase):
 
 
 class StaticValidation(unittest.TestCase):
-    def assert_error(self, text, fragment, line=None):
+    def assert_error(self, text, fragment, line=None, col=None):
         with self.assertRaises(CompileError) as ctx:
             compile(text)
         message = str(ctx.exception)
         self.assertIn(fragment, message, message)
         if line is not None:
             self.assertEqual(ctx.exception.line, line)
+        if col is not None:
+            self.assertEqual(ctx.exception.col, col)
 
     def test_duplicate_step_name(self):
         text = "step a {\n}\nstep a {\n}\n"
@@ -87,6 +89,18 @@ class StaticValidation(unittest.TestCase):
     def test_unknown_dependency(self):
         text = "step a {\n  needs: ghost;\n}\n"
         self.assert_error(text, "unknown step 'ghost'", line=2)
+
+    def test_error_column_tracks_tokens_on_same_line(self):
+        # 第 4 行：\t 推进到第 9 列，needs 占 9-13，": " 后 a 在 16，ghost 在 19。
+        text = "step a {\n}\nstep b {\n\tneeds: a, ghost;\n}\n"
+        self.assertEqual(text.splitlines()[3].expandtabs(8).index("ghost") + 1, 19)
+        self.assert_error(text, "unknown step 'ghost'", line=4, col=19)
+
+    def test_error_column_for_param_ref_on_same_line(self):
+        # 同一行内多个记号之后的 $ 引用，列号必须指向 $ 本身。
+        text = 'step a {\n  args: { x: 1, y: $missing }\n}\n'
+        self.assertEqual(text.splitlines()[1].index("$") + 1, 20)
+        self.assert_error(text, "unknown parameter $missing", line=2, col=20)
 
     def test_duplicate_dependency(self):
         text = "step a {\n}\nstep b {\n  needs: a, a;\n}\n"
