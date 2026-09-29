@@ -23,13 +23,14 @@
 结合 s 与整体校验 c（整个码字的异或和）得到判决表：
 
     s == 0, c == 0 : 无错
-    s != 0, c == 1 : 单比特错，位置 = s，翻转即纠正
+    1 <= s <= m, c == 1 : 单比特错，位置 = s，翻转即纠正
     s == 0, c == 1 : 整体校验位自身出错（位置 0），翻转即纠正
+    s >  m, c == 1 : 缩短码未使用的校正子（对应 >=3 比特错误），不可纠，拒绝输出
     s != 0, c == 0 : 偶数个错误（>=2），不可纠，拒绝输出
 
 本模块提供两套实现：
     encode/decode      —— 基于整数位运算与 popcount 的快速实现
-    ref_encode/ref_decode —— 逐位循环的教科书式参考实现（用于对拍）
+    ref_encode/ref_decode —— 逐位循环编码 + 最近合法码字搜索的参考实现（用于对拍）
 """
 
 from functools import lru_cache
@@ -126,6 +127,7 @@ def decode(cw: int, k: int) -> DecodeResult:
     if not 0 <= cw < (1 << n):
         raise ValueError("codeword out of range for k bits")
     r, masks, data_positions = _layout(k)
+    m = k + r
     syndrome = 0
     for i, mask in enumerate(masks):
         if _popcount(cw & mask) & 1:
@@ -134,6 +136,10 @@ def decode(cw: int, k: int) -> DecodeResult:
     if syndrome == 0 and overall == 0:
         return DecodeResult(NO_ERROR, _extract_data(cw, data_positions), None)
     if overall == 1:
+        if syndrome > m:
+            # 缩短码未使用的校正子取值：合法位置只有 0..m，
+            # 落到区段外说明是 >=3 比特错误，不可纠，拒绝输出
+            return DecodeResult(UNCORRECTABLE, None, None)
         # syndrome == 0 时是整体校验位（位置 0）自己出错
         pos = syndrome
         cw ^= 1 << pos
@@ -185,32 +191,26 @@ def ref_encode(data: int, k: int) -> int:
 
 
 def ref_decode(cw: int, k: int) -> DecodeResult:
-    """教科书式逐位译码：显式重建每个校验组并逐位异或。"""
+    """参考译码：在距离 <= 1 的范围内搜索最近的合法码字。
+
+    与快速实现的校正子定位完全独立：枚举候选码字（cw 本身，以及翻转
+    任意一位得到的 n 个码字），用 ref_encode 重编码逐一验证合法性。
+    由于 dmin = 4，距离 <= 1 的合法码字至多一个：
+      - cw 本身合法       -> no_error
+      - 唯一合法候选在距离 1 -> corrected（出错位置 = 翻转的那一位）
+      - 没有合法候选       -> uncorrectable（拒绝输出）
+    """
     n = codeword_bits(k)
     if not 0 <= cw < (1 << n):
         raise ValueError("codeword out of range for k bits")
-    r = parity_bits_for(k)
-    m = k + r
-    # 长度取 2^r：多比特错误被"误纠"时 syndrome 可能超过 m，
-    # 此时翻转的是一个超出有效码字范围的位置，与快速实现行为一致。
-    bits = _int_to_bits(cw, 1 << r)
-    syndrome = 0
-    for i in range(r):
-        check = 0
-        for p in range(1, m + 1):
-            if (p >> i) & 1:
-                check ^= bits[p]
-        if check:
-            syndrome |= 1 << i
-    overall = 0
-    for p in range(0, m + 1):
-        overall ^= bits[p]
-    if syndrome == 0 and overall == 0:
-        return DecodeResult(NO_ERROR, _ref_extract(bits, m), None)
-    if overall == 1:
-        pos = syndrome
-        bits[pos] ^= 1
-        return DecodeResult(CORRECTED, _ref_extract(bits, m), pos)
+    m = k + parity_bits_for(k)
+    for pos in range(-1, n):  # pos = -1 表示候选为 cw 本身
+        candidate = cw if pos < 0 else cw ^ (1 << pos)
+        data = _ref_extract(_int_to_bits(candidate, n), m)
+        if ref_encode(data, k) == candidate:
+            if pos < 0:
+                return DecodeResult(NO_ERROR, data, None)
+            return DecodeResult(CORRECTED, data, pos)
     return DecodeResult(UNCORRECTABLE, None, None)
 
 
