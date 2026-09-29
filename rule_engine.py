@@ -19,7 +19,7 @@
 
 import operator
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 Condition = Tuple[str, str, Any]
 
@@ -45,6 +45,137 @@ class Rule:
 
 class RuleTableError(Exception):
     """规则表加载期校验失败。"""
+
+
+# ---------------------------------------------------------------- 判定追踪
+
+# 评估状态：
+#   hit                 首个命中（实际生效）
+#   not_matched         在命中之前被评估，条件不满足
+#   skipped_by_priority 条件也满足，但优先级低于已命中规则，被跳过
+#   not_reached         排在命中之后，实际匹配中不会被评估到
+STATUS_LABELS = {
+    "hit": "命中",
+    "not_matched": "未命中",
+    "skipped_by_priority": "被优先级跳过",
+    "not_reached": "未评估到（已被截断）",
+}
+
+
+@dataclass(frozen=True)
+class ConditionCheck:
+    """单条条件的求值结果。"""
+    field: str
+    op: str
+    expected: Any
+    actual: Any
+    passed: bool
+
+    def render(self) -> str:
+        mark = "✓" if self.passed else "✗"
+        return (f"{mark} {self.field} {self.op} {self.expected!r}"
+                f"（实际值 {self.actual!r}）")
+
+
+@dataclass(frozen=True)
+class RuleEvaluation:
+    """一条规则在一次判定中的评估记录。"""
+    rule_id: str
+    priority: int
+    matched: bool
+    status: str
+    checks: Tuple[ConditionCheck, ...]
+
+    def first_failure(self) -> Optional[ConditionCheck]:
+        return next((c for c in self.checks if not c.passed), None)
+
+
+@dataclass(frozen=True)
+class Trace:
+    """一次判定的完整来源追踪。
+
+    rule     实际生效的规则（命中规则；未命中任何业务规则时为默认规则）
+    matched  命中的业务规则；落入默认分支时为 None
+    """
+    ctx: Dict[str, Any]
+    evaluations: Tuple[RuleEvaluation, ...]
+    rule: Rule
+    matched: Optional[Rule]
+
+    @property
+    def is_default(self) -> bool:
+        return self.matched is None
+
+    @property
+    def skipped_by_priority(self) -> Tuple[str, ...]:
+        """条件同样满足、但因优先级低于命中规则而被跳过的规则编号。"""
+        return tuple(e.rule_id for e in self.evaluations
+                     if e.status == "skipped_by_priority")
+
+    def _result_display(self) -> str:
+        result = self.rule.result
+        if isinstance(result, tuple) and len(result) == 2 and callable(result[1]):
+            return repr((result[0], result[1](self.ctx)))
+        return repr(result)
+
+    def render(self) -> str:
+        """渲染为可读文本报告（单个判定）。"""
+        lines = []
+        ctx_str = ", ".join(f"{k}={v!r}" for k, v in self.ctx.items())
+        lines.append(f"输入: {ctx_str}")
+        lines.append("评估过程（按优先级降序）:")
+        not_reached = 0
+        for e in self.evaluations:
+            if e.status == "not_reached":
+                not_reached += 1
+                continue
+            lines.append(f"  [{e.rule_id}] (priority={e.priority}) "
+                         f"{STATUS_LABELS[e.status]}")
+            if e.status == "hit":
+                for c in e.checks:
+                    lines.append(f"      {c.render()}")
+            elif e.status == "not_matched":
+                lines.append(f"      首个不满足条件: "
+                             f"{e.first_failure().render()}")
+            elif e.status == "skipped_by_priority":
+                lines.append(f"      条件全部满足，但优先级低于 "
+                             f"{self.matched.rule_id}，被跳过")
+        if not_reached:
+            lines.append(f"  …其余 {not_reached} 条规则排在命中规则之后，"
+                         f"未参与评估")
+        if self.is_default:
+            lines.append(
+                f"结论: 默认分支 [{self.rule.rule_id}] 生效 -> "
+                f"{self._result_display()}"
+            )
+            lines.append(f"默认分支生效原因: {len(self.evaluations)} "
+                         f"条业务规则均未命中（见上）")
+        else:
+            skipped = self.skipped_by_priority
+            extra = (f"；{', '.join(skipped)} 条件同样满足但被优先级跳过"
+                     if skipped else "")
+            lines.append(
+                f"结论: 规则 [{self.rule.rule_id}] 命中 -> "
+                f"{self._result_display()}{extra}"
+            )
+        return "\n".join(lines)
+
+
+def render_report(traces, title: str = "判定来源追踪报告") -> str:
+    """把多次判定的追踪结果渲染为一份可读报告。"""
+    traces = list(traces)
+    parts = [f"# {title}", "", f"共 {len(traces)} 次判定。"]
+    for i, t in enumerate(traces, 1):
+        parts += ["", f"## 判定 {i}", "", t.render()]
+    return "\n".join(parts) + "\n"
+
+
+def export_report(traces, path, title: str = "判定来源追踪报告") -> str:
+    """渲染报告并写入文件，返回文件路径。"""
+    text = render_report(traces, title=title)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return str(path)
 
 
 # ---------------------------------------------------------------- 可满足性分析
@@ -233,3 +364,30 @@ class Engine:
             if all(_OPS[op](ctx[f], v) for f, op, v in r.conditions):
                 return r
         return self._default
+
+    def explain(self, ctx: Dict[str, Any]) -> Trace:
+        """对一次判定做来源追踪。
+
+        与 match 使用同一份规则表（self._ordered）与同一组运算符（_OPS），
+        首个命中规则即 match 的返回结果；其余规则继续评估以解释
+        “哪些规则因优先级被跳过 / 默认分支为何生效”。
+        """
+        evaluations: List[RuleEvaluation] = []
+        matched: Optional[Rule] = None
+        for r in self._ordered:
+            checks = tuple(
+                ConditionCheck(f, op, v, ctx[f], bool(_OPS[op](ctx[f], v)))
+                for f, op, v in r.conditions
+            )
+            ok = all(c.passed for c in checks)
+            if matched is None:
+                status = "hit" if ok else "not_matched"
+                if ok:
+                    matched = r
+            else:
+                status = "skipped_by_priority" if ok else "not_reached"
+            evaluations.append(
+                RuleEvaluation(r.rule_id, r.priority, ok, status, checks)
+            )
+        rule = matched if matched is not None else self._default
+        return Trace(dict(ctx), tuple(evaluations), rule, matched)

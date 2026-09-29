@@ -14,16 +14,32 @@
 | `tests/test_differential.py` | 差分回归：2160 例穷举比对 + 规则覆盖断言 |
 | `tests/test_ordering.py` | 顺序敏感性：乱序等价验证 + 优先级交换行为验证 |
 | `tests/test_conflicts.py` | 冲突 / 不可达 / 默认分支校验用例 |
+| `tests/test_trace.py` | 来源追踪：2160 例追踪-判定一致性 + 追踪内容 + 报告导出 |
+| `demo_trace.py` | 追踪演示：打印代表性用例的追踪并导出 `trace_report.md` |
 
 ## 运行命令
 
 ```bash
 cd A
-python3 -m unittest discover -s tests -v   # 全部测试（12 个）
+python3 -m unittest discover -s tests -v   # 全部测试（18 个）
 python3 -m unittest tests.test_differential -v   # 仅差分回归
 python3 -m unittest tests.test_ordering -v       # 仅顺序敏感性
 python3 -m unittest tests.test_conflicts -v      # 仅冲突检测
+python3 -m unittest tests.test_trace -v          # 仅来源追踪
+python3 demo_trace.py                            # 打印追踪并导出 trace_report.md
 ```
+
+## 来源追踪（为什么是这个结果）
+
+- `Engine.explain(ctx)` 与 `match` 使用**同一份规则表**（同一 `_ordered`
+  与 `_OPS`），返回 `Trace`：首命中规则、每条未命中规则的首个不满足
+  条件（含实际值）、条件同样满足但因优先级被跳过的规则
+  （`trace.skipped_by_priority`）、默认分支生效原因。
+- `refactored.explain(...)` 返回 `(判定结果, Trace)`；
+  `Trace.render()` 输出单条可读追踪；`rule_engine.render_report /
+  export_report` 把多次追踪渲染 / 导出为一份 Markdown 报告。
+- 一致性可断言：`tests/test_trace.py` 对 2160 例穷举输入逐例断言
+  `trace.rule is engine.match(ctx)` 且 `explain` 结果 == `decide` 结果。
 
 ## 设计要点
 
