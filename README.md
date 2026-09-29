@@ -56,7 +56,9 @@ SELECT COUNT(*) WHERE ts >= 1700000000 AND env = 'prod' GROUP BY service
 - 缺失字段：任何比较均为假（`!=` 也不例外）。
 - 跨类型比较（如字符串与数值）恒为假，不抛异常。
 - `GROUP BY` 需配合 `SELECT COUNT(*)`，输出按分组键排序的 `(键, 计数)` 列表，保证确定性。
-- `SELECT *` 默认按块封存顺序（即 ts 升序）输出；`ORDER BY ts DESC` 为倒序。
+- `SELECT *` 默认按块封存顺序（即 ts 升序）输出；`ORDER BY ts` 的并列 ts
+  以写入序号决胜（DESC 取后写入者、ASC 取先写入者），提前终止与全量扫描共用
+  这一个确定顺序。
 
 ## 块级下推设计
 
@@ -80,8 +82,9 @@ SELECT COUNT(*) WHERE ts >= 1700000000 AND env = 'prod' GROUP BY service
 执行器（`logengine/engine.py`）：
 
 - 普通查询：按块顺序扫描候选块，块内逐条评估全部条件。
-- `ORDER BY ts DESC LIMIT N`：候选块按 `max_ts` 降序逐块扫描，凑满 N 条立即终止，
-  剩余候选块记为 `skipped_limit_blocks`，不读一条记录。
+- `ORDER BY ts DESC LIMIT N`：候选块按 `(max_ts, 块基写入序号)` 降序、块内
+  按写入序号倒序逐块扫描（排序键即 `(ts DESC, seq DESC)`，与全量扫描一致），
+  凑满 N 条立即终止，剩余候选块记为 `skipped_limit_blocks`，不读一条记录。
   正确性前提：块间时间区间不重叠且单调递增（`Store.append` 强制校验）。
 - 指标不变量：`total_blocks = scanned_blocks + pruned_blocks + skipped_limit_blocks`。
 

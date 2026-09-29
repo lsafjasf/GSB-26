@@ -160,6 +160,38 @@ class TestDeterministic(unittest.TestCase):
         self.assertEqual([rec["ts"] for rec in r.data], [1, 2, 3])
         self.assertEqual(r.metrics.scanned_blocks, 4)
 
+    def test_tied_ts_limit_cuts_inside_tie_group(self):
+        # 块内存在相同 ts 的并列组：块0=[1]，块1=[2,3,3,3,4]，块2=[5,5,5,6]
+        # 倒序全序为 id 9,8,7,6,5,4,3,2,1,0；LIMIT 截在 ts=5 的并列组中间时，
+        # 提前终止（块内从后往前）与全量扫描（稳定排序）必须给出同一条记录。
+        tied = Store()
+        specs = [[(1, 0)], [(2, 1), (3, 2), (3, 3), (3, 4), (4, 5)],
+                 [(5, 6), (5, 7), (5, 8), (6, 9)]]
+        for group in specs:
+            for ts_val, rec_id in group:
+                tied.append({"id": rec_id, "ts": ts_val})
+            tied.seal_block()
+
+        for limit, expected in [(1, [9]), (2, [9, 8]), (3, [9, 8, 7]),
+                                (4, [9, 8, 7, 6]), (6, [9, 8, 7, 6, 5, 4])]:
+            sql = f"SELECT * WHERE ts >= 1 ORDER BY ts DESC LIMIT {limit}"
+            r = assert_same(self, tied, sql)
+            self.assertEqual([rec["id"] for rec in r.data], expected)
+            if limit < 4:
+                # 最新块即可凑满，后续 2 个候选块均未触及
+                self.assertEqual(r.metrics.scanned_blocks, 1)
+                self.assertEqual(r.metrics.skipped_limit_blocks, 2)
+
+        # 截在中间块（ts=3）的并列组中间
+        r = assert_same(self, tied, "SELECT * WHERE ts >= 1 ORDER BY ts DESC LIMIT 7")
+        self.assertEqual([rec["id"] for rec in r.data], [9, 8, 7, 6, 5, 4, 3])
+        self.assertEqual(r.metrics.scanned_blocks, 2)
+        self.assertEqual(r.metrics.skipped_limit_blocks, 1)
+
+        # 并列决胜规则对称地适用于 ASC：先写入者优先
+        r = assert_same(self, tied, "SELECT * WHERE ts >= 1 ORDER BY ts ASC LIMIT 4")
+        self.assertEqual([rec["id"] for rec in r.data], [0, 1, 2, 3])
+
     def test_count(self):
         r = assert_same(self, self.store, "SELECT COUNT(*) WHERE level = 'error'")
         self.assertEqual(r.data, 3)
@@ -189,9 +221,11 @@ def build_random_store(seed: int, blocks: int, per_block: int) -> Store:
     services = ["auth", "api", "web", "worker", "db", "cache"]
     levels = ["info", "warn", "error"]
     ts = 0
-    for _ in range(blocks):
-        for _ in range(per_block):
-            ts += rng.randint(1, 3)
+    for block_idx in range(blocks):
+        for j in range(per_block):
+            # 允许 0 增量，制造块内相同 ts 的并列组；每块首条强制 +1，
+            # 以满足 Store 对块间时间区间严格递增的约束
+            ts += 1 if block_idx > 0 and j == 0 else rng.randint(0, 3)
             rec = {
                 "ts": ts,
                 "service": rng.choice(services),

@@ -3,7 +3,8 @@
 执行流程：
 1. 规划：用块统计做条件下推，得到候选块（被跳过的块不计入扫描）。
 2. 执行：
-   - ORDER BY ts DESC + LIMIT：候选块按 max_ts 降序逐块扫描，
+   - ORDER BY ts DESC + LIMIT：候选块按 (max_ts, base_seq) 降序、块内
+     按写入序号倒序扫描，排序键 (ts DESC, seq DESC) 与全量扫描一致，
      凑满 N 条立即终止，剩余候选块记为 skipped_limit（未扫描）。
    - 其他查询：按块封存顺序扫描全部候选块。
 3. 聚合：GROUP BY 时按键分组计数（排序输出保证确定性）。
@@ -92,6 +93,11 @@ def _group_key(value: Any) -> str:
     return f"{type(value).__name__}:{value!r}"
 
 
+def _block_order_key(block) -> Tuple[float, int]:
+    """块在倒序扫描中的先后：max_ts 降序，并列时按写入序号降序。"""
+    return block.stats.max_ts, block.base_seq
+
+
 def _run(query: Query, blocks, pushdown: bool) -> Tuple[Any, Metrics]:
     metrics = Metrics(total_blocks=len(blocks))
     if pushdown:
@@ -114,7 +120,9 @@ def _run(query: Query, blocks, pushdown: bool) -> Tuple[Any, Metrics]:
     )
 
     if early_termination:
-        ordered = sorted(candidates, key=lambda b: b.stats.max_ts, reverse=True)
+        ordered = sorted(candidates, key=_block_order_key, reverse=True)
+        # 与全量扫描共用同一个排序键 (ts DESC, seq DESC)：块按
+        # (max_ts, base_seq) 降序，块内按写入序号倒序遍历。
         rows: List[Dict[str, Any]] = []
         for idx, block in enumerate(ordered):
             metrics.scanned_blocks += 1
@@ -127,29 +135,32 @@ def _run(query: Query, blocks, pushdown: bool) -> Tuple[Any, Metrics]:
                         return rows, metrics
         return rows, metrics
 
-    matched: List[Dict[str, Any]] = []
+    matched: List[Tuple[int, Dict[str, Any]]] = []
     for block in candidates:
         metrics.scanned_blocks += 1
         metrics.scanned_records += block.stats.row_count
-        for rec in block.records:
+        for offset, rec in enumerate(block.records):
             if record_matches(rec, query.conditions):
-                matched.append(rec)
+                matched.append((block.base_seq + offset, rec))
 
     if query.select == "count":
         if query.group_by is None:
             return len(matched), metrics
         groups: Dict[Any, int] = {}
-        for rec in matched:
+        for _, rec in matched:
             key = rec.get(query.group_by)
             groups[key] = groups.get(key, 0) + 1
         rows = sorted(groups.items(), key=lambda kv: _group_key(kv[0]))
         return rows, metrics
 
     if query.order_by == "ts":
-        matched.sort(key=lambda r: r["ts"], reverse=query.order_desc)
+        # 同 ts 并列时以写入序号决胜（DESC 取后写入、ASC 取先写入），
+        # 与提前终止分支保持同一个确定顺序。
+        matched.sort(key=lambda item: (item[1]["ts"], item[0]),
+                     reverse=query.order_desc)
     if query.limit is not None:
         matched = matched[: query.limit]
-    return matched, metrics
+    return [rec for _, rec in matched], metrics
 
 
 def execute(store: Store, query: Query) -> Result:
