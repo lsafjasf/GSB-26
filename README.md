@@ -9,10 +9,13 @@ Python 3 实现，仅使用标准库。从文本中识别身份证号、银行�
 - `sensfind/engine.py` — 归一化、阈值过滤、重叠冲突消解
 - `sensfind/__main__.py` — 命令行入口
 - `scripts/gen_dataset.py` — 构造评测数据集（种子固定，可复现）
-- `scripts/run_eval.py` — 评测：混淆矩阵、阈值扫描、吞吐，输出 `REPORT.md`
-- `tests/selftest.py` — 边界情形与功能自测
+- `scripts/run_eval.py` — 评测：混淆矩阵、误报率/漏报率、阈值多档扫描、
+  冲突消解记录、吞吐；输出 `REPORT.md` 与 `eval_out/` 下逐样本/逐条记录
+- `tests/selftest.py` — 边界情形、功能与评测指标口径自测
 - `data/dataset.jsonl` — 550 条构造样本（330 正例 / 220 负样本）
-- `REPORT.md` — 评测结果（混淆矩阵、阈值扫描、吞吐数据）
+- `REPORT.md` — 评测结果（混淆矩阵、误报率/漏报率、阈值扫描、消解记录、吞吐）
+- `eval_out/per_sample.jsonl` — 每个阈值档下逐样本结论（tp/fp/fn 明细，可 diff 比对）
+- `eval_out/conflicts.jsonl` — 规则重叠命中的逐条消解记录
 
 ## 判定依据
 
@@ -59,10 +62,22 @@ Luhn + IIN）。消解规则是确定性的，依次比较：
 ```bash
 python3 scripts/gen_dataset.py     # 重新生成数据集 data/dataset.jsonl
 python3 tests/selftest.py          # 自测（空文本/超大文本/换行分隔/零宽字符等）
-python3 scripts/run_eval.py        # 评测并生成 REPORT.md
+python3 scripts/run_eval.py        # 评测并生成 REPORT.md 与 eval_out/
+python3 scripts/run_eval.py --compare 0.6 0.4   # 逐样本比对两个阈值档的结论
 echo "联系电话：13812345678" | python3 -m sensfind            # 扫描 stdin
 python3 -m sensfind 文件路径 --threshold 0.7                  # 扫描文件
 ```
+
+## 评测指标口径
+
+所有指标由 `scripts/run_eval.py` 从 `data/dataset.jsonl` 重算，可复现：
+
+- TP/FP/FN 为实体级计数（按 gold value 匹配）；
+- TN 为样本×类型级计数（某样本某类型既无 gold 也无预测时记 1）；
+- 误报率 FPR = FP / (FP + TN)；漏报率 FNR = FN / (TP + FN) = 1 - Recall；
+- 阈值多档扫描每档均给出误报率与漏报率；每档逐样本结论写入
+  `eval_out/per_sample.jsonl`（按 threshold、id 排序），阈值调整后同一批
+  样本的结论可用 diff 逐条比对，或用 `--compare` 直接查看差异。
 
 ## 边界情形覆盖
 
@@ -74,7 +89,8 @@ python3 -m sensfind 文件路径 --threshold 0.7                  # 扫描文件
 
 ## 评测结果摘要（详见 REPORT.md）
 
-阈值 0.6 时构造数据集上 micro Precision/Recall/F1 均为 1.0；阈值降到 0.40
-时负向上下文样本泄漏（FP=10），升到 0.80 以上漏报上升。注意：数据集为
+阈值 0.6 时构造数据集上 micro Precision/Recall/F1 均为 1.0，误报率与漏报率
+均为 0；阈值降到 0.40 时负向上下文样本泄漏（FP=10，误报率 0.0076），
+升到 0.80 以上漏报率上升（0.90 时漏报率 0.2424）。注意：数据集为
 构造数据，与规则同源，衡量的是规则一致性与边界行为，不代表真实文本上的
 表现；真实场景应在此基础上用抽样人工标注数据重新标定阈值。

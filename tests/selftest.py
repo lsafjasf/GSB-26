@@ -5,8 +5,10 @@ import sys
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 from sensfind import Engine
 from sensfind.detectors import id_check_char, luhn_ok, luhn_check_digit
+import run_eval
 
 PASSED = []
 
@@ -87,5 +89,31 @@ got = sum(1 for f in r.findings if f.type == "mobile")
 check("超大文本不丢命中", got == expected, "%d/%d" % (got, expected))
 check("超大文本耗时合理", dt < 60, "%.1f MB 用时 %.1f s (%.1f MB/s)" % (mb, dt, mb / dt))
 print("\n吞吐参考: %.1f MB 用时 %.2f s = %.1f MB/s" % (mb, dt, mb / dt))
+
+# 9. 评测指标口径不变量（从数据集重算，可复现）
+records = run_eval.load_dataset()
+_, tp, fp, fn, tn, per_sample, conflicts = run_eval.evaluate(records, 0.6)
+TP, FP, FN, TN = sum(tp.values()), sum(fp.values()), sum(fn.values()), sum(tn.values())
+check("默认阈值零误报零漏报", (TP, FP, FN) == (330, 0, 0),
+      "TP=%d FP=%d FN=%d" % (TP, FP, FN))
+fpr, fnr = run_eval.fpr_fnr(TP, FP, FN, TN)
+check("误报率/漏报率为零", fpr == 0.0 and fnr == 0.0, "FPR=%.4f FNR=%.4f" % (fpr, fnr))
+_, tp2, fp2, fn2, tn2, _, _ = run_eval.evaluate(records, 0.4)
+fpr4, fnr4 = run_eval.fpr_fnr(sum(tp2.values()), sum(fp2.values()),
+                              sum(fn2.values()), sum(tn2.values()))
+check("低阈值误报率上升", sum(fp2.values()) == 10 and fpr4 > 0.0 and fnr4 == 0.0,
+      "FP=%d FPR=%.4f" % (sum(fp2.values()), fpr4))
+_, tp9, fp9, fn9, tn9, _, _ = run_eval.evaluate(records, 0.9)
+fpr9, fnr9 = run_eval.fpr_fnr(sum(tp9.values()), sum(fp9.values()),
+                              sum(fn9.values()), sum(tn9.values()))
+check("高阈值漏报率上升", sum(fn9.values()) == 80 and fnr9 > 0.0 and fpr9 == 0.0,
+      "FN=%d FNR=%.4f" % (sum(fn9.values()), fnr9))
+p9, r9, _ = run_eval.prf(sum(tp9.values()), sum(fp9.values()), sum(fn9.values()))
+check("漏报率 = 1 - 召回率", abs(fnr9 - (1 - r9)) < 1e-12)
+check("逐样本结论覆盖全部样本", len(per_sample) == len(records)
+      and sorted(s["id"] for s in per_sample) == [r["id"] for r in records])
+check("消解记录逐条可追溯", len(conflicts) == 16
+      and all("id" in c and "kept" in c and "dropped" in c and "rule" in c
+              for c in conflicts))
 
 print("\n全部 %d 项自测通过" % len(PASSED))
