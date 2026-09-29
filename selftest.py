@@ -6,10 +6,11 @@
 from __future__ import annotations
 
 import math
+import statistics
 import time
 import unittest
 
-from calibrate import calibrate
+from calibrate import calibrate, required_arrivals
 from capacity_model import capacity_metrics, erlang_c
 from recommend import recommend
 from simulator import simulate
@@ -81,13 +82,44 @@ class EdgeCaseTest(unittest.TestCase):
     def test_calibration_runs(self):
         rows, alerts = calibrate(n_arrivals=20000)
         self.assertEqual(len(rows), 4)
-        # M/M/c 精确解: 均值类指标应与模拟吻合 (稀有事件 p_timeout 噪声大, 不断言)
+        # M/M/c 精确解: 均值类指标应与模拟吻合
+        # (p_timeout 为稀有事件, 统计断言见 test_calibration_p_timeout)
         for row in rows:
             if row["name"].startswith("M/M/c"):
                 self.assertLess(row["devs"]["mean_wait"], 0.15, row["name"])
                 self.assertLess(row["devs"]["mean_queue"], 0.15, row["name"])
         # 突发场景应告警 (模型失效边界的体现)
         self.assertTrue(any("突发" in a for a in alerts))
+
+    def test_calibration_p_timeout(self):
+        # 稀有事件 p_timeout 的统计断言 (M/M/c 精确解 vs 模拟)。
+        # 单次模拟的二项 SE 会严重低估真实波动 —— 超时事件在拥堵期成批出现、
+        # 彼此相关, 实测标准误为二项 SE 的 4~9 倍; 故用多次独立重复直接估计
+        # 均值的标准误 (SEM), 断言模型值落在 mean ± 3*SEM 内。
+        n_rep, n_arrivals = 8, 200_000
+        for lam, c, name in ((8.0, 10, "M/M/c rho=0.8"),
+                             (9.5, 10, "M/M/c rho=0.95")):
+            m = capacity_metrics(lam, 1.0, c, timeout=2.0)
+            # 样本量充分性: 单次样本量须满足 iid 所需样本量公式
+            n_req = required_arrivals(m.p_timeout, rel_tol=0.15)
+            self.assertGreaterEqual(
+                n_arrivals, n_req,
+                f"{name}: 样本量 {n_arrivals} < 所需 {n_req} "
+                f"(p={m.p_timeout:.4g}, rel_tol=15%)")
+            probs = [simulate(lam, 1.0, c, timeout=2.0, n_arrivals=n_arrivals,
+                              abandon=False, seed=1000 + s).timeout_prob
+                     for s in range(n_rep)]
+            mean = statistics.mean(probs)
+            sem = statistics.stdev(probs) / math.sqrt(n_rep)
+            # 估计精度充分性: 相对 SEM 不超过 15%, 否则置信区间无意义
+            self.assertLessEqual(
+                sem / mean, 0.15,
+                f"{name}: 相对 SEM {sem / mean:.1%} > 15%, 需增大样本量或重复次数")
+            # 模型值须落在模拟均值的置信区间内
+            self.assertLessEqual(
+                abs(m.p_timeout - mean), 3.0 * sem,
+                f"{name}: 模型 {m.p_timeout:.5f} 超出模拟均值 {mean:.5f} "
+                f"的置信区间 (半宽 {3.0 * sem:.5f})")
 
     def test_recommend_sanity(self):
         q = recommend(100.0, 0.05, cv=1.0, timeout=0.5, peak_factor=2.0)
