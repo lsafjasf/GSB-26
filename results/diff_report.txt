@@ -1,0 +1,19 @@
+scenario                          rows fingerprint        match
+----------------------------------------------------------------------
+small n=10                           1 dffaaac0972b37fc   PASS  (36.1 ms total)
+big scan n=100000 p=1            10229 98dbca377ca7a298   PASS  (26.4 ms total)
+big agg  n=100000 p=1                1 d04da6579cffd076   PASS  (94.7 ms total)
+big scan n=100000 p=2            10229 98dbca377ca7a298   PASS  (67.0 ms total)
+big agg  n=100000 p=2                1 d04da6579cffd076   PASS  (92.0 ms total)
+big scan n=100000 p=4            10229 98dbca377ca7a298   PASS  (55.5 ms total)
+big agg  n=100000 p=4                1 d04da6579cffd076   PASS  (91.6 ms total)
+big scan n=100000 p=8            10229 98dbca377ca7a298   PASS  (45.3 ms total)
+big agg  n=100000 p=8                1 d04da6579cffd076   PASS  (89.0 ms total)
+skewed 5-shards scan             10229 98dbca377ca7a298   PASS  (97.5 ms total)
+skewed 5-shards agg                  1 d04da6579cffd076   PASS  (175.6 ms total)
+single shard scan                10229 98dbca377ca7a298   PASS  (21.3 ms total)
+single shard agg                     1 d04da6579cffd076   PASS  (101.2 ms total)
+more shards than rows                1 dffaaac0972b37fc   PASS  (44.1 ms total)
+empty data                           0 e3b0c44298fc1c14   PASS  (0.0 ms total)
+----------------------------------------------------------------------
+ALL PASS
