@@ -1,0 +1,13 @@
+user_id,region,amount,score,status,ts
+3,west,7,,err,1
+5,east,16,3.62,ok,2
+1,,-7,0.17,ok,3
+8,east,5,8.38,retry,4
+1,east,,6.36,ok,5
+8,south,14,,ok,6
+1,north,4,6.67,ok,7
+1,,27,0.69,err,8
+5,south,,2.61,ok,9
+1,north,17,6.49,err,10
+5,,27,1.86,retry,11
+7,north,0,8.0,retry,12

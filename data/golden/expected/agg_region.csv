@@ -1,0 +1,6 @@
+key_0,cnt,amount_sum,amount_min,amount_max,amount_avg,users_distinct,statuses
+,12,125,-10,27,11.363636363636363,6,err|ok|retry
+east,13,190,3,30,15.833333333333334,4,err|ok|retry
+north,10,93,-10,29,9.3,5,err|ok|retry
+south,7,43,-10,25,7.166666666666667,5,ok|retry
+west,10,104,-10,24,10.4,6,err|ok|retry

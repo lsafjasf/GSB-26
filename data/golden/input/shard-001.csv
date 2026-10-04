@@ -1,0 +1,4 @@
+user_id,region,amount,score,status,ts
+4,south,23,5.23,retry,13
+4,north,26,3.69,ok,14
+8,west,24,,retry,15
