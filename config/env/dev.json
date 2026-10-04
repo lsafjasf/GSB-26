@@ -1,0 +1,6 @@
+{
+  "app": { "debug": true, "port": 18080 },
+  "db": { "host": "dev-db.internal" },
+  "logging": { "level": "DEBUG" },
+  "features": { "new_checkout": true, "beta_api": true }
+}

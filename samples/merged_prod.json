@@ -1,0 +1,23 @@
+{
+  "app": {
+    "debug": false,
+    "name": "order-service",
+    "port": 80
+  },
+  "db": {
+    "host": "127.0.0.1",
+    "pool_size": 50,
+    "port": 15432
+  },
+  "features": {
+    "beta_api": false,
+    "new_checkout": true
+  },
+  "logging": {
+    "level": "WARN",
+    "sinks": [
+      "stdout",
+      "file"
+    ]
+  }
+}

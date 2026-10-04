@@ -1,0 +1,23 @@
+{
+  "app": {
+    "debug": true,
+    "name": "order-service",
+    "port": 18080
+  },
+  "db": {
+    "host": "127.0.0.1",
+    "pool_size": 10,
+    "port": 15432
+  },
+  "features": {
+    "beta_api": true,
+    "new_checkout": true
+  },
+  "logging": {
+    "level": "DEBUG",
+    "sinks": [
+      "stdout",
+      "file"
+    ]
+  }
+}

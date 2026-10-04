@@ -1,0 +1,6 @@
+{
+  "extends": "staging",
+  "app": { "debug": false, "port": 80 },
+  "db": { "host": "prod-db.internal", "pool_size": 50 },
+  "logging": { "level": "WARN" }
+}

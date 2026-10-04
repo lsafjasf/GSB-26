@@ -1,0 +1,34 @@
+{
+  "app": {
+    "debug": false,
+    "name": "order-service",
+    "port": 80
+  },
+  "db": {
+    "host": "127.0.0.1",
+    "pool_size": 50,
+    "port": 15432
+  },
+  "features": {
+    "beta_api": false,
+    "new_checkout": true
+  },
+  "logging": {
+    "level": "WARN",
+    "sinks": [
+      "stdout",
+      "file"
+    ]
+  }
+}
+--- provenance（path <= source layer，合并顺序: base < env:staging < env:prod < local) ---
+app.debug <= env:prod
+app.name <= base
+app.port <= env:prod
+db.host <= local
+db.pool_size <= env:prod
+db.port <= local
+features.beta_api <= base
+features.new_checkout <= env:staging
+logging.level <= env:prod
+logging.sinks <= local

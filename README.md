@@ -102,3 +102,7 @@ buffer dict footprint  : ~160 B/entry -> worst case ~160 KiB at window=1024
 
 注意可解性约束：以消息条数计，`最大抖动 < 空洞超时 < 平均丢包间隔`，
 否则任何实现都会在"迟到误判"与"积压增长"之间失衡（属性测试中有对应注释）。
+
+---
+
+另见 [CONFIG_INHERITANCE.md](CONFIG_INHERITANCE.md)：多环境配置继承系统（`config_layers.py`，base < env < local，合并可追溯）。

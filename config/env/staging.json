@@ -1,0 +1,6 @@
+{
+  "app": { "debug": true },
+  "db": { "host": "staging-db.internal", "pool_size": 20 },
+  "logging": { "level": "DEBUG" },
+  "features": { "new_checkout": true }
+}
