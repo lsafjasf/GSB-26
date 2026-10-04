@@ -1,0 +1,8 @@
+{
+  "service": {
+    "port": 9090
+  },
+  "log": {
+    "level": "DEBUG"
+  }
+}

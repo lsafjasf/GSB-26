@@ -1,0 +1,9 @@
+{
+  "__inherits__": "prod",
+  "db": {
+    "host": "prod-db.cn.internal"
+  },
+  "service": {
+    "timeout_ms": 3000
+  }
+}

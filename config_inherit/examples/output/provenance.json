@@ -1,0 +1,215 @@
+{
+  "env": "prod.cn",
+  "layer_order": [
+    "base",
+    "env:prod",
+    "env:prod.cn",
+    "local"
+  ],
+  "local_layer": {
+    "file": "config_inherit/examples/local.json",
+    "present": true
+  },
+  "values": {
+    "allow_ips": {
+      "file": "config_inherit/examples/base.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": [
+            "10.0.0.0/8"
+          ]
+        }
+      ],
+      "layer": "base",
+      "value": [
+        "10.0.0.0/8"
+      ]
+    },
+    "db.host": {
+      "file": "config_inherit/examples/envs/prod.cn.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/envs/prod.json",
+          "layer": "env:prod",
+          "value": "prod-db.internal"
+        },
+        {
+          "file": "config_inherit/examples/envs/prod.cn.json",
+          "layer": "env:prod.cn",
+          "value": "prod-db.cn.internal"
+        }
+      ],
+      "layer": "env:prod.cn",
+      "value": "prod-db.cn.internal"
+    },
+    "db.pool_size": {
+      "file": "config_inherit/examples/envs/prod.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": 10
+        },
+        {
+          "file": "config_inherit/examples/envs/prod.json",
+          "layer": "env:prod",
+          "value": 50
+        }
+      ],
+      "layer": "env:prod",
+      "value": 50
+    },
+    "db.port": {
+      "file": "config_inherit/examples/base.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": 5432
+        }
+      ],
+      "layer": "base",
+      "value": 5432
+    },
+    "db.ssl": {
+      "file": "config_inherit/examples/envs/prod.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": false
+        },
+        {
+          "file": "config_inherit/examples/envs/prod.json",
+          "layer": "env:prod",
+          "value": true
+        }
+      ],
+      "layer": "env:prod",
+      "value": true
+    },
+    "features.beta": {
+      "file": "config_inherit/examples/envs/prod.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": false
+        },
+        {
+          "file": "config_inherit/examples/envs/prod.json",
+          "layer": "env:prod",
+          "value": false
+        }
+      ],
+      "layer": "env:prod",
+      "value": false
+    },
+    "features.cache": {
+      "file": "config_inherit/examples/base.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": true
+        }
+      ],
+      "layer": "base",
+      "value": true
+    },
+    "log.format": {
+      "file": "config_inherit/examples/base.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": "json"
+        }
+      ],
+      "layer": "base",
+      "value": "json"
+    },
+    "log.level": {
+      "file": "config_inherit/examples/local.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": "INFO"
+        },
+        {
+          "file": "config_inherit/examples/envs/prod.json",
+          "layer": "env:prod",
+          "value": "WARN"
+        },
+        {
+          "file": "config_inherit/examples/local.json",
+          "layer": "local",
+          "value": "DEBUG"
+        }
+      ],
+      "layer": "local",
+      "value": "DEBUG"
+    },
+    "service.name": {
+      "file": "config_inherit/examples/base.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": "myapp"
+        }
+      ],
+      "layer": "base",
+      "value": "myapp"
+    },
+    "service.port": {
+      "file": "config_inherit/examples/local.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": 8080
+        },
+        {
+          "file": "config_inherit/examples/local.json",
+          "layer": "local",
+          "value": 9090
+        }
+      ],
+      "layer": "local",
+      "value": 9090
+    },
+    "service.timeout_ms": {
+      "file": "config_inherit/examples/envs/prod.cn.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": 5000
+        },
+        {
+          "file": "config_inherit/examples/envs/prod.cn.json",
+          "layer": "env:prod.cn",
+          "value": 3000
+        }
+      ],
+      "layer": "env:prod.cn",
+      "value": 3000
+    },
+    "service.version": {
+      "file": "config_inherit/examples/base.json",
+      "history": [
+        {
+          "file": "config_inherit/examples/base.json",
+          "layer": "base",
+          "value": "1.0.0"
+        }
+      ],
+      "layer": "base",
+      "value": "1.0.0"
+    }
+  }
+}

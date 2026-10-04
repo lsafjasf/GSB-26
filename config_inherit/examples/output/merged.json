@@ -1,0 +1,25 @@
+{
+  "allow_ips": [
+    "10.0.0.0/8"
+  ],
+  "db": {
+    "host": "prod-db.cn.internal",
+    "pool_size": 50,
+    "port": 5432,
+    "ssl": true
+  },
+  "features": {
+    "beta": false,
+    "cache": true
+  },
+  "log": {
+    "format": "json",
+    "level": "DEBUG"
+  },
+  "service": {
+    "name": "myapp",
+    "port": 9090,
+    "timeout_ms": 3000,
+    "version": "1.0.0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "service": {
+    "timeout_ms": 2000
+  },
+  "db": {
+    "host": "dev-db.internal",
+    "ssl": false
+  },
+  "log": {
+    "level": "DEBUG"
+  },
+  "features": {
+    "beta": true
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "db": {
+    "host": "prod-db.internal",
+    "pool_size": 50,
+    "ssl": true
+  },
+  "log": {
+    "level": "WARN"
+  },
+  "features": {
+    "beta": false
+  }
+}
